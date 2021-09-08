@@ -1,0 +1,16 @@
+[Unit]
+Description=Multi-EAR :: info
+After=network.target
+ 
+[Service]
+Type=simple
+User=tud
+Group=tud
+WorkingDirectory=/opt/services/multi-ear-info
+Environment="VIRTUAL_ENV=/opt/py37"
+Environment="PATH=$VIRTUAL_ENV/bin:$PATH"
+ExecStart=/opt/py37/bin/uwsgi --ini /opt/services/multi-ear-info/uwsgi.ini
+Restart=on-fail
+ 
+[Install]
+WantedBy=multi-user.target
