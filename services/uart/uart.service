@@ -1,5 +1,5 @@
 [Unit]
-Description=Multi-EAR :: uart
+Description=Multi-EAR :: uart readout
 DefaultDependencies=false
  
 [Service]

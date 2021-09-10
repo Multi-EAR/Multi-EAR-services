@@ -26,7 +26,7 @@ sudo apt install -y nginx >> $LOG_FILE 2>&1
 echo -e ".. done\n" >> $LOG_FILE 2>&1
 
 echo ".. pip install python3 packages in $VIRTUAL_ENV" | tee -a $LOG_FILE
-pip3 install uwsgi flask >> $LOG_FILE 2>&1
+pip3 install uwsgi flask check_systemd >> $LOG_FILE 2>&1
 echo -e ".. done\n" >> $LOG_FILE 2>&1
 
 DIR="/opt/services/$SERVICE"

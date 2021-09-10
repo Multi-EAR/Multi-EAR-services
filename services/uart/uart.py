@@ -15,7 +15,7 @@ t_delta = 1/sampling_rate  # s
 
 
 def payload_to_counts(payload, n_payload, t_start):
-    """
+    """Move to data
     """
     # date time
     h, m, s, step = int(payload[0]), int(payload[1]), int(payload[2]), int(payload[3])
@@ -57,8 +57,8 @@ def payload_to_counts(payload, n_payload, t_start):
     return # counts
 
 
-def main():
-    """
+def uart_readout():
+    """Todo: Buffer serial stream as fixed byte length and write to files.
     """
     # connect to serial port
     ser = serial.Serial(
@@ -114,4 +114,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    uart_readout()
