@@ -1,0 +1,53 @@
+{% set strategy = 'html' %}
+<!doctype html>
+<html lang="en">
+<head>
+    {% block head %}
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="Multi-EAR">
+
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <title>{% block title %}{% endblock %} {% if hostname %}{{hostname}}{% endif %}</title>
+
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='icon/apple-touch-icon.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='icon/favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='icon/favicon-16x16.png') }}">
+    <link rel="manifest" href="site.webmanifest">
+    <link rel="mask-icon" href="{{ url_for('static', filename='icon/safari-pinned-tab.svg') }}" color="#00a6d6">
+    <meta name="msapplication-TileColor" content="#da532c">
+    <meta name="theme-color" content="#ffffff">
+
+    <!-- Bootstrap core CSS -->
+    <link rel= "stylesheet" type="text/css" href= "{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <link rel= "stylesheet" type="text/css" href="{{ url_for('static', filename='css/bootstrap-icons.css') }}">
+    <link rel= "stylesheet" type="text/css" href="{{ url_for('static', filename='css/show-password-toggle.min.css') }}">
+    <link rel= "stylesheet" type="text/css" href="{{ url_for('static', filename='css/base.css') }}">
+
+    <!-- Custom styles for this template -->
+    {% block styles %}{% endblock %}
+
+    {% endblock %}
+</head>
+<body>
+    <nav class="d-flex flex-column flex-shrink-0 bg-dark" style="width: 4.5rem;">
+       {% include 'modules/sidebar.html.jinja' %}
+    </nav>
+    <main class="container-fluid bg-light ps-4">
+        {% block main %}<div class="tab-content" id="nav-content">..</div>{% endblock %}
+    </main>
+
+    <!-- Bootstrap core JS -->
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/vanilla-get-json.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/show-password-toggle.min.js') }}"></script>
+
+    <!-- Custom scripts for this template -->
+    {% block script %}
+      <script src="{{ url_for('static', filename='js/base.js') }}"></script>
+    {% endblock %}
+</body>
+</html>
