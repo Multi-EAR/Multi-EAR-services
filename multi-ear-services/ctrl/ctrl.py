@@ -82,7 +82,12 @@ services = {
 
 @app.context_processor
 def inject_stage_and_region():
-    return dict(hostname=socket.gethostname(), version=version, services=services)
+    globs = dict(
+        hostname=socket.gethostname(),
+        version=version, services=services,
+        wifi_hotspot_mode=True,
+    )
+    return globs
 
 
 @app.route("/")
@@ -149,13 +154,6 @@ def api_status_all():
     # res["service"] = service
     # res["status"] = service.contains("active")
     return json.dumps(services, indent=4)
-
-
-@app.route("/_get_wifi_mode")
-def get_wifi_mode():
-    res = rpopen(['ping', '-c', '4', 'www.google.com'])
-    res["mode"] = res["stdout"]
-    return json.dumps(res, indent=4)
 
 
 @app.route("/_switch_wifi_mode")

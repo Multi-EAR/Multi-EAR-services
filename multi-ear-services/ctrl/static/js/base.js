@@ -1,27 +1,75 @@
 /* global bootstrap: false */
 
+function switchWiFiMode() {
 
+    var toggle = document.querySelector('#hotspotWiFiMode')
+
+    toggle.addEventListener('click', function (event) {
+
+        var action, resp
+
+        action = toggle.checked ? 'enable' : 'disable'
+        resp = confirm("Are you sure to " + action + " the wifi hotspot mode?\n\nThis will reboot the device.")
+
+        if (resp == false) {
+            event.preventDefault();
+            event.stopPropagation();
+            return false;
+        }
+
+        action = toggle.checked ? 'Enabling' : 'Disabling'
+        alert(action + " Wi-Fi hotspot mode.\n\nThe device will reboot automatically in 5 sec.")
 
 /*
-function getWiFiMode() {
-    getJSON("/_get_wifi_mode"), {})
-    .then(data => {
-        console.log(data);
-    });
-}
-
-function switchWiFiMode() {
-    var r = confirm("Are you sure?");
-    if (r == false) {
-        return;
-    }
-    getJSON("/_switch_wifi_mode"), {})
-    .then(data => {
-        console.log(data);
-    });
-}
+        getJSON("/_switch_wifi_mode")
+        .then(data => {
+            console.log(data);
+        });
 */
 
+    }, false)
+
+}
+
+
+function validateWiFiForm() {
+
+    // Fetch all the forms we want to apply custom Bootstrap validation styles to
+    var forms = document.querySelectorAll('.needs-validation')
+
+    // Loop over them and prevent submission
+    Array.prototype.slice.call(forms)
+    .forEach(function (form) {
+
+        form.addEventListener('submit', function (event) {
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (form.checkValidity()) {
+                processWifiForm(form)
+                form.querySelector('button[type=submit]').disabled = true
+            }
+
+            form.classList.add('was-validated')
+
+        }, false)
+
+        form.addEventListener('reset', function (event) {
+            form.reset()
+            form.classList.remove('was-validated')
+            form.querySelector('button[type=submit]').disabled = false;
+        }, false)
+
+    })
+}
+
+
+function processWifiForm(form) {
+    ssid = form.elements["inputSSID"].value
+    psk = form.elements["inputPSK"].value
+    alert("ssid = " + ssid + "; psk = " + psk);
+}
 
 
 function statusUpdateLoop(content) {
@@ -76,6 +124,8 @@ function loadTabContent(tab) {
             case "wifi-tab":
                 console.log("wifi code")
                 showPasswordToggle()
+                validateWiFiForm()
+                switchWiFiMode()
             case "status-tab":
                 console.log("status code")
                 statusUpdate()
