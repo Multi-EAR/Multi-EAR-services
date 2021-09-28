@@ -1,6 +1,5 @@
 from flask import Flask, render_template
 from sys import version
-import os
 import subprocess
 import socket
 import configparser
@@ -21,6 +20,7 @@ services = ['multi-ear-ctrl',
             'hostapd',
             'dnsmasq']
 
+
 def _parse_config(config_path: str, **kwargs):
     """
     """
@@ -38,7 +38,7 @@ def _parse_config(config_path: str, **kwargs):
 def _systemd_status(service: str):
     """Get the systemd status of a single service.
     """
-    if service not in _services:
+    if service not in services:
         return dict(
             success=False,
             service=service,
@@ -56,10 +56,10 @@ def _systemd_status_all():
     """Get the systemd status of all services.
     """
     status = dict()
-    for s in _services:
+    for s in services:
         status[s] = _systemd_status(s)
     return status
-    
+
 
 @app.context_processor
 def inject_stage_and_region():
@@ -82,12 +82,14 @@ def index():
 
 # all api relalted stuff
 def rpopen(*args, **kwargs):
-    """Wraps subprocess.Popen in a catch error statement. 
+    """Wraps subprocess.Popen in a catch error statement.
     """
 
     # subprocess command
     try:
-        p = subprocess.Popen(*args, **kwargs, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p = subprocess.Popen(
+            *args, **kwargs, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
     except OSError:
         return {
             "success": False,
@@ -96,7 +98,8 @@ def rpopen(*args, **kwargs):
             "stderr": None,
         }
 
-    # wait for process to finish; this also sets the returncode variable inside 'p'
+    # wait for process to finish;
+    # this also sets the returncode variable inside 'p'
     stdout, stderr = p.communicate()
 
     # construct return dict
@@ -122,14 +125,14 @@ def load_tab(tab="home"):
         "html": html,
     }
     return json.dumps(resp, indent=4)
- 
+
 
 @app.route("/_status/<service>")
 def api_status(service=""):
     res = rpopen(['/usr/bin/systemctl', 'status', service])
     res["service"] = service
     res["status"] = service.contains("active")
-    return json.dumps(resp, indent=4)
+    return json.dumps(res, indent=4)
 
 
 @app.route("/_status_list")
@@ -157,6 +160,7 @@ def main():
     )
     args = parser.parse_args()
     app.run(debug=args.debug)
+
 
 if __name__ == "__main__":
     main()

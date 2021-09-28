@@ -1,6 +1,7 @@
 import time
 import numpy as np
 import serial
+import socket
 from influxdb_client import InfluxDBClient
 # from influxdb_client .client.write_api import SYNCHRONOUS
 
@@ -13,8 +14,11 @@ _packet_bytes_min = 40  # minimum bytes to process a packet
 _sampling_rate = 16  # Hz
 _sampling_delta = np.timedelta64(np.int64(1e9/_sampling_rate))  # ns
 
+# device hostname
+_hostname = socket.gethostname()
+
 # influxDB connection ini
-client = InfluxDBClient.from_config_file("/opt/services/multi-ear-uart/config.ini")
+client = InfluxDBClient.from_config_file("config.ini")
 
 
 def uart_readout(port='/dev/ttyAMA0', baudrate=115200, timeout=2):
@@ -222,53 +226,50 @@ def parse_payload(payload, imprecise_time):
     Returns
     -------
     data_point : `dict`
-        Dictionary with all fields for the given time step. 
+        Dictionary with all fields for the given time step.
 
     """
     print(imprecise_time, payload.hex())
 
+    def frompayload(*args, **kwargs):
+        return np.frombuffer(payload, *args, **kwargs)
+
     # date time
     # h, m, s = int(payload[0]), int(payload[1]), int(payload[2])
-    step = np.frombuffer(payload, dtype=_u1, offset=3)
+    step = frompayload(dtype=_u1, offset=3)
 
     # DLVR-F50D differential pressure (14-bit ADC)
     # DLVR = int(payload[4] | payload[5])
-    DLVR = np.frombuffer(payload, dtype=_i2, offset=4)
+    DLVR = frompayload(dtype=_i2, offset=4)
 
     # SP210
     # SP210 = int(payload[6] << 8 | payload[7])
-    SP210 = np.frombuffer(payload, dtype=_i2_S, offset=6)
+    SP210 = frompayload(dtype=_i2_S, offset=6)
 
-    # LPS33HW barometric pressure (14-bit ADC)
+    # LPS33HW barometric pressure (returns 32-bit)
     # LPS = int.from_bytes(payload[8:11], "little")
-    LPS33HW = np.frombuffer(payload, dtype=_i4, offset=8, count=1)  # returns 32-bit
+    LPS33HW = frompayload(dtype=_i4, offset=8, count=1)
 
     # LIS3DH 3-axis accelerometer and gyroscope (16-bit ADC)
-    LIS3DH_X, LIS3DH_Y, LIS3DH_Z = np.frombuffer(payload, dtype=_i2_S, offset=11, count=3)
+    LIS3DH_X, LIS3DH_Y, LIS3DH_Z = frompayload(dtype=_i2_S, offset=11, count=3)
     # LIS3_X = int(payload[11] << 8 | payload[12])
     # LIS3_Y = int(payload[13] << 8 | payload[14])
     # LIS3_Z = int(payload[15] << 8 | payload[16])
 
-    # LSM303 3-axis accelerometer and magnetometer (16-bit ADC)
-    LSM303_X, LSM303_Y, LSM303_Z = np.frombuffer(payload, dtype=_i1, offset=17, count=3)
-    # int(payload[17]), int(payload[18]), int(payload[19])  # only 8 bit??
+    # LSM303 3-axis accelerometer and magnetometer (returns 8-bit)
+    LSM303_X, LSM303_Y, LSM303_Z = frompayload(dtype=_i1, offset=17, count=3)
+    # int(payload[17]), int(payload[18]), int(payload[19])
 
     # SHT8x temperature and humidity (16-bit ADC)
-    SHT8x_T, SHT8x_H = np.frombuffer(payload, dtype=_i2_S, offset=20, count=2)
+    SHT8x_T, SHT8x_H = frompayload(dtype=_i2_S, offset=20, count=2)
     # SHT_T = int(payload[20] << 8 | payload[21])
     # SHT_H = int(payload[22] << 8 | payload[23])
 
-    # GPS at full cycle
-    if step == 0:
-        GPS_LAT, GPS_LON = np.zeros(2, dtype=_f4)
-    else:
-        GPS_LAT, GPS_LON = np.frombuffer(payload, dtype=_f4, offset=24, count=2)
-
-    # Construct dictionary with data point 
+    # Construct dictionary with data point
     data_point = {
         "measurement": 'Multi-EAR',
         "time": imprecise_time,
-        "tag": 'hostname!!',
+        "tag": _hostname,
         "fields": {
             "step": step,
             "DLVR": DLVR,
@@ -282,10 +283,15 @@ def parse_payload(payload, imprecise_time):
             "LSM303_Z": LSM303_Z,
             "SHT8x_T": SHT8x_T,
             "SHT8x_H": SHT8x_H,
-            "GPS_LAT": GPS_LAT,
-            "GPS_LON": GPS_LON,
         }
     }
+
+    # Readout gnss at full cycle
+    # add GNSS quality
+    if step == 0:
+        GNS_LAT, GNS_LON = frompayload(dtype=_f4, offset=24, count=2)
+        data_point['fields']['GNS_LAT'] = GNS_LAT
+        data_point['fields']['GNS_LON'] = GNS_LON
 
     return data_point
 
