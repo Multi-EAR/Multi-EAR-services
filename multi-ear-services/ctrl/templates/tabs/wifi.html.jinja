@@ -1,36 +1,35 @@
 <h1 class="h2 pt-3 pb-2 mb-3 border-bottom">Wi-Fi</h1>
 
-<div class="row">
-  <div class="col col-md-8 col-lg-6">
+<div class="container-md">
 
     <h3 class="mb-3 hstack gap-3">Hotspot mode <div class="vr"></div> <small class="text-muted">broadcast a wireless network</small></h3>
     <p>Let the Raspberry Pi broadcast it's own wireless network.<br>
     The Raspberry Pi's ip address shall be <code>192.168.128.1</code>.</p>
 
-    <div class="row mb-3">
-      <div class="col">
+    <div class="row mb-3 justify-content-end">
+      <div class="col-md-9">
         <div class="form-check form-switch">
-          <input class="form-check-input" type="checkbox" id="hotspotWiFiMode" {% if wifi_hotspot_mode %}checked{% endif %}>
-          <label class="form-check-label" for="hotspotWiFiMode">Wi-Fi hotspot mode</label>
+          <input class="form-check-input" type="checkbox" id="wirelessAccessPoint" {% if wireless_access_point %}checked{% endif %}>
+          <label class="form-check-label" for="hotspotWiFiMode">wireless access point mode</label>
         </div>
       </div>
     </div>
 
     <div class="row mb-3">
-      <div class="col-3 text-end">
-        <label for="staticNetworkName" class="col-form-label">Network Name</label>
+      <div class="col-md-3 text-md-end">
+        <label for="staticNetworkName" class="col-form-label">Name/SSID</label>
       </div>
-      <div class="col-9">
-        <input input type="text" readonly class="form-control" id="staticNetworkName" value="{{hostname}}">
+      <div class="col-md-9">
+        <input type="text" class="form-control" id="staticNetworkName" value="{{hostapd.ssid}}" readonly>
       </div>
     </div>
 
     <div class="row mb-3">
-      <div class="col-3 text-end">
-        <label for="staticPassword" class="col-form-label">Password</label>
+      <div class="col-md-3 text-md-end">
+        <label for="staticPassword" class="col-form-label">WPA{{hostapd.wpa}} passphrase</label>
       </div>
-      <div class="col-9">
-        <input input type="text" readonly class="form-control" id="staticPassword" value="{{hostname}}">
+      <div class="col-md-9">
+        <input type="text" class="form-control" id="staticPassword" value="{{hostapd.wpa_passphrase}}" readonly>
       </div>
     </div>
 
@@ -43,15 +42,16 @@
     <form class="needs-validation" novalidate>
 
       <div class="row mb-3">
-        <p>Connect to a known wireless network.<br>
-        Enter the <code>ssid</code> and <code>psk</code> to add the network to the Raspberry Pi's <code>wpa_supplicant</code> list. Only WPA2 (WPA Personal) networks are supported.</p>
+        <p>Automatilly connect to known wireless networks when wireless access point mode is <code>disabled</code>.</p>
+        <p>Enter the <code>name</code> and <code>passphrase</code> to add the network to the Raspberry Pi's <code>wpa_supplicant</code> list.<br> 
+        Only WPA2 (WPA Personal) secured networks are supported and editing/removing networks is not allowed.</p>
       </div>
 
       <div class="row mb-3">
-        <div class="col-3 text-end">
+        <div class="col-md-3 text-md-end">
           <label for="inputSSID" class="col-form-label">Name/SSID</label>
         </div>
-        <div class="col-9">
+        <div class="col-md-9">
           <input type="text" id="inputSSID" class="form-control" spellcheck="false"
            autocorrect="off" autocapitalize="off" required>
           <div class="invalid-feedback">
@@ -61,10 +61,10 @@
       </div>
 
       <div class="row mb-3">
-        <div class="col-3 text-end">
-          <label for="inputPSK" class="col-form-label">Security Key/PSK</label>
+        <div class="col-md-3 text-md-end">
+          <label for="inputPSK" class="col-form-label">WPA2 passphrase</label>
         </div>
-        <div class="col-9">
+        <div class="col-md-9">
           <div class="input-group">
             <input type="password" id="inputPSK" class="form-control" spellcheck="false"
              autocorrect="off" autocapitalize="off" minlength="8" maxlength="63" required>
@@ -85,5 +85,4 @@
 
   </form>
 
-  </div>
 </div>

@@ -2,14 +2,14 @@
 
 function switchWiFiMode() {
 
-    var toggle = document.querySelector('#hotspotWiFiMode')
+    var toggle = document.querySelector('#wirelessAccessPoint')
 
     toggle.addEventListener('click', function (event) {
 
         var action, resp
 
         action = toggle.checked ? 'enable' : 'disable'
-        resp = confirm("Are you sure to " + action + " the wifi hotspot mode?\n\nThis will reboot the device.")
+        resp = confirm("Are you sure to " + action + " the wireless access point mode?\n\nThis will reboot the device.")
 
         if (resp == false) {
             event.preventDefault();
@@ -18,7 +18,7 @@ function switchWiFiMode() {
         }
 
         action = toggle.checked ? 'Enabling' : 'Disabling'
-        alert(action + " Wi-Fi hotspot mode.\n\nThe device will reboot automatically in 5 sec.")
+        alert(action + " wireless access point mode.\n\nThe device will reboot automatically in 5 sec.")
 
 /*
         getJSON("/_switch_wifi_mode")
@@ -102,6 +102,57 @@ function statusUpdate() {
 }
 
 
+
+function loadDashboard() {
+  // Graphs
+  var ctx = document.getElementById('myChart')
+  // eslint-disable-next-line no-unused-vars
+  var myChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: [
+        'Sunday',
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday'
+      ],
+      datasets: [{
+        data: [
+          15339,
+          21345,
+          18483,
+          24003,
+          23489,
+          24092,
+          12034
+        ],
+        lineTension: 0,
+        backgroundColor: 'transparent',
+        borderColor: '#00a6d6',
+        borderWidth: 4,
+        pointBackgroundColor: '#00a6d6'
+      }]
+    },
+    options: {
+      scales: {
+        yAxes: [{
+          ticks: {
+            beginAtZero: false
+          }
+        }]
+      },
+      legend: {
+        display: false
+      }
+    }
+  })
+}
+
+
+
 function loadTabContent(tab) {
     // nav-tab set?
     if (tab === undefined) {
@@ -121,13 +172,16 @@ function loadTabContent(tab) {
     })
     .finally(function() {
         switch (tab.id) {
+            case "dashboard-tab":
+                console.log("dashboard script")
+                loadDashboard()
             case "wifi-tab":
-                console.log("wifi code")
+                console.log("wifi script")
                 showPasswordToggle()
                 validateWiFiForm()
                 switchWiFiMode()
             case "status-tab":
-                console.log("status code")
+                console.log("status script")
                 statusUpdate()
                 statusUpdateLoop()
         }

@@ -2,25 +2,27 @@
 
 <p>Monitoring of the Multi-EAR core services, updated automatically every 10 seconds.</p>
 <div class="progress mb-3 mb-lg-4" style="height: 2px;">
-  <div class="progress-bar" role="progressbar" id="update" style="width:0%; transition:width .15s ease;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+  <div class="progress-bar" role="progressbar" id="update" style="width:0%; transition:width .15s ease;"
+   aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
 </div>
 
 <div class="accordion accordion-flush" id="status">
-  {% for service, details in services.items() %}
+  {% for service in services %}
   <div class="accordion-item">
-    <h2 class="accordion-header" id="status-{{service|lower}}">
-      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#status-resp-{{service|lower}}" aria-expanded="false" aria-controls="status-resp-{{service|lower}}">
+    <h2 class="accordion-header" id="{{service}}">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#{{service}}-response"
+       aria-expanded="false" aria-controls="{{service}}-response">
         <div class"row row-cols-2">
-          <div class="col d-flex"><div class="py-1">{{details.name}}</div></div>
+          <div class="col d-flex"><div class="py-1" id="{{service}}-name">{{service}}</div></div>
           <div class="col d-flex">
-              <div class="py-1"><span class="badge badge-status bg-success">{{details.status}}</span></div>
-              <div class="py-1 ms-2"><span class="badge badge-version bg-primary">v{{details.version}}</span></div>
+              <div class="py-1"><span class="badge badge-status bg-success" id="{{service}}-status">[STATUS]</span></div>
+              <div class="py-1 ms-2"><span class="badge badge-version bg-primary" id="{{service}}-version">[VERSION]</span></div>
           </div>
         </div>
       </button>
     </h2>
-    <div id="status-resp-{{service|lower}}" class="accordion-collapse collapse" aria-labelledby="status-{{service|lower}}" data-bs-parent="#status">
-      <div class="accordion-body">{{details.response}}</div>
+    <div id="{{service}}-response" class="accordion-collapse collapse" aria-labelledby="{{service}}-response" data-bs-parent="#status">
+      <div class="accordion-body">[RESPONSE]</div>
     </div>
   </div>
   {% endfor %}

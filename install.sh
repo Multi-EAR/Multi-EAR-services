@@ -35,57 +35,20 @@ if id -u pi >/dev/null 2>&1; then
 fi
 
 #
-# Apt update
-#
-function apt_update
-{
-    echo ".. apt update" | tee -a $LOG_FILE
-    sudo apt update >> $LOG_FILE 2>&1
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
-}
-
-#
-# Apt upgrade
-#
-function apt_upgrade
-{
-    echo ".. apt upgrade" | tee -a $LOG_FILE
-    sudo apt upgrade -y >> $LOG_FILE 2>&1
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
-}
-
-#
-# Apt autoremove
-#
-function apt_autoremove
-{
-    echo ".. apt autoremove" | tee -a $LOG_FILE
-    sudo apt autoremove -y >> $LOG_FILE 2>&1
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
-}
-
-#
-# Apt sequence
-#
-function apt_sequence
-{
-    apt_update
-    apt_upgrade
-    apt_autoremove
-}
-
-#
 # Install python3
 #
 function install_python3
 {
-    echo ".. apt install python3"
+    echo ".. install python3" | tee -a $LOG_FILE
     sudo apt update >> $LOG_FILE 2>&1
-    sudo apt install -y python3 python3-pip python3-venv >> $LOG_FILE 2>&1
+    sudo apt install -y libatlas-base-dev >> $LOG_FILE 2>&1
+    sudo apt install -y python3 python3-pip python3-venv python3-serial python3-numpy >> $LOG_FILE 2>&1
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 
-    echo ".. set pip trusted hosts and self update"
-    cat <<EOF | sudo tee -a /etc/pip.conf
+    echo ".. set pip trusted hosts and self update" | tee -a $LOG_FILE
+    cat <<EOF | sudo tee /etc/pip.conf
+[global]
+extra-index-url=https://www.piwheels.org/simple
 trusted-host = pypi.org
                pypi.python.org
                files.pythonhosted.org
@@ -95,29 +58,68 @@ EOF
 }
 
 #
-# Install numpy and blas
+# Nginx 
 #
-function install_numpy_blas
+function install_nginx
 {
-    echo ".. apt install python3-numpy with BLAS support"
+    echo ".. install nginx" | tee -a $LOG_FILE
     sudo apt update >> $LOG_FILE 2>&1
-    sudo apt install -y libatlas-base-dev >> $LOG_FILE 2>&1
-    sudo apt install -y python3-numpy >> $LOG_FILE 2>&1
+    sudo apt install -y nginx >> $LOG_FILE 2>&1
+    echo -e ".. done\n" >> $LOG_FILE 2>&1
+}
+
+function configure_nginx
+{
+    echo ".. configure influxdb" | tee -a $LOG_FILE
+    # remove default nginx site
+    sudo rm -f /etc/nginx/sites-enabled/default
+    sudo rm -f /etc/nginx/sites-available/default
+    # test
+    sudo service nginx configtest
+    # enable and start service
+    sudo systemctl unmask nginx >> $LOG_FILE 2>&1
+    sudo systemctl enable nginx >> $LOG_FILE 2>&1
+    sudo systemctl start nginx >> $LOG_FILE 2>&1
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
 
 #
-# Install influxdb
+# Hostapd and dnsmasq (wifi access point)
 #
-function install_influxdb
+function install_hostapd_dnsmasq
 {
-    echo ".. apt install influxdb"
+    echo ".. install hostapd dnsmasq" | tee -a $LOG_FILE
+    sudo apt update >> $LOG_FILE 2>&1
+    sudo apt install -y hostapd dnsmasq >> $LOG_FILE 2>&1
+    echo -e ".. done\n" >> $LOG_FILE 2>&1
+}
+
+function configure_hostapd_dnsmasq
+{
+    echo ".. configure hostapd dnsmasq" | tee -a $LOG_FILE
+    sudo systemctl stop hostapd >> $LOG_FILE 2>&1
+    sudo systemctl stop dnsmasq >> $LOG_FILE 2>&1
+    echo -e ".. done\n" >> $LOG_FILE 2>&1
+}
+
+#
+# Influxdb and Telegraf
+#
+function install_influxdb_telegraf
+{
+    echo ".. install influxdb" | tee -a $LOG_FILE
     # add to apt
     wget -qO- https://repos.influxdata.com/influxdb.key | sudo apt-key add - >> $LOG_FILE 2>&1
     echo "deb https://repos.influxdata.com/debian $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/influxdb.list >> $LOG_FILE 2>&1
     # install
     sudo apt update >> $LOG_FILE 2>&1
-    sudo apt install -y influxdb >> $LOG_FILE 2>&1
+    sudo apt install -y influxdb telegraf >> $LOG_FILE 2>&1
+    echo -e ".. done\n" >> $LOG_FILE 2>&1
+}
+
+function configure_influxdb
+{
+    echo ".. configure influxdb" | tee -a $LOG_FILE
     # enable and start service
     sudo systemctl unmask influxdb >> $LOG_FILE 2>&1
     sudo systemctl enable influxdb >> $LOG_FILE 2>&1
@@ -131,18 +133,41 @@ function install_influxdb
     # configure, enable service, create database
 }
 
+function configure_telegraf
+{
+    echo ".. configure telegraf" | tee -a $LOG_FILE
+    # enable and start service
+    sudo systemctl unmask telegraf >> $LOG_FILE 2>&1
+    sudo systemctl enable telegraf >> $LOG_FILE 2>&1
+    sudo systemctl start telegraf >> $LOG_FILE 2>&1
+    # configure
+    sudo cp etc/telegraf/telegraf.conf /etc/telegraf/telegraf.conf >> $LOG_FILE 2>&1
+    # restart service
+    sudo systemctl start telegraf >> $LOG_FILE 2>&1
+    echo -e ".. done\n" >> $LOG_FILE 2>&1
+
+    # configure, enable service, create database
+}
+
 #
-# Install grafana
+# Grafana
 #
 function install_grafana
 {
-    echo ".. apt install grafana"
+    echo ".. apt install grafana" | tee -a $LOG_FILE
     # add to apt
     curl https://packages.grafana.com/gpg.key | sudo apt-key add - >> $LOG_FILE 2>&1
     echo "deb https://packages.grafana.com/oss/deb stable main" | sudo tee -a /etc/apt/sources.list.d/grafana.list >> $LOG_FILE 2>&1
     # install
     sudo apt update >> $LOG_FILE 2>&1
     sudo apt install -y grafana >> $LOG_FILE 2>&1
+    echo -e ".. done\n" >> $LOG_FILE 2>&1
+
+function configure_grafana
+{
+    echo ".. configure grafana" | tee -a $LOG_FILE
+    # plugins 
+    sudo grafana-cli plugins install grafana-clock-panel
     # enable and start service
     sudo systemctl unmask grafana >> $LOG_FILE 2>&1
     sudo systemctl enable grafana >> $LOG_FILE 2>&1
@@ -157,7 +182,7 @@ function install_grafana
 }
 
 #
-# Create python3 virtual environment
+# Python3 virtual environment
 #
 function create_python3_venv
 {
@@ -168,9 +193,6 @@ function create_python3_venv
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
 
-#
-# Activate python3 virtual environment
-#
 function activate_python3_venv
 {
     echo ".. activate python3 venv" | tee -a $LOG_FILE
@@ -187,9 +209,9 @@ function activate_python3_venv
 #
 # Multi-EAR services
 #
-function install_services
+function install_multi_ear_services
 {
-    echo ".. setup services" | tee -a $LOG_FILE
+    echo ".. setup Multi-EAR services" | tee -a $LOG_FILE
     DIR="/opt/services"
     sudo mkdir $DIR >> $LOG_FILE 2>&1
     sudo chown -R $USER:$USER $DIR >> $LOG_FILE 2>&1
@@ -211,12 +233,14 @@ function install_services
 #
 echo "Multi-EAR software install v$VERSION" | tee $LOG_FILE
 install_python3
-install_numpy_blas
-install_influxdb
+install_influxdb_telegraf
 install_grafana
+configure_influxdb
+configure_telegraf
+configure_grafana
 create_python3_venv
 activate_python3_venv
-install_services
+# install_multi_ear_services
 echo  "install complete" | tee -a $LOG_FILE
 
 exit 0

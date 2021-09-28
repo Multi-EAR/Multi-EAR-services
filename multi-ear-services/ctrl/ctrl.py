@@ -3,91 +3,75 @@ from sys import version
 import os
 import subprocess
 import socket
+import configparser
 import json
+import argparse
 
 app = Flask(__name__)
 
-services = {
-    'multi-ear-ctrl': {
-        'name': 'Multi-EAR-CTRL',
-        'info': '',
-        'status': 'active (running)',
-        'version': '0.0',
-        'response': '...',
-    },
-    'multi-ear-data': {
-        'name': 'Multi-EAR-DATA',
-        'info': '',
-        'status': 'active (running)',
-        'version': '0.0',
-        'response': '...',
-    },
-    'multi-ear-lora': {
-        'name': 'Multi-EAR-LORA',
-        'info': '',
-        'status': 'active (running)',
-        'version': '0.0',
-        'response': '...',
-    },
-    'multi-ear-uart': {
-        'name': 'Multi-EAR-UART',
-        'info': '',
-        'status': 'active (running)',
-        'version': '0.0',
-        'response': '...',
-    },
-    'multi-ear-wifi': {
-        'name': 'Multi-EAR-WIFI',
-        'info': '',
-        'status': 'active (running)',
-        'version': '0.0',
-        'response': '...',
-    },
-    'influxdb': {
-        'name': 'InfluxDB',
-        'info': '',
-        'status': 'active (running)',
-        'version': '0.0',
-        'response': '...',
-    },
-    'grafana': {
-        'name': 'Grafana',
-        'info': '',
-        'status': 'active (running)',
-        'version': '0.0',
-        'response': '...',
-    },
-    'telegraph': {
-        'name': 'Telegraph',
-        'info': '',
-        'status': 'active (running)',
-        'version': '0.0',
-        'response': '...',
-    },
-    'hostapd': {
-        'name': 'hostapd',
-        'info': '',
-        'status': 'active (running)',
-        'version': '0.0',
-        'response': '...',
-    },
-    'dnsmasq': {
-        'name': 'dnsmasq',
-        'info': '',
-        'status': 'active (running)',
-        'version': '0.0',
-        'response': '...',
-    },
-}
+
+services = ['multi-ear-ctrl',
+            'multi-ear-data',
+            'multi-ear-lora',
+            'multi-ear-uart',
+            'multi-ear-wifi',
+            'influxdb',
+            'grafana',
+            'telegraph',
+            'hostapd',
+            'dnsmasq']
+
+def _parse_config(config_path: str, **kwargs):
+    """
+    """
+    config = configparser.ConfigParser(**kwargs)
+    try:
+        config.read(config_path)
+    except configparser.MissingSectionHeaderError:
+        with open(config_path, 'r') as f:
+            config_string = '[default]\n' + f.read()
+            config = configparser.ConfigParser()
+            config.read_string(config_string)
+    return config
+
+
+def _systemd_status(service: str):
+    """Get the systemd status of a single service.
+    """
+    if service not in _services:
+        return dict(
+            success=False,
+            service=service,
+            response='Service not part of listed Multi-EAR services.',
+        )
+    else:
+        return dict(
+            success=False,
+            service=service,
+            response=rpopen(['/usr/bin/systemctl', 'status', service]),
+        )
+
+
+def _systemd_status_all():
+    """Get the systemd status of all services.
+    """
+    status = dict()
+    for s in _services:
+        status[s] = _systemd_status(s)
+    return status
+    
 
 @app.context_processor
 def inject_stage_and_region():
-    globs = dict(
+    hostapd = ('' if app.debug else '/') + 'etc/hostapd/hostapd.conf'
+    print(hostapd)
+    return dict(
         hostname=socket.gethostname(),
-        version=version, services=services,
-        wifi_hotspot_mode=True,
+        version=version,
+        wireless_access_point=True,
+        services=services,
+        hostapd=dict(_parse_config(hostapd)['default']),
     )
-    return globs
 
 
 @app.route("/")
@@ -162,5 +146,17 @@ def switch_wifi_mode():
     return json.dumps(res, indent=4)
 
 
+def main():
+    parser = argparse.ArgumentParser(
+        prog='multi-ear-ctrl',
+        description=('Multi-EAR CTRL web service.'),
+    )
+    parser.add_argument(
+        '--debug', action='store_true',
+        help='Enable debug mode (auto re-loaded resources).'
+    )
+    args = parser.parse_args()
+    app.run(debug=args.debug)
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    main()
