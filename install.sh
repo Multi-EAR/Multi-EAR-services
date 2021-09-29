@@ -209,7 +209,12 @@ function do_install
 function do_create_python3_venv
 {
     echo ".. create python3 venv in $VIRTUAL_ENV" | tee -a $LOG_FILE
-    sudo mkdir $VIRTUAL_ENV >> $LOG_FILE 2>&1
+    if [[ -d "$VIRTUAL_ENV" ]]
+    then
+        echo ".. found existing python3 venv in $VIRTUAL_ENV" >> $LOG_FILE 2>&1
+        # sudo rm -rf $VIRTUAL_ENV >> $LOG_FILE 2>&1
+    fi
+    sudo mkdir -f $VIRTUAL_ENV >> $LOG_FILE 2>&1
     sudo chown -R $USER:$USER $VIRTUAL_ENV >> $LOG_FILE 2>&1
     python3 -m venv $VIRTUAL_ENV >> $LOG_FILE 2>&1
     echo -e ".. done\n" >> $LOG_FILE 2>&1
