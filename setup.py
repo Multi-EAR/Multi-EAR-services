@@ -7,21 +7,40 @@ from setuptools import setup, find_namespace_packages
 README = open('README.rst').read()
 README = re.sub('----.*marker', '----', README, flags=re.DOTALL)
 
-DESCRIPTION = ''
+DESCRIPTION = 'Multi-EAR services for Raspberry Pi OS LITE (32-bit)'
 
 NAME = 'multi-ear-services'
 
 setup(
     name=NAME,
-    python_requires='>=3.7.0',
+    python_requires='>=3.6.0',
     description=DESCRIPTION,
     long_description=README,
-    author='Pieter Smets',
-    author_email='mail@pietersmets.be',
+    author='Olivier den Ouden, Pieter Smets and others',
+    maintainer = 'Olivier den Ouden, Pieter Smets',
+    maintainer_email='mail@pietersmets.be',
     url='https://github.com/Multi-EAR/Multi-EAR-software',
     download_url='https://github.com/Multi-EAR/Multi-EAR-software',
     license='GNU General Public License v3 (GPLv3)',
+    license_file = 'LICENSE',
+    platforms = 'ARMv7',
     packages=find_namespace_packages(include=['multi-ear-services.*']),
+    classifiers=[
+        'Development Status :: 5 - Production/Stable',
+        'Intended Audience :: Science/Research',
+        'Intended Audience :: Education',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+        'Operating System :: POSIX',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+    ],
+    project_urls=[
+        'Source=https://github.com/Multi-EAR/Multi-EAR-software',
+        'Tracker=https://github.com/Multi-EAR/Multi-EAR-software/issues',
+    ],
     keywords=[
         'multi-ear', 'timeseries', 'waveforms',
     ],
@@ -29,16 +48,6 @@ setup(
         'console_scripts': [],
     },
     scripts=[],
-    classifiers=[
-        'Development Status :: 4 - Beta',
-        'Intended Audience :: Science/Research',
-        'Intended Audience :: Developers',
-        ('License :: OSI Approved :: '
-         'GNU General Public License v3 (GPLv3)'),
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
-    ],
     install_requires=[
         'pyserial>=3.5',
         'uwsgi>=2.0',
@@ -51,5 +60,5 @@ setup(
         'relative_to': __file__,
         'write_to': os.path.join('multi-ear-services', 'version.py'),
     },
-    setup_requires=['setuptools_scm'],
+    setup_requires=['setuptools_scm', 'flake8'],
 )
