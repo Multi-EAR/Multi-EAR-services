@@ -37,3 +37,14 @@ main {
 .nav-flush .nav-link {
   border-radius: 0;
 }
+
+.pcb {
+    position: fixed;
+    right: 1rem;
+    z-index: 1030;
+    vertical-align: middle;
+}
+
+.pcb img {
+    vertical-align: middle;
+}
