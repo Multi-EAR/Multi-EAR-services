@@ -9,7 +9,7 @@ README = re.sub('----.*marker', '----', README, flags=re.DOTALL)
 
 DESCRIPTION = 'Multi-EAR services for Raspberry Pi OS LITE (32-bit)'
 
-NAME = 'multi_ear_services'
+NAME = 'multi-ear-services'
 
 setup(
     name=NAME,
@@ -24,7 +24,7 @@ setup(
     license='GNU General Public License v3 (GPLv3)',
     license_file = 'LICENSE',
     platforms = 'ARMv7',
-    packages=find_namespace_packages(include=['pip/multi_ear_services.*']),
+    packages=find_namespace_packages(include=['multi-ear-services.*']),
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Science/Research',
@@ -63,7 +63,7 @@ setup(
     use_scm_version={
         'root': '.',
         'relative_to': __file__,
-        'write_to': os.path.join('pip', 'multi_ear_services', 'version.py'),
+        'write_to': os.path.join('multi-ear-services', 'version.py'),
     },
     setup_requires=['setuptools_scm'],
 )

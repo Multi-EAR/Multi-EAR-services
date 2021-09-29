@@ -1,5 +1,5 @@
 [Unit]
-Description=Multi-EAR :: wifi access point mode trigger
+Description=Multi-EAR :: wifi access point mode trigger on pin 7
 After=network.target
  
 [Service]
@@ -7,9 +7,7 @@ Type=simple
 User=tud
 Group=tud
 WorkingDirectory=/tmp/multi-ear-services
-Environment="VIRTUAL_ENV=/opt/py37"
-Environment="PATH=$VIRTUAL_ENV/bin:$PATH"
-ExecStart=/opt/py37/bin/python3 /opt/py37/multi-ear-services/wifi/wifi.py
+ExecStart=/opt/multi-ear-services/bin/gpio-watch -v -e rising 7
 StandardOutput=syslog
 StandardError=syslog
 SyslogIdentifier=multi-ear-wifi
