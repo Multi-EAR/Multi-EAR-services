@@ -165,7 +165,7 @@ function do_install_grafana
 {
     echo ".. apt install grafana" | tee -a $LOG_FILE
     # add to apt
-    curl https://packages.grafana.com/gpg.key | sudo apt-key add - >> $LOG_FILE 2>&1
+    curl -s https://packages.grafana.com/gpg.key | sudo apt-key add - >> $LOG_FILE 2>&1
     echo "deb https://packages.grafana.com/oss/deb stable main" | sudo tee /etc/apt/sources.list.d/grafana.list >> $LOG_FILE 2>&1
     # install
     sudo apt update >> $LOG_FILE 2>&1
