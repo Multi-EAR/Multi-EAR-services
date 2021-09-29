@@ -296,5 +296,9 @@ def parse_payload(payload, imprecise_time):
     return data_point
 
 
-if __name__ == "__main__":
+def main():
     uart_readout()
+
+
+if __name__ == "__main__":
+    main()
