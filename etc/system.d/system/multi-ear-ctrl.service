@@ -1,5 +1,5 @@
 [Unit]
-Description=Multi-EAR :: ctrl
+Description=Multi-EAR :: ctrl webservice
 After=network.target
  
 [Service]
@@ -10,7 +10,10 @@ WorkingDirectory=/opt/services/multi-ear-ctrl
 Environment="VIRTUAL_ENV=/opt/py37"
 Environment="PATH=$VIRTUAL_ENV/bin:$PATH"
 ExecStart=/opt/py37/bin/uwsgi --ini /opt/services/multi-ear-ctrl/uwsgi.ini
-Restart=on-fail
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=multi-ear-ctrl
+Restart=always
  
 [Install]
 WantedBy=multi-user.target

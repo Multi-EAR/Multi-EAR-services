@@ -1,5 +1,5 @@
 [Unit]
-Description=Multi-EAR :: uart readout
+Description=Multi-EAR :: wifi access point mode trigger
 After=network.target
  
 [Service]
@@ -9,11 +9,11 @@ Group=tud
 WorkingDirectory=/tmp/multi-ear-services
 Environment="VIRTUAL_ENV=/opt/py37"
 Environment="PATH=$VIRTUAL_ENV/bin:$PATH"
-ExecStart=/opt/py37/bin/python3 /opt/services/multi-ear-uart/uart.py
+ExecStart=/opt/py37/bin/python3 /opt/py37/multi-ear-services/wifi/wifi.py
 StandardOutput=syslog
 StandardError=syslog
-SyslogIdentifier=multi-ear-uart
+SyslogIdentifier=multi-ear-wifi
 Restart=always
-
+ 
 [Install]
 WantedBy=multi-user.target
