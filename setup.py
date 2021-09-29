@@ -24,7 +24,7 @@ setup(
     license='GNU General Public License v3 (GPLv3)',
     license_file = 'LICENSE',
     platforms = 'ARMv7',
-    packages=find_namespace_packages(include=['src/multi_ear_services.*']),
+    packages=find_namespace_packages(include=['pip/multi_ear_services.*']),
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Science/Research',
@@ -54,6 +54,7 @@ setup(
     scripts=[],
     install_requires=[
         'pyserial>=3.5',
+        'gpiozero>=1.6',
         'uwsgi>=2.0',
         'flask>=2.0',
         'numpy>=1.18',
@@ -62,7 +63,7 @@ setup(
     use_scm_version={
         'root': '.',
         'relative_to': __file__,
-        'write_to': os.path.join('src', 'multi_ear_services', 'version.py'),
+        'write_to': os.path.join('pip', 'multi_ear_services', 'version.py'),
     },
     setup_requires=['setuptools_scm'],
 )

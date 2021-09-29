@@ -175,6 +175,20 @@ function do_install_grafana
 }
 
 
+function do_install_gpio_watch
+{
+    echo ".. apt install gpio-watch" | tee -a $LOG_FILE
+    git clone https://github.com/larsks/gpio-watch.git >> $LOG_FILE 2>&1
+    cd gpio-watch >> $LOG_FILE 2>&1
+    make >> $LOG_FILE 2>&1
+    sudo mkdir -p /opt/multi_ear_services/bin >> $LOG_FILE 2>&1
+    sudo cp gpio-watch /opt/multi_ear_services/bin >> $LOG_FILE 2>&1
+    cd .. >> $LOG_FILE 2>&1
+    rm -rf gpio-watch >> $LOG_FILE 2>&1
+    echo -e ".. done\n" >> $LOG_FILE 2>&1
+}
+
+
 function do_install
 {
     do_install_python3
@@ -182,6 +196,7 @@ function do_install
     do_install_hostapd_dnsmasq
     do_install_influxdb_telegraf
     do_install_grafana
+    do_install_gpio_watch
 }
 
 
