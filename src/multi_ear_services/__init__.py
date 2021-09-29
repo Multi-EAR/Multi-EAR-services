@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-multi-ear-services
+multi_ear_services
 
 Multi-EAR system services for Raspberry Pi OS LITE (32-bit).
 
