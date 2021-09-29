@@ -35,6 +35,18 @@ if id -u pi >/dev/null 2>&1; then
 fi
 
 #
+# Rsync etc and var
+#
+function rsync_etc_var
+{
+    echo ".. rsync /etc" | tee -a $LOG_FILE
+    sudo rsync -amv etc /etc >> $LOG_FILE 2>&1
+    sudo mkdir -p /var/log/multi-ear >> $LOG_FILE 2>&1
+    sudo chown -r $USER:$USER /var/log/multi-ear >> $LOG_FILE 2>&1
+    echo -e ".. done\n" >> $LOG_FILE 2>&1
+}
+
+#
 # Install python3
 #
 function install_python3
@@ -42,7 +54,8 @@ function install_python3
     echo ".. install python3" | tee -a $LOG_FILE
     sudo apt update >> $LOG_FILE 2>&1
     sudo apt install -y libatlas-base-dev >> $LOG_FILE 2>&1
-    sudo apt install -y python3 python3-pip python3-venv python3-serial python3-numpy >> $LOG_FILE 2>&1
+    sudo apt install -y python3 python3-pip python3-venv >> $LOG_FILE 2>&1
+    sudo apt install -y python3-numpy python3-gpiozero python3-serial >> $LOG_FILE 2>&1
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 
     echo ".. set pip trusted hosts and self update" | tee -a $LOG_FILE
@@ -206,26 +219,31 @@ function activate_python3_venv
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
 
+function configure_python3_venv
+{
+    create_python3_venv
+    activate_python3_venv
+}
+
 #
 # Multi-EAR services
 #
-function install_multi_ear_services
+function configure_multi_ear_services
 {
-    echo ".. setup Multi-EAR services" | tee -a $LOG_FILE
-    DIR="/opt/services"
-    sudo mkdir $DIR >> $LOG_FILE 2>&1
-    sudo chown -R $USER:$USER $DIR >> $LOG_FILE 2>&1
+    echo ".. setup multi-ear systemd services" | tee -a $LOG
+    services=$(ls etc/system.d/system/multi-ear-*.service)
 
-    echo ".... multi-ear-uart.service" | tee -a $LOG_FILE
-    cd services/uart
-    bash install.sh $VIRTUAL_ENV $LOG_FILE
-    cd ../..
+    sudo systemctl daemon-reload >> $LOG_FILE 2>&1
+    for service in $services
+    do
+        # apply per multi-ear-service
+        echo ".. setup systemd $service" >> $LOG_FILE 2>&1
+        sudo systemctl stop $service >> $LOG_FILE 2>&1
+        sudo systemctl enable $service >> $LOG_FILE 2>&1
+        sudo systemctl start $service >> $LOG_FILE 2>&1
+        echo -e ".. done\n" >> $LOG_FILE 2>&1
+    done
 
-    echo ".... multi-ear-ctrl.service" | tee -a $LOG_FILE
-    cd services/ctrl
-    bash install.sh $VIRTUAL_ENV $LOG_FILE
-    cd ../..
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
 
 #
@@ -233,14 +251,16 @@ function install_multi_ear_services
 #
 echo "Multi-EAR software install v$VERSION" | tee $LOG_FILE
 install_python3
+install_nginx
 install_influxdb_telegraf
 install_grafana
+rsync_etc_var
+configure_nginx
 configure_influxdb
 configure_telegraf
 configure_grafana
-create_python3_venv
-activate_python3_venv
-# install_multi_ear_services
+configure_python3_venv
+configure_multi_ear_services
 echo  "install complete" | tee -a $LOG_FILE
 
 exit 0
