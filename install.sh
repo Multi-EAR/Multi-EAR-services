@@ -30,10 +30,11 @@ function usage
 ""
 "Install step:"
 "  all            Perform full deployment of all following steps (default)."
-"  install        Install required packages."
-"  config         Configure required packages."
-"  python         Python3 virtual environment."
-"  services       Multi-EAR services."
+"  install        Install all required packages."
+"  etc            Sync /etc for all packages."
+"  config         Configure all packages (make sure /etc is synced)."
+"  python3        Create and activate the Python3 virtual environment."
+"  services       Enable the Multi-EAR services."
 ""
 "Options:"
 "  --help, -h     Print help."
@@ -117,7 +118,7 @@ function do_install_python3
     sudo apt install -y python3-numpy python3-gpiozero python3-serial >> $LOG_FILE 2>&1
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 
-    echo ".. set pip trusted hosts and self update" | tee -a $LOG_FILE
+    echo ".. set pip trusted hosts and self update" >> $LOG_FILE 2>&1
     cat <<EOF | sudo tee /etc/pip.conf >> $LOG_FILE 2>&1
 [global]
 extra-index-url=https://www.piwheels.org/simple
@@ -211,16 +212,16 @@ function do_activate_python3_venv
 }
 
 
-#
-# Configure
-#
-function do_configure_python3
+function do_python3_venv
 {
     do_create_python3_venv
     do_activate_python3_venv
 }
 
 
+#
+# Configure
+#
 function do_configure_rsyslog
 {
     echo ".. configure rsyslog" | tee -a $LOG_FILE
@@ -311,7 +312,6 @@ function do_configure_grafana
 
 function do_configure
 {
-    do_configure_python3
     do_configure_nginx
     do_configure_hostapd_dnsmasq
     do_configure_influxdb
@@ -366,6 +366,7 @@ case "${1}" in
     do_install
     do_rsync_etc
     do_configure
+    do_python3_venv
     do_multi_ear_services
     echo "Multi-EAR software install completed" | tee -a $LOG_FILE
     ;;
@@ -374,6 +375,8 @@ case "${1}" in
     e|etc) do_rsync_etc
     ;;
     c|conf|config|configure) do_configure
+    ;;
+    p|python|python3) do_python3_venv
     ;;
     s|serv|services) do_multi_ear_service
     ;;
