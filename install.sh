@@ -18,6 +18,65 @@ VIRTUAL_ENV="/opt/py37"
 # Log file
 LOG_FILE="$(pwd)/install.log"
 
+
+#
+# Message to display for usage and help.
+#
+function usage
+{
+    local txt=(
+"Multi-EAR $SCRIPT on a deployed Raspberry Pi OS LITE (32-bit)."
+"Usage: $SCRIPT [options] <install_step>"
+""
+"Install step:"
+"  all            Perform full deployment of all following steps (default)."
+"  install        Install required packages."
+"  config         Configure required packages."
+"  python         Python3 virtual environment."
+"  services       Multi-EAR services."
+""
+"Options:"
+"  --help, -h     Print help."
+"  --version, -v  Print version."
+    )
+
+    printf "%s\n" "${txt[@]}"
+    exit 0
+}
+
+
+#
+# Message to display when bad usage.
+#
+function badUsage
+{
+    local message="$1"
+    local txt=(
+"For an overview of the command, execute:"
+"$SCRIPT --help"
+    )
+
+    [[ $message ]] && printf "$message\n"
+
+    printf "%s\n" "${txt[@]}"
+    exit -1
+}
+
+
+#
+# Message to display for version.
+#
+function version
+{
+    local txt=(
+"$SCRIPT v$VERSION"
+    )
+
+    printf "%s\n" "${txt[@]}"
+    exit 0
+}
+
+
 #
 # Check if current user is tud
 #
@@ -34,20 +93,22 @@ if id -u pi >/dev/null 2>&1; then
     exit -1
 fi
 
+
 #
 # Rsync etc and var
 #
 function rsync_etc_var
 {
     echo ".. rsync /etc" | tee -a $LOG_FILE
-    sudo rsync -amv etc /etc >> $LOG_FILE 2>&1
+    sudo rsync -amv --chown=root:root etc /etc >> $LOG_FILE 2>&1
     sudo mkdir -p /var/log/multi-ear >> $LOG_FILE 2>&1
     sudo chown -r $USER:$USER /var/log/multi-ear >> $LOG_FILE 2>&1
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
 
+
 #
-# Install python3
+# Installs
 #
 function install_python3
 {
@@ -70,9 +131,7 @@ EOF
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
 
-#
-# Nginx 
-#
+
 function install_nginx
 {
     echo ".. install nginx" | tee -a $LOG_FILE
@@ -80,6 +139,89 @@ function install_nginx
     sudo apt install -y nginx >> $LOG_FILE 2>&1
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
+
+
+function install_hostapd_dnsmasq
+{
+    echo ".. install hostapd dnsmasq" | tee -a $LOG_FILE
+    sudo apt update >> $LOG_FILE 2>&1
+    sudo apt install -y hostapd dnsmasq >> $LOG_FILE 2>&1
+    echo -e ".. done\n" >> $LOG_FILE 2>&1
+}
+
+
+function install_influxdb_telegraf
+{
+    echo ".. install influxdb" | tee -a $LOG_FILE
+    # add to apt
+    wget -qO- https://repos.influxdata.com/influxdb.key | sudo apt-key add - >> $LOG_FILE 2>&1
+    echo "deb https://repos.influxdata.com/debian $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/influxdb.list >> $LOG_FILE 2>&1
+    # install
+    sudo apt update >> $LOG_FILE 2>&1
+    sudo apt install -y influxdb telegraf >> $LOG_FILE 2>&1
+    echo -e ".. done\n" >> $LOG_FILE 2>&1
+}
+
+
+function install_grafana
+{
+    echo ".. apt install grafana" | tee -a $LOG_FILE
+    # add to apt
+    curl https://packages.grafana.com/gpg.key | sudo apt-key add - >> $LOG_FILE 2>&1
+    echo "deb https://packages.grafana.com/oss/deb stable main" | sudo tee /etc/apt/sources.list.d/grafana.list >> $LOG_FILE 2>&1
+    # install
+    sudo apt update >> $LOG_FILE 2>&1
+    sudo apt install -y grafana >> $LOG_FILE 2>&1
+    echo -e ".. done\n" >> $LOG_FILE 2>&1
+}
+
+
+function installs
+{
+    install_python3
+    install_nginx
+    install_hostapd_dnsmasq
+    install_influxdb_telegraf
+    install_grafana
+}
+
+
+#
+# Python3 virtual environment
+#
+function create_python3_venv
+{
+    echo ".. create python3 venv in $VIRTUAL_ENV" | tee -a $LOG_FILE
+    sudo mkdir $VIRTUAL_ENV >> $LOG_FILE 2>&1
+    sudo chown -R $USER:$USER $VIRTUAL_ENV >> $LOG_FILE 2>&1
+    python3 -m venv $VIRTUAL_ENV >> $LOG_FILE 2>&1
+    echo -e ".. done\n" >> $LOG_FILE 2>&1
+}
+
+
+function activate_python3_venv
+{
+    echo ".. activate python3 venv" | tee -a $LOG_FILE
+    if ! grep -q "source $VIRTUAL_ENV/bin/activate" "/home/$USER/.bashrc"; then
+        echo "add source activate to .bashrc" >> $LOG_FILE 2>&1
+        echo -e "\n# Multi-EAR python3 venv\nsource $VIRTUAL_ENV/bin/activate" | tee -a /home/$USER/.bashrc >> $LOG_FILE 2>&1
+    else
+        echo "source activate already exists in .bashrc" >> $LOG_FILE 2>&1
+    fi
+    source $VIRTUAL_ENV/bin/activate >> $LOG_FILE 2>&1
+    echo -e ".. done\n" >> $LOG_FILE 2>&1
+}
+
+
+#
+# Configures
+#
+function configure_python3
+{
+    create_python3_venv
+    activate_python3_venv
+}
+
 
 function configure_nginx
 {
@@ -96,16 +238,6 @@ function configure_nginx
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
 
-#
-# Hostapd and dnsmasq (wifi access point)
-#
-function install_hostapd_dnsmasq
-{
-    echo ".. install hostapd dnsmasq" | tee -a $LOG_FILE
-    sudo apt update >> $LOG_FILE 2>&1
-    sudo apt install -y hostapd dnsmasq >> $LOG_FILE 2>&1
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
-}
 
 function configure_hostapd_dnsmasq
 {
@@ -115,20 +247,6 @@ function configure_hostapd_dnsmasq
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
 
-#
-# Influxdb and Telegraf
-#
-function install_influxdb_telegraf
-{
-    echo ".. install influxdb" | tee -a $LOG_FILE
-    # add to apt
-    wget -qO- https://repos.influxdata.com/influxdb.key | sudo apt-key add - >> $LOG_FILE 2>&1
-    echo "deb https://repos.influxdata.com/debian $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/influxdb.list >> $LOG_FILE 2>&1
-    # install
-    sudo apt update >> $LOG_FILE 2>&1
-    sudo apt install -y influxdb telegraf >> $LOG_FILE 2>&1
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
-}
 
 function configure_influxdb
 {
@@ -146,6 +264,7 @@ function configure_influxdb
     # configure, enable service, create database
 }
 
+
 function configure_telegraf
 {
     echo ".. configure telegraf" | tee -a $LOG_FILE
@@ -162,19 +281,6 @@ function configure_telegraf
     # configure, enable service, create database
 }
 
-#
-# Grafana
-#
-function install_grafana
-{
-    echo ".. apt install grafana" | tee -a $LOG_FILE
-    # add to apt
-    curl https://packages.grafana.com/gpg.key | sudo apt-key add - >> $LOG_FILE 2>&1
-    echo "deb https://packages.grafana.com/oss/deb stable main" | sudo tee -a /etc/apt/sources.list.d/grafana.list >> $LOG_FILE 2>&1
-    # install
-    sudo apt update >> $LOG_FILE 2>&1
-    sudo apt install -y grafana >> $LOG_FILE 2>&1
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
 
 function configure_grafana
 {
@@ -194,41 +300,22 @@ function configure_grafana
     # configure, enable service, link to database
 }
 
-#
-# Python3 virtual environment
-#
-function create_python3_venv
+
+function configures
 {
-    echo ".. create python3 venv in $VIRTUAL_ENV" | tee -a $LOG_FILE
-    sudo mkdir $VIRTUAL_ENV >> $LOG_FILE 2>&1
-    sudo chown -R $USER:$USER $VIRTUAL_ENV >> $LOG_FILE 2>&1
-    python3 -m venv $VIRTUAL_ENV >> $LOG_FILE 2>&1
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
+    configure_python3
+    configure_nginx
+    configure_hostapd_dnsmasq
+    configure_influxdb
+    configure_telegraf
+    configure_grafana
 }
 
-function activate_python3_venv
-{
-    echo ".. activate python3 venv" | tee -a $LOG_FILE
-    if ! grep -q "source $VIRTUAL_ENV/bin/activate" "/home/$USER/.bashrc"; then
-        echo "add source activate to .bashrc" >> $LOG_FILE 2>&1
-        echo -e "\n# Multi-EAR python3 venv\nsource $VIRTUAL_ENV/bin/activate" | tee -a /home/$USER/.bashrc >> $LOG_FILE 2>&1
-    else
-        echo "source activate already exists in .bashrc" >> $LOG_FILE 2>&1
-    fi
-    source $VIRTUAL_ENV/bin/activate >> $LOG_FILE 2>&1
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
-}
-
-function configure_python3_venv
-{
-    create_python3_venv
-    activate_python3_venv
-}
 
 #
 # Multi-EAR services
 #
-function configure_multi_ear_services
+function multi_ear_services
 {
     echo ".. setup multi-ear systemd services" | tee -a $LOG
     services=$(ls etc/system.d/system/multi-ear-*.service)
@@ -246,21 +333,44 @@ function configure_multi_ear_services
 
 }
 
+
 #
-# Setup sequence
+# Process options
 #
-echo "Multi-EAR software install v$VERSION" | tee $LOG_FILE
-install_python3
-install_nginx
-install_influxdb_telegraf
-install_grafana
-rsync_etc_var
-configure_nginx
-configure_influxdb
-configure_telegraf
-configure_grafana
-configure_python3_venv
-configure_multi_ear_services
-echo  "install complete" | tee -a $LOG_FILE
+while (( $# ));
+do
+    case "$1" in
+        --help | -h) usage
+        ;;
+        --version | -v) version
+        ;;
+        *) break
+    esac
+    shift
+done
+
+
+# Perform one step or the entire workflow
+case "${1}" in
+    ""|all)
+    rm -f $LOG_FILE
+    echo "Multi-EAR Software Install Tool v${VERSION}" | tee $LOG_FILE
+    install
+    rsync_etc_var
+    configure
+    multi_ear_services
+    echo "Multi-EAR software install completed" | tee -a $LOG_FILE
+    ;;
+    i|install) install
+    ;;
+    e|etc) rsync_etc_var
+    ;;
+    c|conf|config|configure) configure
+    ;;
+    s|serv|services) multi_ear_services
+    ;;
+    *) badUsage "Unknown command ${1}." | tee $LOG_FILE
+    ;;
+esac
 
 exit 0
