@@ -50,9 +50,9 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-           f'multi-ear-ctrl={NAME}.ctrl.ctrl:main',
-           f'multi-ear-uart={NAME}.uart.uart:main',
-           f'multi-ear-wifi={NAME}.wifi.wifi:main',
+           # f'multi-ear-ctrl={NAME}.ctrl.ctrl:main',
+           # f'multi-ear-uart={NAME}.uart.uart:main',
+           # f'multi-ear-wifi={NAME}.wifi.wifi:main',
         ],
     },
     scripts=[],
