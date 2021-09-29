@@ -105,7 +105,7 @@ fi
 function do_rsync_etc
 {
     echo ".. rsync /etc" | tee -a $LOG_FILE
-    sudo rsync -amtv --chown=root:root etc /etc >> $LOG_FILE 2>&1
+    sudo rsync -amtv --chown=root:root etc / >> $LOG_FILE 2>&1
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
 
@@ -113,7 +113,7 @@ function do_rsync_etc
 function do_rsync_opt
 {
     echo ".. rsync /opt" | tee -a $LOG_FILE
-    sudo rsync -amtv --chown=tud:tud opt /opt >> $LOG_FILE 2>&1
+    sudo rsync -amtv --chown=tud:tud multi-ear-services /opt >> $LOG_FILE 2>&1
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
 
