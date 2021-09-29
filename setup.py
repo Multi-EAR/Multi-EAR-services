@@ -37,12 +37,12 @@ setup(
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
     ],
-    project_urls=[
-        'Source=https://github.com/Multi-EAR/Multi-EAR-software',
-        'Tracker=https://github.com/Multi-EAR/Multi-EAR-software/issues',
-    ],
+    project_urls={
+        'Source': 'https://github.com/Multi-EAR/Multi-EAR-software',
+        'Tracker': 'https://github.com/Multi-EAR/Multi-EAR-software/issues',
+    },
     keywords=[
-        'multi-ear', 'timeseries', 'waveforms',
+        'multi-ear', 'mems', 'gpio', 'raspberry pi', 'timeseries', 'waveforms',
     ],
     entry_points={
         'console_scripts': [],
