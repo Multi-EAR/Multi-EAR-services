@@ -24,7 +24,7 @@ setup(
     license='GNU General Public License v3 (GPLv3)',
     license_file = 'LICENSE',
     platforms = 'ARMv7',
-    packages=find_namespace_packages(include=['multi-ear-services.*']),
+    packages=find_namespace_packages(include=['multi_ear_services.*']),
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Science/Research',
@@ -49,11 +49,7 @@ setup(
         'multi-ear', 'mems', 'gpio', 'raspberry pi', 'timeseries', 'waveforms',
     ],
     entry_points={
-        'console_scripts': [
-           # f'multi-ear-ctrl={NAME}.ctrl.ctrl:main',
-           # f'multi-ear-uart={NAME}.uart.uart:main',
-           # f'multi-ear-wifi={NAME}.wifi.wifi:main',
-        ],
+        'console_scripts': [],
     },
     scripts=[],
     install_requires=[
@@ -66,7 +62,7 @@ setup(
     use_scm_version={
         'root': '.',
         'relative_to': __file__,
-        'write_to': os.path.join('multi-ear-services', 'version.py'),
+        'write_to': os.path.join('multi_ear_services', 'version.py'),
     },
     setup_requires=['setuptools_scm'],
 )
