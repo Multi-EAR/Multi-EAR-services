@@ -2,7 +2,7 @@
 
 echo "$0"
 
-sudo systemctl deamon-reload
+sudo systemctl daemon-reload
 sudo systemctl enable hostapd
 sudo systemctl start hostapd
 sudo systemctl enable dnsmasq
