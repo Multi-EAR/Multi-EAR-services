@@ -209,4 +209,9 @@ function loadTabContent(tab) {
 
     })
 
+    // prevent page reload
+    window.onbeforeunload = function(event) {
+        event.preventDefault();
+    }
+
 })()
