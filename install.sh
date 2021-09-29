@@ -97,12 +97,10 @@ fi
 #
 # Rsync etc and var
 #
-function rsync_etc_var
+function do_rsync_etc
 {
     echo ".. rsync /etc" | tee -a $LOG_FILE
     sudo rsync -amv --chown=root:root etc /etc >> $LOG_FILE 2>&1
-    sudo mkdir -p /var/log/multi-ear >> $LOG_FILE 2>&1
-    sudo chown -r $USER:$USER /var/log/multi-ear >> $LOG_FILE 2>&1
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
 
@@ -110,7 +108,7 @@ function rsync_etc_var
 #
 # Installs
 #
-function install_python3
+function do_install_python3
 {
     echo ".. install python3" | tee -a $LOG_FILE
     sudo apt update >> $LOG_FILE 2>&1
@@ -132,7 +130,7 @@ EOF
 }
 
 
-function install_nginx
+function do_install_nginx
 {
     echo ".. install nginx" | tee -a $LOG_FILE
     sudo apt update >> $LOG_FILE 2>&1
@@ -141,7 +139,7 @@ function install_nginx
 }
 
 
-function install_hostapd_dnsmasq
+function do_install_hostapd_dnsmasq
 {
     echo ".. install hostapd dnsmasq" | tee -a $LOG_FILE
     sudo apt update >> $LOG_FILE 2>&1
@@ -150,7 +148,7 @@ function install_hostapd_dnsmasq
 }
 
 
-function install_influxdb_telegraf
+function do_install_influxdb_telegraf
 {
     echo ".. install influxdb" | tee -a $LOG_FILE
     # add to apt
@@ -163,7 +161,7 @@ function install_influxdb_telegraf
 }
 
 
-function install_grafana
+function do_install_grafana
 {
     echo ".. apt install grafana" | tee -a $LOG_FILE
     # add to apt
@@ -176,20 +174,20 @@ function install_grafana
 }
 
 
-function installs
+function do_install
 {
-    install_python3
-    install_nginx
-    install_hostapd_dnsmasq
-    install_influxdb_telegraf
-    install_grafana
+    do_install_python3
+    do_install_nginx
+    do_install_hostapd_dnsmasq
+    do_install_influxdb_telegraf
+    do_install_grafana
 }
 
 
 #
 # Python3 virtual environment
 #
-function create_python3_venv
+function do_create_python3_venv
 {
     echo ".. create python3 venv in $VIRTUAL_ENV" | tee -a $LOG_FILE
     sudo mkdir $VIRTUAL_ENV >> $LOG_FILE 2>&1
@@ -199,7 +197,7 @@ function create_python3_venv
 }
 
 
-function activate_python3_venv
+function do_activate_python3_venv
 {
     echo ".. activate python3 venv" | tee -a $LOG_FILE
     if ! grep -q "source $VIRTUAL_ENV/bin/activate" "/home/$USER/.bashrc"; then
@@ -214,18 +212,28 @@ function activate_python3_venv
 
 
 #
-# Configures
+# Configure
 #
-function configure_python3
+function do_configure_python3
 {
-    create_python3_venv
-    activate_python3_venv
+    do_create_python3_venv
+    do_activate_python3_venv
 }
 
 
-function configure_nginx
+function do_configure_rsyslog
 {
-    echo ".. configure influxdb" | tee -a $LOG_FILE
+    echo ".. configure rsyslog" | tee -a $LOG_FILE
+    sudo mkdir -p /var/log/multi-ear >> $LOG_FILE 2>&1
+    sudo chown -r $USER:$USER /var/log/multi-ear >> $LOG_FILE 2>&1
+    sudo systemctl restart rsyslog >> $LOG_FILE 2>&1
+    echo -e ".. done\n" >> $LOG_FILE 2>&1
+}
+
+
+function do_configure_nginx
+{
+    echo ".. configure nginx" | tee -a $LOG_FILE
     # remove default nginx site
     sudo rm -f /etc/nginx/sites-enabled/default
     sudo rm -f /etc/nginx/sites-available/default
@@ -239,7 +247,7 @@ function configure_nginx
 }
 
 
-function configure_hostapd_dnsmasq
+function do_configure_hostapd_dnsmasq
 {
     echo ".. configure hostapd dnsmasq" | tee -a $LOG_FILE
     sudo systemctl stop hostapd >> $LOG_FILE 2>&1
@@ -248,7 +256,7 @@ function configure_hostapd_dnsmasq
 }
 
 
-function configure_influxdb
+function do_configure_influxdb
 {
     echo ".. configure influxdb" | tee -a $LOG_FILE
     # enable and start service
@@ -265,7 +273,7 @@ function configure_influxdb
 }
 
 
-function configure_telegraf
+function do_configure_telegraf
 {
     echo ".. configure telegraf" | tee -a $LOG_FILE
     # enable and start service
@@ -282,7 +290,7 @@ function configure_telegraf
 }
 
 
-function configure_grafana
+function do_configure_grafana
 {
     echo ".. configure grafana" | tee -a $LOG_FILE
     # plugins 
@@ -301,21 +309,21 @@ function configure_grafana
 }
 
 
-function configures
+function do_configure
 {
-    configure_python3
-    configure_nginx
-    configure_hostapd_dnsmasq
-    configure_influxdb
-    configure_telegraf
-    configure_grafana
+    do_configure_python3
+    do_configure_nginx
+    do_configure_hostapd_dnsmasq
+    do_configure_influxdb
+    do_configure_telegraf
+    do_configure_grafana
 }
 
 
 #
 # Multi-EAR services
 #
-function multi_ear_services
+function do_multi_ear_services
 {
     echo ".. setup multi-ear systemd services" | tee -a $LOG
     services=$(ls etc/system.d/system/multi-ear-*.service)
@@ -355,19 +363,19 @@ case "${1}" in
     ""|all)
     rm -f $LOG_FILE
     echo "Multi-EAR Software Install Tool v${VERSION}" | tee $LOG_FILE
-    installs
-    rsync_etc_var
-    configures
-    multi_ear_services
+    do_install
+    do_rsync_etc
+    do_configure
+    do_multi_ear_services
     echo "Multi-EAR software install completed" | tee -a $LOG_FILE
     ;;
-    i|install) installs
+    i|install) do_install
     ;;
-    e|etc) rsync_etc_var
+    e|etc) do_rsync_etc
     ;;
-    c|conf|config|configure) configures
+    c|conf|config|configure) do_configure
     ;;
-    s|serv|services) multi_ear_services
+    s|serv|services) do_multi_ear_service
     ;;
     *) badUsage "Unknown command ${1}." | tee $LOG_FILE
     ;;
