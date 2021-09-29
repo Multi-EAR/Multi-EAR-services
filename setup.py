@@ -63,7 +63,7 @@ setup(
     use_scm_version={
         'root': '.',
         'relative_to': __file__,
-        'write_to': os.path.join('multi-ear-services', 'version.py'),
+        'write_to': os.path.join('version.py'),
     },
     setup_requires=['setuptools_scm'],
 )
