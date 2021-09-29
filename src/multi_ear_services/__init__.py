@@ -16,6 +16,8 @@ Multi-EAR system services for Raspberry Pi OS LITE (32-bit).
     (https://www.gnu.org/licenses/gpl-3.0.en.html)
 """
 
+__all__ = []
+
 # Version
 try:
     # - Released versions just tags:       1.10.0
