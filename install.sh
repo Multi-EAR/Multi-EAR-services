@@ -118,7 +118,7 @@ function do_install_python3
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 
     echo ".. set pip trusted hosts and self update" | tee -a $LOG_FILE
-    cat <<EOF | sudo tee /etc/pip.conf
+    cat <<EOF | sudo tee /etc/pip.conf >> $LOG_FILE 2>&1
 [global]
 extra-index-url=https://www.piwheels.org/simple
 trusted-host = pypi.org
