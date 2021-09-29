@@ -355,17 +355,17 @@ case "${1}" in
     ""|all)
     rm -f $LOG_FILE
     echo "Multi-EAR Software Install Tool v${VERSION}" | tee $LOG_FILE
-    install
+    installs
     rsync_etc_var
-    configure
+    configures
     multi_ear_services
     echo "Multi-EAR software install completed" | tee -a $LOG_FILE
     ;;
-    i|install) install
+    i|install) installs
     ;;
     e|etc) rsync_etc_var
     ;;
-    c|conf|config|configure) configure
+    c|conf|config|configure) configures
     ;;
     s|serv|services) multi_ear_services
     ;;
