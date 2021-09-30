@@ -1,6 +1,6 @@
 # Multi-EAR-Software
 
-Software setup of the Raspberry Pi.
+Multi-EAR software install on a deployed Raspberry Pi OS LITE (32-bit).
 
 ## Install
 

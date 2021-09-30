@@ -335,6 +335,13 @@ function do_multi_ear_install
     do_activate_python3_venv
     echo ".. pip install multi_ear" | tee -a $LOG_FILE
     pip install . >> $LOG_FILE 2>&1
+    # add to .bashrc
+    if ! grep -q "export FLASK_APP=multi_ear.ctrl" "/home/$USER/.bashrc"; then
+        echo "export FLASK_APP=multi_ear.ctrl" >> $LOG_FILE 2>&1
+    fi
+    if ! grep -q "export FLASK_ENV=production" "/home/$USER/.bashrc"; then
+        echo "export FLASK_ENV=production" >> $LOG_FILE 2>&1
+    fi
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
 
