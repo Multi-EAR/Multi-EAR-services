@@ -1,6 +1,8 @@
 #!/bin/bash
 
-echo "$0"
+echo $0
+echo $(dirname $0)
+exit
 
 # stop and disable the access point services
 sudo systemctl daemon-reload
@@ -10,6 +12,8 @@ sudo systemctl disable dnsmasq
 sudo systemctl stop dnsmasq
 
 # link to enable
-sudo ln -sf /opt/multi-ear-services/enable_wifi_access_point.sh switch_wifi_access_point_mode
+ln -sfv $(dirname $0)/multi_ear_enable_access_point_mode \
+        $(dirname $0)/multi_ear_switch_access_point_mode
+
 
 exit 0

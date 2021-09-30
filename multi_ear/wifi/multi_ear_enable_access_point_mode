@@ -1,0 +1,28 @@
+#!/bin/bash
+
+echo $0
+echo $(dirname $0)
+exit
+
+# check
+if [[ $MULTI_EAR_WIFI_ACCESS_POINT == 1 ]];
+then
+    echo "Multi-EAR Wi-Fi access point mode already enabled"
+    return
+else
+    echo "Enable Multi-EAR Wi-Fi access point mode"
+fi
+
+# stop and disable the access point services
+sudo systemctl daemon-reload
+sudo systemctl enable hostapd
+sudo systemctl start hostapd
+sudo systemctl enable dnsmasq
+sudo systemctl start dnsmasq
+
+# link to disable
+export MULTI_EAR_WIFI_ACCESS_POINT=1
+# ln -sfv $(dirname $0)/multi_ear_disable_access_point_mode \
+#         $(dirname $0)/multi_ear_switch_access_point_mode
+
+return
