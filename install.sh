@@ -13,13 +13,10 @@
 VERSION="0.1"
 
 # Python virtual environment
-VIRTUAL_ENV="/opt/py37"
+VIRTUAL_ENV="~/.py37"
 
 # Log file
 LOG_FILE="$(pwd)/install.log"
-
-# Service destination
-SERVICES="/opt/multi-ear-services"
 
 
 #
@@ -35,7 +32,6 @@ function usage
 "  all            Perform full deployment of all following steps (default)."
 "  install        Install all required packages."
 "  etc            Sync /etc for all packages."
-"  opt            Sync /opt for all services."
 "  config         Configure all packages (make sure /etc is synced)."
 "  python3        Create and activate the Python3 virtual environment."
 "  services       Enable the Multi-EAR services."
@@ -106,14 +102,6 @@ function do_rsync_etc
 {
     echo ".. rsync /etc" | tee -a $LOG_FILE
     sudo rsync -amtv --chown=root:root etc / >> $LOG_FILE 2>&1
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
-}
-
-
-function do_rsync_opt
-{
-    echo ".. rsync /opt" | tee -a $LOG_FILE
-    sudo rsync -amtv --chown=tud:tud multi-ear-services /opt >> $LOG_FILE 2>&1
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
 
@@ -193,8 +181,7 @@ function do_install_gpio_watch
     git clone https://github.com/larsks/gpio-watch.git >> $LOG_FILE 2>&1
     cd gpio-watch >> $LOG_FILE 2>&1
     make >> $LOG_FILE 2>&1
-    sudo mkdir -p $SERVICES/bin >> $LOG_FILE 2>&1
-    sudo cp gpio-watch $SERVICES/bin >> $LOG_FILE 2>&1
+    cp gpio-watch $VIRTUAL_ENV/bin >> $LOG_FILE 2>&1
     cd .. >> $LOG_FILE 2>&1
     rm -rf gpio-watch >> $LOG_FILE 2>&1
     echo -e ".. done\n" >> $LOG_FILE 2>&1
@@ -396,7 +383,6 @@ case "${1}" in
     rm -f $LOG_FILE
     echo "Multi-EAR Software Install Tool v${VERSION}" | tee $LOG_FILE
     do_install
-    do_rsync_opt
     do_rsync_etc
     do_configure
     do_python3_venv
@@ -404,8 +390,6 @@ case "${1}" in
     echo "Multi-EAR software install completed" | tee -a $LOG_FILE
     ;;
     i|install) do_install
-    ;;
-    o|opt) do_rsync_opt
     ;;
     e|etc) do_rsync_etc
     ;;

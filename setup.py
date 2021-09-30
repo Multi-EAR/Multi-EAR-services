@@ -52,9 +52,9 @@ setup(
         'console_scripts': [f'multi-ear-uart=multi_ear.uart:uart_readout'],
     },
     scripts=[
-        f'multi_ear/wifi/multi_ear_enable_access_point_mode',
-        f'multi_ear/wifi/multi_ear_disable_access_point_mode',
-        f'multi_ear/wifi/multi_ear_switch_access_point_mode',
+        f'multi_ear/wifi/multi_ear_wifi_enable',
+        f'multi_ear/wifi/multi_ear_wifi_disable',
+        f'multi_ear/wifi/multi_ear_wifi_switch',
     ],
     install_requires=[
         'pyserial>=3.5',
