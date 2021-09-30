@@ -37,7 +37,8 @@ function usage
 "  etc            Sync /etc for all packages."
 "  config         Configure all packages (make sure /etc is synced)."
 "  python3        Create the Python3 virtual environment (py37) in $VIRTUAL_ENV."
-"  multi_ear      Install and enable the Multi-EAR modules and services."
+"  gpio-watch     Install gpio-watch in $VIRTUAL_ENV."
+"  multi-ear      Install and enable the Multi-EAR software in $VIRTUAL_ENV."
 ""
 "Options:"
 "  --help, -h     Print help."
@@ -161,19 +162,6 @@ function do_install_grafana
 }
 
 
-function do_install_gpio_watch
-{
-    echo ".. apt install gpio-watch" | tee -a $LOG_FILE
-    git clone https://github.com/larsks/gpio-watch.git >> $LOG_FILE 2>&1
-    cd gpio-watch >> $LOG_FILE 2>&1
-    make >> $LOG_FILE 2>&1
-    cp gpio-watch $VIRTUAL_ENV/bin >> $LOG_FILE 2>&1
-    cd .. >> $LOG_FILE 2>&1
-    rm -rf gpio-watch >> $LOG_FILE 2>&1
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
-}
-
-
 function do_install
 {
     do_install_python3
@@ -181,7 +169,6 @@ function do_install
     do_install_hostapd_dnsmasq
     do_install_influxdb_telegraf
     do_install_grafana
-    do_install_gpio_watch
 }
 
 
@@ -328,7 +315,23 @@ function do_configure
 
 
 #
-# Multi-EAR services
+# GPIO-watch
+#
+function do_gpio_watch
+{
+    echo ".. clone and make gpio-watch" | tee -a $LOG_FILE
+    git clone https://github.com/larsks/gpio-watch.git >> $LOG_FILE 2>&1
+    cd gpio-watch >> $LOG_FILE 2>&1
+    make >> $LOG_FILE 2>&1
+    cp gpio-watch $VIRTUAL_ENV/bin >> $LOG_FILE 2>&1
+    cd .. >> $LOG_FILE 2>&1
+    rm -rf gpio-watch >> $LOG_FILE 2>&1
+    echo -e ".. done\n" >> $LOG_FILE 2>&1
+}
+
+
+#
+# Multi-EAR software
 #
 function do_multi_ear_install
 {
@@ -413,8 +416,8 @@ case "${1}" in
     do_rsync_etc
     do_configure
     do_python3_venv
-    do_multi_ear_install
-    do_multi_ear_services
+    do_gpio_watch
+    do_multi_ear
     echo "Multi-EAR software install completed" | tee -a $LOG_FILE
     ;;
     packages) do_install
@@ -424,6 +427,8 @@ case "${1}" in
     conf|config|configure) do_configure
     ;;
     python|python3) do_python3_venv
+    ;;
+    gpio-watch|gpio_watch) do_gpio_watch
     ;;
     multi-ear|multi_ear) do_multi_ear
     ;;
