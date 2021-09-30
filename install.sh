@@ -29,12 +29,12 @@ function usage
 "Usage: $SCRIPT [options] <install_step>"
 ""
 "Install step:"
-"  all            Perform full deployment of all following steps (default)."
-"  install        Install all required packages."
+"  all            Perform all of the following steps (default)."
+"  packages       Install all required packages via apt."
 "  etc            Sync /etc for all packages."
 "  config         Configure all packages (make sure /etc is synced)."
-"  python3        Create and activate the Python3 virtual environment."
-"  services       Enable the Multi-EAR services."
+"  python3        Create the Python3 virtual environment (py37) in $VIRTUAL_ENV."
+"  multi_ear      Install and enable the Multi-EAR modules and services."
 ""
 "Options:"
 "  --help, -h     Print help."
@@ -371,6 +371,13 @@ function do_multi_ear_services
 }
 
 
+function do_multi_ear
+{
+    do_multi_ear_install
+    do_multi_ear_services
+}
+
+
 #
 # Process options
 #
@@ -400,15 +407,15 @@ case "${1}" in
     do_multi_ear_services
     echo "Multi-EAR software install completed" | tee -a $LOG_FILE
     ;;
-    i|install) do_install
+    packages) do_install
     ;;
-    e|etc) do_rsync_etc
+    etc) do_rsync_etc
     ;;
-    c|conf|config|configure) do_configure
+    conf|config|configure) do_configure
     ;;
-    p|python|python3) do_python3_venv
+    python|python3) do_python3_venv
     ;;
-    s|serv|services) do_multi_ear_service
+    multi-ear|multi_ear) do_multi_ear
     ;;
     *) badUsage "Unknown command ${1}." | tee $LOG_FILE
     ;;
