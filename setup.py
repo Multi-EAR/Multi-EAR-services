@@ -24,7 +24,7 @@ setup(
     license='GNU General Public License v3 (GPLv3)',
     license_file = 'LICENSE',
     platforms = 'ARMv7',
-    packages=find_namespace_packages(include=['multi-ear.*']),
+    packages=find_namespace_packages(include=['multi_ear.*']),
     include_package_data=True,
     zip_safe=False,
     classifiers=[
