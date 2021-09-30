@@ -205,13 +205,22 @@ function do_install
 function do_create_python3_venv
 {
     echo ".. create python3 venv in $VIRTUAL_ENV" | tee -a $LOG_FILE
+    # check if already exists
     if [[ -d "$VIRTUAL_ENV" ]]
     then
         echo ".. found existing python3 venv in $VIRTUAL_ENV" >> $LOG_FILE 2>&1
     else
         mkdir -f $VIRTUAL_ENV >> $LOG_FILE 2>&1
     fi
+    # force create environment
     python3 -m venv --clear --prompt py37 $VIRTUAL_ENV >> $LOG_FILE 2>&1
+    # add to .bashrc
+    if ! grep -q "source $VIRTUAL_ENV/bin/activate" "/home/$USER/.bashrc"; then
+        echo "add source activate to .bashrc" >> $LOG_FILE 2>&1
+        echo -e "\n# Multi-EAR python3 venv\nsource $VIRTUAL_ENV/bin/activate" | tee -a /home/$USER/.bashrc >> $LOG_FILE 2>&1
+    else
+        echo "source activate already exists in .bashrc" >> $LOG_FILE 2>&1
+    fi
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
 
@@ -219,12 +228,6 @@ function do_create_python3_venv
 function do_activate_python3_venv
 {
     echo ".. activate python3 venv" | tee -a $LOG_FILE
-    if ! grep -q "source $VIRTUAL_ENV/bin/activate" "/home/$USER/.bashrc"; then
-        echo "add source activate to .bashrc" >> $LOG_FILE 2>&1
-        echo -e "\n# Multi-EAR python3 venv\nsource $VIRTUAL_ENV/bin/activate" | tee -a /home/$USER/.bashrc >> $LOG_FILE 2>&1
-    else
-        echo "source activate already exists in .bashrc" >> $LOG_FILE 2>&1
-    fi
     source $VIRTUAL_ENV/bin/activate >> $LOG_FILE 2>&1
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
@@ -233,7 +236,7 @@ function do_activate_python3_venv
 function do_python3_venv
 {
     do_create_python3_venv
-    do_activate_python3_venv
+    # do_activate_python3_venv
 }
 
 
@@ -341,6 +344,15 @@ function do_configure
 #
 # Multi-EAR services
 #
+function do_multi_ear_install
+{
+    do_activate_python3_venv
+    echo ".. pip install multi_ear" | tee -a $LOG_FILE
+    pip install . >> $LOG_FILE 2>&1
+    echo -e ".. done\n" >> $LOG_FILE 2>&1
+}
+
+
 function do_multi_ear_services
 {
     echo ".. setup multi-ear systemd services" | tee -a $LOG
@@ -356,7 +368,6 @@ function do_multi_ear_services
         sudo systemctl start $service >> $LOG_FILE 2>&1
         echo -e ".. done\n" >> $LOG_FILE 2>&1
     done
-
 }
 
 
@@ -385,6 +396,7 @@ case "${1}" in
     do_rsync_etc
     do_configure
     do_python3_venv
+    do_multi_ear_install
     do_multi_ear_services
     echo "Multi-EAR software install completed" | tee -a $LOG_FILE
     ;;
