@@ -17,11 +17,9 @@ _sampling_delta = np.timedelta64(np.int64(1e9/_sampling_rate))  # ns
 # device hostname
 _hostname = socket.gethostname()
 
-# influxDB connection ini
-client = InfluxDBClient.from_config_file("config.ini")
 
-
-def uart_readout(port='/dev/ttyAMA0', baudrate=115200, timeout=2):
+def uart_readout(port='/dev/ttyAMA0', baudrate=115200, timeout=2,
+                 client: InfluxDBClient = None):
     """
     Continuoisly read uart serial stream.
 
@@ -35,7 +33,14 @@ def uart_readout(port='/dev/ttyAMA0', baudrate=115200, timeout=2):
 
     timeout : `int`, optional
         Serial port timeout, in seconds (default: 1).
+
+    client : `InfluxDBClient`, optional
+        InfluxDB client for data storage.
     """
+
+    # connect to influxDB data client
+    client = client or InfluxDBClient.from_config_file("influxdb.conf")
+    print(client)
 
     # connect to serial port
     ser = serial.Serial(port=port, baudrate=baudrate, timeout=timeout)

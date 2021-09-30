@@ -7,9 +7,9 @@ from setuptools import setup, find_namespace_packages
 README = open('README.rst').read()
 README = re.sub('----.*marker', '----', README, flags=re.DOTALL)
 
-DESCRIPTION = 'Multi-EAR services for Raspberry Pi OS LITE (32-bit)'
+DESCRIPTION = 'Multi-EAR modules and services for Raspberry Pi OS (32-bit)'
 
-NAME = 'multi-ear-services'
+NAME = 'multi-ear'
 
 setup(
     name=NAME,
@@ -24,7 +24,9 @@ setup(
     license='GNU General Public License v3 (GPLv3)',
     license_file = 'LICENSE',
     platforms = 'ARMv7',
-    packages=find_namespace_packages(include=['multi-ear-services.*']),
+    packages=find_namespace_packages(include=['multi-ear.*']),
+    include_package_data=True,
+    zip_safe=False,
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Science/Research',
@@ -49,9 +51,12 @@ setup(
         'multi-ear', 'mems', 'gpio', 'raspberry pi', 'timeseries', 'waveforms',
     ],
     entry_points={
-        'console_scripts': [],
+        'console_scripts': [f'{NAME}-uart=multi_ear.uart.uart_readout'],
     },
-    scripts=[],
+    scripts=[
+        'multi-ear/wifi/enable_wifi_access_point.sh',
+        'multi-ear/wifi/disable_wifi_access_point.sh',
+    ],
     install_requires=[
         'pyserial>=3.5',
         'gpiozero>=1.6',
@@ -63,7 +68,7 @@ setup(
     use_scm_version={
         'root': '.',
         'relative_to': __file__,
-        'write_to': os.path.join('version.py'),
+        'write_to': os.path.join('multi-ear', 'version.py'),
     },
-    setup_requires=['setuptools_scm'],
+    setup_requires=['setuptools_scm', 'flake8'],
 )
