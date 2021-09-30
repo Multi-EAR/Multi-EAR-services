@@ -9,6 +9,9 @@
 # Email         : mail@pietersmets.be
 ##############################################################################
 
+# Name of the script
+SCRIPT=$( basename "$0" )
+
 # Current version
 VERSION="0.1"
 
@@ -25,7 +28,7 @@ LOG_FILE="$(pwd)/install.log"
 function usage
 {
     local txt=(
-"Multi-EAR $SCRIPT on a deployed Raspberry Pi OS LITE (32-bit)."
+"Multi-EAR software install on a deployed Raspberry Pi OS LITE (32-bit)."
 "Usage: $SCRIPT [options] <install_step>"
 ""
 "Install step:"
@@ -76,23 +79,6 @@ function version
     printf "%s\n" "${txt[@]}"
     exit 0
 }
-
-
-#
-# Check if current user is tud
-#
-if [ $USER != "tud" ]; then
-    echo "Script must be run as user: tud" | tee -a $LOG_FILE
-    exit -1
-fi
-
-#
-# Check for default user pi
-#
-if id -u pi >/dev/null 2>&1; then
-    echo "Default user pi should not exit" | tee -a $LOG_FILE
-    exit -1
-fi
 
 
 #
@@ -392,6 +378,23 @@ do
     esac
     shift
 done
+
+
+#
+# Check if current user is tud
+#
+if [ $USER != "tud" ]; then
+    echo "Script must be run as user: tud" | tee -a $LOG_FILE
+    exit -1
+fi
+
+#
+# Check for default user pi
+#
+if id -u pi >/dev/null 2>&1; then
+    echo "Default user pi should not exit" | tee -a $LOG_FILE
+    exit -1
+fi
 
 
 # Perform one step or the entire workflow
