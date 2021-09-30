@@ -13,7 +13,7 @@
 VERSION="0.1"
 
 # Python virtual environment
-VIRTUAL_ENV="~/.py37"
+VIRTUAL_ENV="/home/tud/.py37"
 
 # Log file
 LOG_FILE="$(pwd)/install.log"
