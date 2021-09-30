@@ -51,7 +51,7 @@ setup(
         'multi-ear', 'mems', 'gpio', 'raspberry pi', 'timeseries', 'waveforms',
     ],
     entry_points={
-        'console_scripts': [f'{NAME}-uart={NAME}.uart.uart_readout'],
+        'console_scripts': [f'{NAME}-uart={NAME}.uart:uart_readout'],
     },
     scripts=[
         f'{NAME}/wifi/enable_wifi_access_point.sh',
