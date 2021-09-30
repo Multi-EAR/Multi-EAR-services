@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-multi_ear_services
+multi_ear
 
-Multi-EAR system services for Raspberry Pi OS LITE (32-bit).
+Multi-EAR modules and services for Raspberry Pi OS (32-bit).
 
 :author:
     Pieter Smets (p.s.m.smets@tudelft.nl)
@@ -16,7 +16,9 @@ Multi-EAR system services for Raspberry Pi OS LITE (32-bit).
     (https://www.gnu.org/licenses/gpl-3.0.en.html)
 """
 
-__all__ = []
+from . import ctrl, uart
+
+__all__ = ['ctrl', 'uart']
 
 # Version
 try:
