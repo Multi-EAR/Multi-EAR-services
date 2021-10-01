@@ -58,10 +58,16 @@ Log files are generated per services in `/var/log/multi-ear/` and can be filtere
 
 ### multi-ear-uart
 Data collection and storage on the device.
-Sensorboard serial readout via UART and storage in a local InfluxDB database.
+Sensorboard serial readout via UART with data storage in a local InfluxDB database.
 
+You can manually start the sensorboard serial readout for testing purposes. 
 ```
 multi-ear-uart
+```
+
+Make sure that the systemd service is stopped as only one serial connection to the sensorboard is possible.
+```
+sudo systemctl stop multi-ear-uart
 ```
 
 ## multi-ear-ctrl
