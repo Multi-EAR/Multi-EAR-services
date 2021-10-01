@@ -33,29 +33,8 @@ Options:
 ## Getting started
 
 The Multi-EAR services provide:
-- data collection and storage on the device
-- control, documentation and data visualization via a web browser
-- remote monitoring of the device via LoRa
-- data transmission to a central database
-
-## Local Web-Services
-
-Browse to the devive IPv4 address for the local web-services (`192.168.128.1` in Wi-Fi access point mode).
-
-### Documentation of the MEMS sensors
-
-### Data visualization dashboard
-
-### Simplified Wi-Fi control
-
-Enable Wi-Fi access point mode (via the web-service to let the device broadcast it's own network.
-The network SSID name shall be the device name with WPA2 passphrase `multi-ear`.
-The device IPv4 address shall be `192.168.128.1`.
-Wireless access point mode can also be enabled by connecting [GPIO 7 #PIN-26](https://pinout.xyz/pinout/pin26_gpio7) with ground #PIN-25.
-
-When Wi-Fi access point mode is disabled the device will automatilly connect to known wireless networks.
-Enter the name and passphrase to add a network to the Raspberry Pi's `wpa_supplicant` list.
-
-### Multi-EAR service monitoring
-
-Monitoring of all the Multi-EAR related services.
+- multi-ear-uart: data collection and storage on the device.
+- multi-ear-ctrl: simplified control, monitoring, documentation and data visualization via a web browser.
+- multi-ear-wifi: enable wireless access point mode by connecting [GPIO-7](https://pinout.xyz/pinout/pin26_gpio7) with ground.
+- multi-ear-lora: remote monitoring of the device via LoRa.
+- multi-ear-data: data transmission to a central database.
