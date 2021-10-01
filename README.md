@@ -7,13 +7,13 @@ Make sure that the Raspberry Pi is connected to a wireless network with internet
 
 Run the bash script install the Multi-EAR software.
 ```
-bash multi-ear-software.sh
+bash install.sh
 ```
 
-Type `bash multi-ear-software.sh --help` for the usage.
+Type `bash install.sh --help` for the usage.
 ```
 Multi-EAR software install on a deployed Raspberry Pi OS LITE (32-bit).
-Usage: multi-ear-software.sh [options] <install_step>
+Usage: install.sh [options] <install_step>
 
 Install step:
   all            Perform all of the following steps (default).

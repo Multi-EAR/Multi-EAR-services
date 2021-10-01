@@ -1,0 +1,150 @@
+#!/bin/bash
+
+##############################################################################
+# Script Name	: install.sh
+# Description	: Automatic software installation for the Multi-EAR platform
+#                 given a prepared install of RASPBERRY PI OS LITE (32-bit).
+# Args          : n.a.
+# Author       	: Pieter Smets
+# Email         : mail@pietersmets.be
+##############################################################################
+
+# Name of the script
+SCRIPT=$( basename "$0" )
+
+# Current version
+VERSION="0.1"
+
+#
+# Message to display for usage and help.
+#
+function usage
+{
+    local txt=(
+"Multi-EAR Wi-Fi access point mode."
+"Usage: $SCRIPT [options] <action>"
+""
+"Actions:"
+"  --status       Returns if wireless access point mode is enabled."
+"  --on           Enable wireless access point mode (host mode)."
+"  --off          Disable wireless access point mode (client mode)."
+"  --switch       Switch between wireless access point mode."
+""
+"Options:"
+"  --help, -h     Print help."
+"  --version, -v  Print version."
+    )
+
+    printf "%s\n" "${txt[@]}"
+    exit 0
+}
+
+
+#
+# Message to display when bad usage.
+#
+function badUsage
+{
+    local message="$1"
+    local txt=(
+"For an overview of the command, execute:"
+"$SCRIPT --help"
+    )
+
+    [[ $message ]] && printf "$message\n"
+
+    printf "%s\n" "${txt[@]}"
+    exit -1
+}
+
+
+#
+# Message to display for version.
+#
+function version
+{
+    local txt=(
+"$SCRIPT v$VERSION"
+    )
+
+    printf "%s\n" "${txt[@]}"
+    exit 0
+}
+
+
+#
+# Returns True if wireless access point mode is enabled
+#
+function is_access_point_mode_enabled
+{
+}
+
+
+#
+# Enable wireless access point mode
+#
+function do_enable_access_point_mode
+{
+    echo "Enable Multi-EAR Wi-Fi access point mode"
+    sudo systemctl daemon-reload
+    sudo systemctl enable hostapd
+    sudo systemctl start hostapd
+    sudo systemctl enable dnsmasq
+    sudo systemctl start dnsmasq
+}
+
+
+#
+# Disable wireless access point mode
+#
+function do_disable_access_point_mode
+{
+    echo "Enable Multi-EAR Wi-Fi access point mode"
+    sudo systemctl daemon-reload
+    sudo systemctl enable hostapd
+    sudo systemctl start hostapd
+    sudo systemctl enable dnsmasq
+    sudo systemctl start dnsmasq
+}
+
+
+#
+# Switch the wireless access point mode
+#
+function do_switch_access_point_mode
+{
+}
+
+
+#
+# Process options
+#
+while (( $# ));
+do
+    case "$1" in
+        --help | -h) usage
+        ;;
+        --version | -v) version
+        ;;
+        *) break
+    esac
+    shift
+done
+
+#
+# Perform action
+#
+case "${1}" in
+    --on) do_enable_access_point_mode
+    ;;
+    --off) do_disable_access_point_mode
+    ;;
+    --switch) do_switch_access_point_mode
+    ;;
+    --status) is_access_point_mode_enabled
+    ;;
+    *) badUsage "Unknown command ${1}."
+    ;;
+esac
+
+exit 0

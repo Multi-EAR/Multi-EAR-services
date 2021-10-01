@@ -1,1 +1,11 @@
-/opt/multi-ear-services/wifi/enable_wifi_access_point.sh
+#!/bin/bash
+
+##############################################################################
+# Script Name	: 7
+# Description	: Triggered by gpio-watch for pin 7.
+# Args          : n.a.
+# Author       	: Pieter Smets
+# Email         : mail@pietersmets.be
+##############################################################################
+
+/bin/bash /home/tud/.py37/bin/multi-ear-wifi --switch

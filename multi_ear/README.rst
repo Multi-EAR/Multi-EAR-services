@@ -1,10 +1,10 @@
 *************************************
 Multi-EAR-SERVICES
 *************************************
-Multi-EAR system services for Raspberry Pi OS LITE (32-bit)
+Multi-EAR python modules and scripts for Raspberry Pi OS LITE (32-bit)
 
 
-Multi-EAR modules and services:
+Multi-EAR python modules and scripts:
 
 - ctrl : a local webservice to control and monitor the device
 

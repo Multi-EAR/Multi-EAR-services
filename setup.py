@@ -7,7 +7,7 @@ from setuptools import setup, find_namespace_packages
 README = open('multi_ear/README.rst').read()
 README = re.sub('----.*marker', '----', README, flags=re.DOTALL)
 
-DESCRIPTION = 'Multi-EAR modules and services for Raspberry Pi OS (32-bit)'
+DESCRIPTION = 'Multi-EAR python modules and scripts for Raspberry Pi OS (32-bit)'
 
 setup(
     name='multi_ear',
@@ -52,9 +52,7 @@ setup(
         'console_scripts': [f'multi-ear-uart=multi_ear.uart:uart_readout'],
     },
     scripts=[
-        f'multi_ear/wifi/multi-ear-wifi-enable',
-        f'multi_ear/wifi/multi-ear-wifi-disable',
-        f'multi_ear/wifi/multi-ear-wifi-switch',
+        f'multi_ear/wifi/multi-ear-wifi',
     ],
     install_requires=[
         'pyserial>=3.5',
