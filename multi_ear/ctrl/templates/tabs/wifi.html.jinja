@@ -3,8 +3,8 @@
 <div class="container-md">
 
     <h3 class="mb-3 hstack gap-3">Hotspot mode <div class="vr"></div> <small class="text-muted">broadcast a wireless network</small></h3>
-    <p>Let the Raspberry Pi broadcast it's own wireless network.<br>
-    The Raspberry Pi's ip address shall be <code>192.168.128.1</code>.</p>
+    <p>Enable wireless access point mode to let the device broadcast its own wireless network.<br>
+    The device IPv4 address shall be <code>192.168.128.1</code>.</p>
 
     <div class="row mb-3 justify-content-end">
       <div class="col-md-9">
@@ -34,6 +34,7 @@
     </div>
 
     <p><b>Note:</b> this network shall not have internet access!</p>
+    <p>Wireless access point mode can also be enabled by triggering <a href="https://pinout.xyz/pinout/pin26_gpio7">GPIO-7 #PIN-26</a> with ground #PIN-25.</p>
 
     <hr class="my-5">
 
@@ -42,8 +43,8 @@
     <form class="needs-validation" novalidate>
 
       <div class="row mb-3">
-        <p>Automatilly connect to known wireless networks when wireless access point mode is <code>disabled</code>.</p>
-        <p>Enter the <code>name</code> and <code>passphrase</code> to add the network to the Raspberry Pi's <code>wpa_supplicant</code> list.<br> 
+        <p>The device automatilly connects to known wireless networks when wireless access point mode is <code>disabled</code>.</p>
+        <p>Enter the <code>name</code> and <code>passphrase</code> to add a network to the Raspberry Pi's <code>wpa_supplicant</code> list.<br> 
         Only WPA2 (WPA Personal) secured networks are supported and editing/removing networks is not allowed.</p>
       </div>
 
