@@ -1,9 +1,9 @@
-# Multi-EAR
+# Multi-EAR Services
 
-The Multi-EAR is a mobile low-cost multidisciplinary sensor platform for scientific monitoring of the earth and atmosphere. The low-cost platform uses digital Micro­electromechanical Systems (MEMS) sensors embedded on a Printed Circuit Board (PCB). The Multi-EAR extends the INFRA-EAR, a sensor platform for monitoring geophysical parameters designed to fit a Wandering Albatross.
+Multi-EAR system services for Raspberry Pi OS LITE (32-bit).
 
 ## Installation
-Install the Multi-EAR software on a deployed Raspberry Pi OS LITE (32-bit).
+Install the Multi-EAR services on a [deployed](https://github.com/Multi-EAR/Multi-EAR-deploy) Raspberry Pi.
 Make sure that the Raspberry Pi is connected to a wireless network with internet connection.
 
 Run the bash script to install and configure the Multi-EAR software and services.
@@ -32,17 +32,21 @@ Options:
 
 ## Getting started
 
-The Multi-EAR software contains all essential modules and services: data collection and storage, web-services for documentation and data visualization and services for remote monitoring and data transmission.
+The Multi-EAR services provide:
+- data collection and storage on the device
+- control, documentation and data visualization via a web browser
+- remote monitoring of the device via LoRa
+- data transmission to a central database
 
-## Local Web-Serices
+## Local Web-Services
 
 Browse to the devive IPv4 address for the local web-services (`192.168.128.1` in Wi-Fi access point mode).
 
-# Documentation #sensors
+### Documentation of the MEMS sensors
 
-# Data visualization #dashboard
+### Data visualization dashboard
 
-# Simplified Wi-Fi control #wifi
+### Simplified Wi-Fi control
 
 Enable Wi-Fi access point mode (via the web-service to let the device broadcast it's own network.
 The network SSID name shall be the device name with WPA2 passphrase `multi-ear`.
@@ -52,6 +56,6 @@ Wireless access point mode can also be enabled by connecting [GPIO 7 #PIN-26](ht
 When Wi-Fi access point mode is disabled the device will automatilly connect to known wireless networks.
 Enter the name and passphrase to add a network to the Raspberry Pi's `wpa_supplicant` list.
 
-# Multi-EAR service monitoring #status
+### Multi-EAR service monitoring
 
-Monitoring of the Multi-EAR related services
+Monitoring of all the Multi-EAR related services.
