@@ -8,4 +8,4 @@
 # Email         : mail@pietersmets.be
 ##############################################################################
 
-/bin/bash /home/tud/.py37/bin/multi-ear-wifi --switch
+/bin/bash /home/tud/.py37/bin/multi-ear-wifi --enable

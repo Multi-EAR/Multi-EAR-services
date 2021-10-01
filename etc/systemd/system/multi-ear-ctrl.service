@@ -1,15 +1,15 @@
 [Unit]
-Description=Multi-EAR :: ctrl webservice
+Description=Multi-EAR :: ctrl web-service
 After=network.target
  
 [Service]
 Type=simple
 User=tud
 Group=tud
-WorkingDirectory=/opt/services/multi-ear-ctrl
-Environment="VIRTUAL_ENV=/opt/py37"
+WorkingDirectory=/home/tud/
+Environment="VIRTUAL_ENV=/home/tud/.py37"
 Environment="PATH=$VIRTUAL_ENV/bin:$PATH"
-ExecStart=/opt/py37/bin/uwsgi --ini /opt/services/multi-ear-ctrl/uwsgi.ini
+ExecStart=/home/tud/.py37/bin/uwsgi --ini /home/tud/.py37/share/multi_ear/ctrl/uwsgi.ini
 StandardOutput=syslog
 StandardError=syslog
 SyslogIdentifier=multi-ear-ctrl

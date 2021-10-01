@@ -39,7 +39,7 @@ def uart_readout(port='/dev/ttyAMA0', baudrate=115200, timeout=2,
     """
 
     # connect to influxDB data client
-    client = client or InfluxDBClient.from_config_file("influxdb.conf")
+    client = client or InfluxDBClient.from_config_file("influxdb.ini")
     print(client)
 
     # connect to serial port

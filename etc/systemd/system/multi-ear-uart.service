@@ -6,10 +6,11 @@ After=network.target
 Type=simple
 User=tud
 Group=tud
-WorkingDirectory=/tmp/multi-ear-services
-Environment="VIRTUAL_ENV=/opt/py37"
+WorkingDirectory=/home/tud/
+Environment="VIRTUAL_ENV=/home/tud/.py37"
 Environment="PATH=$VIRTUAL_ENV/bin:$PATH"
-ExecStart=/opt/py37/bin/python3 /opt/services/multi-ear-uart/uart.py
+# ExecStart=/home/tud/.py37/bin/python3 /home/tud/.py37/lib/python3.7/site-packages/multi_ear_services/uart/uart.py
+ExecStart=/home/tud/.py37/bin/multi-ear-uart
 StandardOutput=syslog
 StandardError=syslog
 SyslogIdentifier=multi-ear-uart

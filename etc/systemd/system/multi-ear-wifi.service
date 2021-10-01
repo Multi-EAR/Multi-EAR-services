@@ -6,8 +6,10 @@ After=network.target
 Type=simple
 User=tud
 Group=tud
-WorkingDirectory=/tmp/multi-ear-services
-ExecStart=/opt/multi-ear-services/bin/gpio-watch -v -e rising 7
+WorkingDirectory=/home/tud
+Environment="VIRTUAL_ENV=/home/tud/.py37"
+Environment="PATH=$VIRTUAL_ENV/bin:$PATH"
+ExecStart=/home/tud/.py37/bin/gpio-watch -v -e rising 7
 StandardOutput=syslog
 StandardError=syslog
 SyslogIdentifier=multi-ear-wifi

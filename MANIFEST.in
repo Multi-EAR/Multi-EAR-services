@@ -4,14 +4,14 @@ include CONTRIBUTORS
 include LICENSE
 include setup.py
 
-include multi-ear/ctrl/browserconfig.xml
-include multi-ear/ctrl/favicon.ico
-include multi-ear/ctrl/site.webmanifest
-include multi-ear/ctrl/uwsgi.ini
-graft multi-ear/ctrl/static
-graft multi-ear/ctrl/templates
+include multi_ear_services/ctrl/browserconfig.xml
+include multi_ear_services/ctrl/favicon.ico
+include multi_ear_services/ctrl/site.webmanifest
+#include multi_ear_services/ctrl/uwsgi.ini
+graft multi_ear_services/ctrl/static
+graft multi_ear_services/ctrl/templates
 
-include multi-ear/uart/influxdb.ini
+include multi_ear_services/uart/influxdb.ini
 
 global-exclude __pycache__
 global-exclude *.py[cod]

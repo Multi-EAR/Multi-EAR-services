@@ -4,13 +4,13 @@ import re
 from setuptools import setup, find_namespace_packages
 
 # Get README and remove badges.
-README = open('multi_ear/README.rst').read()
+README = open('multi_ear_services/README.rst').read()
 README = re.sub('----.*marker', '----', README, flags=re.DOTALL)
 
 DESCRIPTION = 'Multi-EAR python modules and scripts for Raspberry Pi OS (32-bit)'
 
 setup(
-    name='multi_ear',
+    name='multi_ear_services',
     python_requires='>=3.6.0',
     description=DESCRIPTION,
     long_description=README,
@@ -22,7 +22,7 @@ setup(
     license='GNU General Public License v3 (GPLv3)',
     license_file = 'LICENSE',
     platforms = 'ARMv7',
-    packages=find_namespace_packages(include=[f'multi_ear.*']),
+    packages=find_namespace_packages(include=[f'multi_ear_services.*']),
     include_package_data=True,
     zip_safe=False,
     classifiers=[
@@ -42,17 +42,20 @@ setup(
         'Topic :: Scientific/Engineering :: Physics',
     ],
     project_urls={
-        'Source': 'https://github.com/Multi-EAR/Multi-EAR-software',
-        'Tracker': 'https://github.com/Multi-EAR/Multi-EAR-software/issues',
+        'Source': 'https://github.com/Multi-EAR/Multi-EAR-services',
+        'Tracker': 'https://github.com/Multi-EAR/Multi-EAR-services/issues',
     },
     keywords=[
         'multi-ear', 'mems', 'gpio', 'raspberry pi', 'timeseries', 'waveforms',
     ],
     entry_points={
-        'console_scripts': [f'multi-ear-uart=multi_ear.uart:uart_readout'],
+        'console_scripts': ['multi-ear-uart=multi_ear_services.uart:uart_readout'],
     },
     scripts=[
-        f'multi_ear/wifi/multi-ear-wifi',
+        'multi_ear_services/wifi/multi-ear-wifi',
+    ],
+    data_files=[
+        ('multi-ear/ctrl', 'multi_ear_services/ctrl/uwsgi.ini')
     ],
     install_requires=[
         'pyserial>=3.5',
@@ -65,7 +68,7 @@ setup(
     use_scm_version={
         'root': '.',
         'relative_to': __file__,
-        'write_to': os.path.join('multi_ear', 'version.py'),
+        'write_to': os.path.join('multi_ear_services', 'version.py'),
     },
     setup_requires=['setuptools_scm', 'flake8'],
 )
