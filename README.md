@@ -31,6 +31,17 @@ Options:
 ```
 
 ## Multi-EAR services
+
+- ctrl : a local webservice to control and monitor the device
+
+- data : data transmission to the central database
+
+- lora : remote monitoring of the device
+
+- uart : continuous data readout, buffering and local storage
+
+- wifi : enable/disable wireless access point mode
+
 Multi-EAR services are installed in a Python3 virtual environment `(py37)` and are enabled via systemd system services.
 
 Activate the virtual environment
@@ -49,8 +60,32 @@ Log files are generated per services in `/var/log/multi-ear/` and can be filtere
 Data collection and storage on the device.
 Sensorboard serial readout via UART and storage in a local InfluxDB database.
 
+```
+multi-ear-uart
+```
+
 ## multi-ear-ctrl
 Simplified control, monitoring, documentation and data visualization via a web browser.
+
+The web-service is started automatically via the `multi_ear_ctrl.service` in `/etc/systemd/system` via a `uwsgi` socket handled via `nginx` on the default http port 80.
+
+You can also manually start the web-service on `http://127.0.0.1:5000`.
+First check if the Flask environment variables are set correctly.
+```
+echo $FLASK_APP  # should be multi_ear_services.ctrl
+echo $FLASK_ENV  # should be production (default) or development
+```
+
+If not set in `.bashrc` or incorrect
+```
+export FLASK_ENV=development
+export FLASK_APP=multi_ear_services.ctrl
+```
+
+Start the web-service
+```
+flask run
+```
 
 ## multi-ear-wifi
 Simply switch between wireless access point mode (hotspot) or regular client mode to connect to an existing wireless network controlled via a bash script.

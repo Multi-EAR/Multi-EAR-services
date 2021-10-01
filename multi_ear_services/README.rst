@@ -14,4 +14,4 @@ Multi-EAR python modules and scripts:
 
 - uart : continuous data readout, buffering and local storage
 
-- wifi : enable/disable wireless access point modei
+- wifi : enable/disable wireless access point mode
