@@ -34,10 +34,8 @@ function usage
 "Install step:"
 "  all            Perform all of the following steps (default)."
 "  packages       Install all required packages via apt."
-"  etc            Sync /etc for all packages."
 "  config         Configure all packages (make sure /etc is synced)."
 "  python3        Create the Python3 virtual environment (py37) in $VIRTUAL_ENV."
-"  gpio-watch     Install gpio-watch in $VIRTUAL_ENV."
 "  multi-ear      Install and enable the Multi-EAR software in $VIRTUAL_ENV."
 ""
 "Options:"
@@ -79,17 +77,6 @@ function version
 
     printf "%s\n" "${txt[@]}"
     exit 0
-}
-
-
-#
-# Rsync
-#
-function do_rsync_etc
-{
-    echo ".. rsync /etc" | tee -a $LOG_FILE
-    sudo rsync -amtv --chown=root:root etc / >> $LOG_FILE 2>&1
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
 
 
@@ -216,6 +203,14 @@ function do_python3_venv
 #
 # Configure
 #
+function do_rsync_etc
+{
+    echo ".. rsync /etc" | tee -a $LOG_FILE
+    sudo rsync -amtv --chown=root:root etc / >> $LOG_FILE 2>&1
+    echo -e ".. done\n" >> $LOG_FILE 2>&1
+}
+
+
 function do_configure_rsyslog
 {
     echo ".. configure rsyslog" | tee -a $LOG_FILE
@@ -306,6 +301,7 @@ function do_configure_grafana
 
 function do_configure
 {
+    do_rsync_etc
     do_configure_nginx
     do_configure_hostapd_dnsmasq
     do_configure_influxdb
@@ -315,9 +311,9 @@ function do_configure
 
 
 #
-# GPIO-watch
+# Multi-EAR software
 #
-function do_gpio_watch
+function do_gpio_watch_install
 {
     echo ".. clone and make gpio-watch" | tee -a $LOG_FILE
     git clone https://github.com/larsks/gpio-watch.git >> $LOG_FILE 2>&1
@@ -330,9 +326,6 @@ function do_gpio_watch
 }
 
 
-#
-# Multi-EAR software
-#
 function do_multi_ear_install
 {
     do_activate_python3_venv
@@ -369,6 +362,8 @@ function do_multi_ear_services
 
 function do_multi_ear
 {
+    do_activate_python3_venv
+    do_gpio_watch_install
     do_multi_ear_install
     do_multi_ear_services
 }
@@ -413,7 +408,6 @@ case "${1}" in
     rm -f $LOG_FILE
     echo "Multi-EAR Software Install Tool v${VERSION}" | tee $LOG_FILE
     do_install
-    do_rsync_etc
     do_configure
     do_python3_venv
     do_gpio_watch
