@@ -12,8 +12,8 @@
 # Name of the script
 SCRIPT=$( basename "$0" )
 
-# Current version
-VERSION="0.1"
+# Current version from git
+VERSION=$( git describe --tag --abbrev=0 )
 
 # Python virtual environment
 VIRTUAL_ENV="/home/tud/.py37"
@@ -72,7 +72,7 @@ function badUsage
 function version
 {
     local txt=(
-"$SCRIPT v$VERSION"
+"$SCRIPT $VERSION"
     )
 
     printf "%s\n" "${txt[@]}"
