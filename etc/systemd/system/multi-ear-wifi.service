@@ -13,7 +13,7 @@ ExecStart=/home/tud/.py37/bin/gpio-watch -v -e rising 7
 StandardOutput=syslog
 StandardError=syslog
 SyslogIdentifier=multi-ear-wifi
-Restart=always
+Restart=on-fail
  
 [Install]
 WantedBy=multi-user.target
