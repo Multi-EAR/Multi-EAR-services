@@ -81,8 +81,7 @@ You can manually start the sensorboard serial readout for testing purposes.
 
 .. code-block:: console
  
-multi-ear-uart
-
+    multi-ear-uart
 
 Make sure that the systemd service is stopped as only one serial connection to the sensorboard is possible.
 
@@ -105,7 +104,6 @@ First check if the Flask environment variables are set correctly.
 
     echo $FLASK_APP  # should be multi_ear_services.ctrl
     echo $FLASK_ENV  # should be production (default) or development
-
 
 If not set in ``.bashrc`` or incorrect
 
@@ -147,9 +145,7 @@ Type ``multi-ear-wifi --help`` for the usage
       --help, -h     Print help.
       --version, -v  Print version.
 
-
-Wireless access point mode can be controlled via the web-service (see multi-ear-ctrl). 
-Wireless access point mode can also be enabled by connecting GPIO-7_ with ground.
+The wireless access point mode can be controlled via the web-service (see multi-ear-ctrl) and ca be enabled by connecting GPIO-7_ with ground.
 
 .. _GPIO-7: https://pinout.xyz/pinout/pin26_gpio7
 
