@@ -1,5 +1,5 @@
 [Unit]
-Description=Multi-EAR :: uart readout
+Description=Multi-EAR uart :: sensorboard serial readout to InfluxDB
 After=network.target
  
 [Service]

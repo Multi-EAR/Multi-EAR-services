@@ -1,5 +1,5 @@
 [Unit]
-Description=Multi-EAR :: wifi access point mode trigger on pin 7
+Description=Multi-EAR wifi :: access point mode trigger on GPIO pin 7
 After=network.target
  
 [Service]

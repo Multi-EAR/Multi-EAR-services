@@ -1,5 +1,5 @@
 [Unit]
-Description=Multi-EAR :: ctrl web-service
+Description=Multi-EAR ctrl :: local web service
 After=network.target
  
 [Service]
