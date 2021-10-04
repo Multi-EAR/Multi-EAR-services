@@ -1,5 +1,6 @@
+*************************************
 multi-ear-uart
---------------
+*************************************
 
 Sensorboard serial readout via UART with data storage in a local InfluxDB database.
 
