@@ -39,6 +39,15 @@ Type ``bash install.sh --help`` for the usage.
       --version, -v  Print version.
 
 
+Multi-EAR services are installed in a Python3 virtual environment ``(py37)``.
+
+Activate the Python3 virtual environment
+
+.. code-block:: console
+
+    source /home/tud/.py37/bin/activate
+
+
 Multi-EAR services
 ==================
 
@@ -47,15 +56,6 @@ Multi-EAR services
 - ``multi-ear-lora`` : remote monitoring of the device via LoRaWAN
 - ``multi-ear-uart`` : sensorboard serial readout and local data storage
 - ``multi-ear-wifi`` : wireless access point mode trigger via GPIO pin 7
-
-
-Multi-EAR services are installed in a Python3 virtual environment ``(py37)``.
-
-Activate the Python3 virtual environment
-
-.. code-block:: console
-
-    source /home/tud/.py37/bin/activate
 
 
 Multi-EAR services are controlled and monitored via systemd system services.
