@@ -32,11 +32,11 @@ function usage
 "Usage: $SCRIPT [options] <install_step>"
 ""
 "Install step:"
-"  all            Perform all of the following steps (default)."
-"  packages       Install all required packages via apt."
-"  config         Configure all packages (make sure /etc is synced)."
-"  python3        Create the Python3 virtual environment (py37) in $VIRTUAL_ENV."
-"  multi-ear      Install and enable the Multi-EAR software in $VIRTUAL_ENV."
+"  --all          Perform all of the following steps (default)."
+"  --packages     Install all required packages via apt."
+"  --configure    Configure all packages (make sure /etc is synced)."
+"  --python       Create the Python3 virtual environment (py37) in $VIRTUAL_ENV."
+"  --multi-ear    Install and enable the Multi-EAR software in $VIRTUAL_ENV."
 ""
 "Options:"
 "  --help, -h     Print help."
@@ -414,17 +414,17 @@ case "${1}" in
     do_multi_ear
     echo "Multi-EAR software install completed" | tee -a $LOG_FILE
     ;;
-    packages) do_install
+    --packages) do_install
     ;;
-    etc) do_rsync_etc
+    --etc) do_rsync_etc
     ;;
-    conf|config|configure) do_configure
+    --configure|--config) do_configure
     ;;
-    python|python3) do_python3_venv
+    --python|--python3) do_python3_venv
     ;;
-    gpio-watch|gpio_watch) do_gpio_watch
+    --gpio-watch) do_gpio_watch
     ;;
-    multi-ear|multi_ear) do_multi_ear
+    --multi-ear) do_multi_ear
     ;;
     *) badUsage "Unknown command ${1}." | tee $LOG_FILE
     ;;
