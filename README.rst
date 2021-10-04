@@ -40,11 +40,11 @@ Type ``bash install.sh --help`` for the usage.
 Multi-EAR services
 ==================
 
-- **ctrl** : local web service to control and monitor the device
-- **data** : data transmission to the central database
-- **lora** : remote monitoring of the device
-- **uart** : continuous data readout, buffering and local storage
-- **wifi** : enable/disable wireless access point mode
+- ``multi-ear-ctrl`` : local web service to control and monitor the device
+- ``multi-ear-data`` : data transfer to the central database
+- ``multi-ear-lora`` : remote monitoring of the device via LoRaWAN
+- ``multi-ear-uart`` : sensorboard serial readout and local data storage
+- ``multi-ear-wifi`` : wireless access point mode trigger via GPIO pin 7
 
 
 Multi-EAR services are installed in a Python3 virtual environment ``(py37)``.
@@ -70,93 +70,3 @@ Check the ``multi-ear-uart`` system logs
 .. code-block:: console
 
     journalctl -u multi-ear-uart.service --since yesterday --until now
-
-
-multi-ear-uart
---------------
-Data collection and storage on the device.
-Sensorboard serial readout via UART with data storage in a local InfluxDB database.
-
-You can manually start the sensorboard serial readout for testing purposes.
-
-.. code-block:: console
- 
-    multi-ear-uart
-
-Make sure that the systemd service is stopped as only one serial connection to the sensorboard is possible.
-
-.. code-block:: console
-
-    sudo systemctl stop multi-ear-uart
-
-
-multi-ear-ctrl
---------------
-Simplified control, monitoring, documentation and data visualization via a web browser.
-
-The web-service is started automatically via the ``multi-ear-ctrl.service`` in ``/etc/systemd/system`` via a ``uwsgi`` socket handled via ``nginx`` on the default http port 80.
-
-You can also manually start the web-service on `http://127.0.0.1:5000`_.
-
-First check if the Flask environment variables are set correctly.
-
-.. code-block:: console
-
-    echo $FLASK_APP  # should be multi_ear_services.ctrl
-    echo $FLASK_ENV  # should be production (default) or development
-
-If not set in ``.bashrc`` or incorrect
-
-.. code-block:: console
-
-    export FLASK_ENV=development
-    export FLASK_APP=multi_ear_services.ctrl
-
-Start the web-service
-
-.. code-block:: console
-
-    flask run
-
-
-multi-ear-wifi
---------------
-
-Simply switch between wireless access point mode (hotspot) or regular client mode to connect to an existing wireless network controlled via a bash script.
-
-.. code-block:: console
-
-    multi-ear-wifi --switch
-
-Type ``multi-ear-wifi --help`` for the usage
-
-.. code-block:: console
-
-    Multi-EAR Wi-Fi access point mode control.
-    Usage: multi-ear-wifi [options] <action>
-
-    Actions:
-      --status       Returns if wireless access point mode is enabled.
-      --on           Enable wireless access point mode (host mode).
-      --off          Disable wireless access point mode (client mode).
-      --switch       Switch between wireless access point mode.
-
-    Options:
-      --help, -h     Print help.
-      --version, -v  Print version.
-
-The wireless access point mode can be controlled via the web-service (see multi-ear-ctrl) and ca be enabled by connecting GPIO-7_ with ground.
-
-.. _GPIO-7: https://pinout.xyz/pinout/pin26_gpio7
-
-
-multi-ear-lora
---------------
-
-Remote monitoring of the Multi-EAR device via LoRa.
-
-
-multi-ear-data
---------------
-
-Data transmission of the Multi-EAR to a central database.
