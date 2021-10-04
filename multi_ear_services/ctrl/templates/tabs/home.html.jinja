@@ -10,6 +10,16 @@ The Multi-EAR extends the <a href="https://doi.org/10.5194/amt-14-3301-2021" tar
       </div>
   </div>
 
-  <div class="py-2 px-0">{% include 'modules/logos.html.jinja' %}</div>
+  <div class="row justify-content-center text-center py-2 px-2">
+    <div class="col col-4 col-md-3 col-lg-2 p-3" onclick="window.open('https://www.tudelft.nl','_blank');">
+      <img src="{{ url_for('static', filename='img/tud.svg') }}" class="mx-auto img-fluid" height="75" width="auto">
+    </div>
+    <div class="col col-4 col-md-3 col-lg-2 p-3" onclick="window.open('https://www.knmi.nl','_blank');">
+      <img src="{{ url_for('static', filename='img/knmi.svg') }}" class="mx-auto img-fluid" height="75" width="auto">
+    </div>
+    <div class="col col-4 col-md-3 col-lg-2 p-3" onclick="window.open('https://www.rijksoverheid.nl/ministeries/ministerie-van-infrastructuur-en-waterstaat','_blank');">
+      <img src="{{ url_for('static', filename='img/ro.svg') }}" class="mx-auto img-fluid" height="75" width="auto">
+    </div>
+  </div>
 
 </div>
