@@ -404,7 +404,7 @@ fi
 
 # Perform one step or the entire workflow
 case "${1}" in
-    ""|all)
+    ""|--all)
     rm -f $LOG_FILE
     echo "Multi-EAR Software Install Tool v${VERSION}" | tee $LOG_FILE
     do_install
