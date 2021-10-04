@@ -8,8 +8,10 @@ Multi-EAR system services for Raspberry Pi OS LITE (32-bit).
 Installation
 ============
 
-Install the Multi-EAR services on a [deployed](https://github.com/Multi-EAR/Multi-EAR-deploy) Raspberry Pi.
+Install the Multi-EAR services on a deployed_ Raspberry Pi.
 Make sure that the Raspberry Pi is connected to a wireless network with internet connection.
+
+.. _deployed: https://github.com/Multi-EAR/Multi-EAR-deploy
 
 Run the bash script to install and configure the Multi-EAR software and services.
 
