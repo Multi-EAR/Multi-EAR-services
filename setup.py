@@ -1,30 +1,36 @@
-# -*- coding: utf-8 -*-
-import os
-import re
-from setuptools import setup, find_namespace_packages
+"""A setuptools based setup module.
 
-# Get README and remove badges.
-README = open('multi_ear_services/README.rst').read()
+See:
+https://packaging.python.org/guides/distributing-packages-using-setuptools/
+https://github.com/pypa/sampleproject
+"""
+
+# Always prefer setuptools over distutils
+import re
+from setuptools import setup, find_packages
+import pathlib
+
+here = pathlib.Path(__file__).parent.resolve()
+
+# Get the long description from the README file and remove badges
+README = (here / 'multi_ear_services/README.rst').read_text(encoding='utf-8')
 README = re.sub('----.*marker', '----', README, flags=re.DOTALL)
 
-DESCRIPTION = 'Multi-EAR python modules and scripts for Raspberry Pi OS (32-bit)'
 
 setup(
     name='multi_ear_services',
     python_requires='>=3.6.0',
-    description=DESCRIPTION,
+    description='Multi-EAR system services for the host Raspberry Pi OS LITE (32-bit) with sensorboard.',
     long_description=README,
+    long_description_content='text/x-rst',
+    url='https://github.com/Multi-EAR/Multi-EAR-services',
     author='Olivier den Ouden, Pieter Smets and others',
     maintainer = 'Olivier den Ouden, Pieter Smets',
     maintainer_email='mail@pietersmets.be',
-    url='https://github.com/Multi-EAR/Multi-EAR-software',
-    download_url='https://github.com/Multi-EAR/Multi-EAR-software',
+    download_url='https://github.com/Multi-EAR/Multi-EAR-services',
     license='GNU General Public License v3 (GPLv3)',
     license_file = 'LICENSE',
     platforms = 'ARMv7',
-    packages=find_namespace_packages(include=[f'multi_ear_services.*']),
-    include_package_data=True,
-    zip_safe=False,
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Science/Research',
@@ -45,15 +51,20 @@ setup(
         'Source': 'https://github.com/Multi-EAR/Multi-EAR-services',
         'Tracker': 'https://github.com/Multi-EAR/Multi-EAR-services/issues',
     },
-    keywords=[
-        'multi-ear', 'mems', 'gpio', 'raspberry pi', 'timeseries', 'waveforms',
+    keywords='multi-ear, raspberry pi, mems, gpio, timeseries, waveforms',
     ],
+    packages=find_packages(),
+    include_package_data=True,
+    zip_safe=False,
     entry_points={
         'console_scripts': ['multi-ear-uart=multi_ear_services.uart:uart_readout'],
     },
     scripts=[
         'multi_ear_services/wifi/multi-ear-wifi',
     ],
+    # package_data={
+    #     'sample': ['package_data.dat'],
+    # },
     data_files=[
         ('multi-ear-services', ['multi_ear_services/ctrl/uwsgi.ini',
                                 'multi_ear_services/uart/influxdb.ini'])
