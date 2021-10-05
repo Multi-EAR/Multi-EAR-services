@@ -8,7 +8,7 @@ import argparse
 # from influxdb_client .client.write_api import SYNCHRONOUS
 
 # Relative imports
-from ..version import version
+from ..version import __version__
 
 
 __all__ = ['uart_readout']
@@ -320,7 +320,7 @@ def main():
                      'data storage in a local InfluxDB database.'),
     )
     parser.add_argument(
-        '--version', action='version', version=version,
+        '--version', action='version', version=__version__,
         help='Print xcorr version and exit'
     )
     args = parser.parse_args()
