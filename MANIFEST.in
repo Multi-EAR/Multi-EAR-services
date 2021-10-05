@@ -1,14 +1,12 @@
-include CHANGELOG.rst
-include README.rst
-include CONTRIBUTORS
-include LICENSE
-include setup.py
+include CHANGELOG.rst README.rst
+include CONTRIBUTORS LICENSE
+include MANIFEST.in
 include pyproject.toml
+include multi_ear_services/version.py
 
 include multi_ear_services/ctrl/browserconfig.xml
 include multi_ear_services/ctrl/favicon.ico
 include multi_ear_services/ctrl/site.webmanifest
-#include multi_ear_services/ctrl/uwsgi.ini
 graft multi_ear_services/ctrl/static
 graft multi_ear_services/ctrl/templates
 
