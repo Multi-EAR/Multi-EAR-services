@@ -138,7 +138,7 @@ function do_install_influxdb_telegraf
 
 function do_install_grafana
 {
-    echo ".. apt install grafana" | tee -a $LOG_FILE
+    echo ".. install grafana" | tee -a $LOG_FILE
     # add to apt
     curl -s https://packages.grafana.com/gpg.key | sudo apt-key add - >> $LOG_FILE 2>&1
     echo "deb https://packages.grafana.com/oss/deb stable main" | sudo tee /etc/apt/sources.list.d/grafana.list >> $LOG_FILE 2>&1
