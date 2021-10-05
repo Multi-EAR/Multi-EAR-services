@@ -12,9 +12,6 @@
 # Name of the script
 SCRIPT=$( basename "$0" )
 
-# Current version
-VERSION=$( get_version )
-
 #
 # Message to display for usage and help.
 #
@@ -68,8 +65,9 @@ function get_version
 
 function version
 {
+    local ver=$( get_version )
     local txt=(
-"$SCRIPT v$VERSION"
+"$SCRIPT $VERSION"
     )
 
     printf "%s\n" "${txt[@]}"
