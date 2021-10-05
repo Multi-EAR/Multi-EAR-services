@@ -1,5 +1,5 @@
 *************************************
-Multi-EAR service - UART
+Multi-EAR services - UART
 *************************************
 
 Sensorboard serial readout via UART with data storage in a local InfluxDB database.

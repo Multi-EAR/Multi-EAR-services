@@ -1,5 +1,5 @@
 *************************************
-Multi-EAR service - CTRL 
+Multi-EAR services - CTRL 
 *************************************
 
 Simplified control, monitoring, documentation and data visualization via a web browser.

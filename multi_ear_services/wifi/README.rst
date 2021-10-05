@@ -1,5 +1,5 @@
 *************************************
-Multi-EAR service - Wifi 
+Multi-EAR services - Wifi 
 *************************************
 
 Wireless access point mode control with trigger via GPIO pin 7.

@@ -1,5 +1,5 @@
 *************************************
-multi_ear_services 
+Multi-EAR services 
 *************************************
 
 Multi-EAR system services for the host Raspberry Pi OS LITE (32-bit) with sensorboard.
