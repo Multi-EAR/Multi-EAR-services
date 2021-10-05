@@ -14,7 +14,7 @@ import pathlib
 here = pathlib.Path(__file__).parent.resolve()
 
 # Get the long description from the README file and remove badges
-README = open('multi_ear_services/README.rst').read_text(encoding='utf-8')
+README = open('multi_ear_services/README.rst').read()
 README = re.sub('----.*marker', '----', README, flags=re.DOTALL)
 
 
