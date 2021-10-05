@@ -129,7 +129,6 @@ function statusUpdate() {
                     obj_status.classList.replace('bg-success', 'bg-warning')
                 }
             } else if (response.status.includes('active')) {
-            if (response.status.includes('active')) {
                 if (obj_status.classList.contains('bg-secondary')) {
                     obj_status.classList.replace('bg-secondary', 'bg-success')
                 }
