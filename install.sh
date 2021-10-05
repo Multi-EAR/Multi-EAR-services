@@ -277,8 +277,6 @@ function do_configure_telegraf
     # restart service
     sudo systemctl start telegraf >> $LOG_FILE 2>&1
     echo -e ".. done\n" >> $LOG_FILE 2>&1
-
-    # configure, enable service, create database
 }
 
 
@@ -301,9 +299,16 @@ function do_configure_grafana
 }
 
 
+function do_daemon_reload
+{
+    sudo systemctl daemon-reload >> $LOG_FILE 2>&1
+}
+
+
 function do_configure
 {
     do_rsync_etc
+    do_daemon_reload
     do_configure_nginx
     do_configure_hostapd_dnsmasq
     do_configure_influxdb
@@ -351,18 +356,39 @@ function do_multi_ear_install
 function do_multi_ear_services
 {
     echo ".. setup multi-ear systemd services" | tee -a $LOG
+
+    do_daemon_reload
+
     services=$(ls etc/system.d/system/multi-ear-*.service)
 
-    sudo systemctl daemon-reload >> $LOG_FILE 2>&1
     for service in $services
     do
-        # apply per multi-ear-service
         echo ".. setup systemd $service" >> $LOG_FILE 2>&1
-        sudo systemctl stop $service >> $LOG_FILE 2>&1
-        sudo systemctl enable $service >> $LOG_FILE 2>&1
-        sudo systemctl start $service >> $LOG_FILE 2>&1
+        do_systemd_service $service >> $LOG_FILE 2>&1
         echo -e ".. done\n" >> $LOG_FILE 2>&1
     done
+}
+
+
+function do_systemd_service
+{
+    local service=$1
+
+    local enabled=$( sudo systemctl is-enabled $service )
+    local active=$( sudo systemctl is-active $service )
+
+    if [ "$enabled" != "enabled" ];
+    then
+        sudo systemctl unmask $service >> $LOG_FILE 2>&1
+        sudo systemctl enable $service >> $LOG_FILE 2>&1
+    fi
+
+    if [ "$active" != "active" ];
+    then
+        sudo systemctl start $service >> $LOG_FILE 2>&1
+    else
+        sudo systemctl restart $service >> $LOG_FILE 2>&1
+    fi
 }
 
 
