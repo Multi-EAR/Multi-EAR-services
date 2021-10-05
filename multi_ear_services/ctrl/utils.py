@@ -36,13 +36,12 @@ def systemd_status(service: str):
         return dict(
             success=False,
             service=service,
-            response='Service not part of listed Multi-EAR services.',
+            stderr='Service not part of listed Multi-EAR services.',
         )
     else:
         return dict(
-            success=False,
             service=service,
-            response=rpopen(['/usr/bin/systemctl', 'status', service]),
+            **rpopen(['/usr/bin/systemctl', 'status', service]),
         )
 
 

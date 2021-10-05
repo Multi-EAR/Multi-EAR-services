@@ -99,6 +99,22 @@ function statusUpdateLoop(content) {
 
 function statusUpdate() {
 
+    getJSON("/_status")
+    .then(function(data) {
+
+        for (const [service, response] of Object.entries(data)) {
+
+            if (!response.success) continue;
+
+            var service_stat = document.querySelector('#' + service + 'status')
+            var service_resp = document.querySelector('#' + service + 'response')
+
+            service_resp.innerHTML = response.stdout
+            // service_resp.innerHTML = response.stdout
+        }
+
+    })
+
 }
 
 
