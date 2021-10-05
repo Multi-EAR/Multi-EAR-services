@@ -88,7 +88,8 @@ function do_install_python3
     echo ".. install python3" | tee -a $LOG_FILE
     sudo apt update >> $LOG_FILE 2>&1
     sudo apt install -y libatlas-base-dev >> $LOG_FILE 2>&1
-    sudo apt install -y python3 python3-pip python3-venv >> $LOG_FILE 2>&1
+    sudo apt install -y build-essential libssl-dev libffi-dev >> $LOG_FILE 2>&1
+    sudo apt install -y python3 python3-pip python3-dev python3-venv python3-setuptools >> $LOG_FILE 2>&1
     sudo apt install -y python3-numpy python3-gpiozero python3-serial >> $LOG_FILE 2>&1
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 
@@ -233,6 +234,7 @@ function do_configure_nginx
     sudo systemctl unmask nginx >> $LOG_FILE 2>&1
     sudo systemctl enable nginx >> $LOG_FILE 2>&1
     sudo systemctl start nginx >> $LOG_FILE 2>&1
+    sudo systemctl restart nginx >> $LOG_FILE 2>&1
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
 
