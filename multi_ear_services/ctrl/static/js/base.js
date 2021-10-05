@@ -110,7 +110,7 @@ function statusUpdate() {
             obj_status = document.querySelector('#' + service + '-status')
             obj_response = document.querySelector('#' + service + '-response > .accordion-body')
 
-            if (!response.success) {
+            if (response.stdout === "") {
                 obj_response.innerHTML = response.stderr
                 obj_status.innerHTML = 'Not found'
                 continue;
