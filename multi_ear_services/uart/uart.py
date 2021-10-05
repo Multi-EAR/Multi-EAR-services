@@ -10,8 +10,8 @@ import argparse
 # Relative imports
 try:
     from ..version import version
-except ImportError:
-    version = None
+except ModuleNotFoundError:
+    version = '[VERSION-NOT-FOUND]'
 
 
 __all__ = ['uart_readout']
