@@ -13,7 +13,7 @@
 SCRIPT=$( basename "$0" )
 
 # Current version
-VERSION="0.1"
+VERSION=$( get_version )
 
 #
 # Message to display for usage and help.
@@ -61,6 +61,11 @@ function badUsage
 #
 # Message to display for version.
 #
+function get_version
+{
+    ls ../lib/python*/site-packages | grep "multi_ear_services-" | sed -En "s/multi_ear_services-(.*).dist-info/\1/p"
+}
+
 function version
 {
     local txt=(
