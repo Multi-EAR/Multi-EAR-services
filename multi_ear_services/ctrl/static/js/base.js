@@ -99,56 +99,43 @@ function statusUpdateLoop(content) {
 
 function statusUpdate() {
 
-    var service, response, stat
-    var obj_status, obj_response
-
     getJSON("/_status")
     .then(function(data) {
 
         for (const [service, response] of Object.entries(data)) {
 
-            obj_status = document.querySelector('#' + service + '-status')
-            obj_response = document.querySelector('#' + service + '-response > .accordion-body')
+            var obj_status = document.querySelector('#' + service + '-status')
+            var obj_response = document.querySelector('#' + service + '-response > .accordion-body')
+
+            if (response.status === null ) continue
 
             if (response.stdout === "") {
                 obj_response.innerHTML = response.stderr
                 obj_status.innerHTML = 'not found'
+                if (!obj_status.classList.contains('bg-secondary')) {
+                    obj_status.classList.remove('bg-success', 'bg-warning', 'bg-danger')
+                    obj_status.classList.add('bg-secondary')
+                }
                 continue;
             }
             obj_response.innerHTML = response.stdout
             obj_status.innerHTML = response.status
 
             if (response.status.includes('inactive')) {
-                if (obj_status.classList.contains('bg-secondary')) {
-                    obj_status.classList.replace('bg-secondary', 'bg-warning')
-                }
-                if (obj_status.classList.contains('bg-danger')) {
-                    obj_status.classList.replace('bg-danger', 'bg-warning')
-                }
-                if (obj_status.classList.contains('bg-success')) {
-                    obj_status.classList.replace('bg-success', 'bg-warning')
+                if (!obj_status.classList.contains('bg-warning')) {
+                    obj_status.classList.remove('bg-secondary', 'bg-success', 'bg-danger')
+                    obj_status.classList.add('bg-warning')
                 }
             } else if (response.status.includes('active')) {
-                if (obj_status.classList.contains('bg-secondary')) {
-                    obj_status.classList.replace('bg-secondary', 'bg-success')
-                }
-                if (obj_status.classList.contains('bg-danger')) {
-                    obj_status.classList.replace('bg-danger', 'bg-success')
-                }
-                if (obj_status.classList.contains('bg-warning')) {
-                    obj_status.classList.replace('bg-warning', 'bg-success')
+                if (!obj_status.classList.contains('bg-success')) {
+                    obj_status.classList.remove('bg-secondary', 'bg-warning', 'bg-danger')
+                    obj_status.classList.add('bg-success')
                 }
             } else {
-                if (obj_status.classList.contains('bg-secondary')) {
-                    obj_status.classList.replace('bg-secondary', 'bg-danger')
+                if (!obj_status.classList.contains('bg-danger')) {
+                    obj_status.classList.remove('bg-secondary', 'bg-success', 'bg-warning')
+                    obj_status.classList.add('bg-danger')
                 }
-                if (obj_status.classList.contains('bg-success')) {
-                    obj_status.classList.replace('bg-success', 'bg-danger')
-                }
-                if (obj_status.classList.contains('bg-warning')) {
-                    obj_status.classList.replace('bg-warning', 'bg-danger')
-                }
-
             }
         }
 

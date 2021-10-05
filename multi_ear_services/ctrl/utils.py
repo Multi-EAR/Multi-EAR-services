@@ -41,7 +41,7 @@ def systemd_status(service: str):
         )
     else:
         response = rpopen(['/usr/bin/systemctl', 'status', service])
-        if 'Active: ' in response['stdout']:
+        if response['stdout'] and 'Active: ' in response['stdout']:
             status = response['stdout'].split('<br>')[2].split('Active: ')[1]
             if 'since' in status:
                 status = status.split(' since ')[0]
