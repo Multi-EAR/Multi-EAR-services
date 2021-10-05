@@ -1,9 +1,18 @@
+# Mandatory imports
 import time
 import numpy as np
 import serial
 import socket
 from influxdb_client import InfluxDBClient
+import argparse
 # from influxdb_client .client.write_api import SYNCHRONOUS
+
+# Relative imports
+from ..version import version
+
+
+__all__ = ['uart_readout']
+
 
 # data packet definition
 _packet_header = b'\x11\x99\x22\x88\x33\x73'
@@ -302,6 +311,19 @@ def parse_payload(payload, imprecise_time):
 
 
 def main():
+    """Main script function.
+    """
+    # arguments
+    parser = argparse.ArgumentParser(
+        prog='multi-ear-uart',
+        description=('Sensorboard serial readout via UART with '
+                     'data storage in a local InfluxDB database.'),
+    )
+    parser.add_argument(
+        '--version', action='version', version=version,
+        help='Print xcorr version and exit'
+    )
+    args = parser.parse_args()
     uart_readout()
 
 

@@ -9,8 +9,11 @@
 # Email         : mail@pietersmets.be
 ##############################################################################
 
-# Name of the script
-SCRIPT=$( basename "$0" )
+# Name and path of the script
+SCRIPT=$( readlink -f $0 )
+SCRIPTPATH=$( dirname $SCRIPT )
+SCRIPT=$(basename $SCRIPT)
+
 
 #
 # Message to display for usage and help.
@@ -60,17 +63,13 @@ function badUsage
 #
 function get_version
 {
-    ls ../lib/python*/site-packages | grep "multi_ear_services-" | sed -En "s/multi_ear_services-(.*).dist-info/\1/p"
+    ls $SCRIPTPATH/../lib/python3*/site-packages | grep "multi_ear_services-" | sed -En "s/multi_ear_services-(.*).dist-info/\1/p"
 }
+
 
 function version
 {
-    local ver=$( get_version )
-    local txt=(
-"$SCRIPT $VERSION"
-    )
-
-    printf "%s\n" "${txt[@]}"
+    get_version
     exit 0
 }
 
