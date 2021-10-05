@@ -67,7 +67,7 @@ setup(
         'influxdb-client>=1.20',
     ],
     use_scm_version={
-        'root': '..',
+        'root': '.',
         'relative_to': __file__,
         'write_to': os.path.join('multi_ear_services', 'version.py'),
     },
