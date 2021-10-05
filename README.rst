@@ -24,6 +24,7 @@ The device is now ready for Multi-EAR'ing.
 Type ``bash install.sh --help`` for the usage.
 
 .. code-block:: console
+
     Multi-EAR system services install on a deployed Raspberry Pi OS LITE (32-bit).
     Usage: install.sh [options] <install_step>
 
@@ -38,6 +39,8 @@ Type ``bash install.sh --help`` for the usage.
       --help, -h     Print help.
       --version, -v  Print version.
 
+Usage
+=====
 
 Multi-EAR services are installed in a Python3 virtual environment ``(py37)``.
 
@@ -55,7 +58,7 @@ Multi-EAR services
 - ``multi-ear-data`` : data transfer to the central database
 - ``multi-ear-lora`` : remote monitoring of the device via LoRaWAN
 - ``multi-ear-uart`` : sensorboard serial readout and local data storage
-- ``multi-ear-wifi`` : wireless access point mode trigger via GPIO pin 7
+- ``multi-ear-wifi`` : wireless access point mode control with trigger via GPIO pin 7
 
 
 Multi-EAR services are controlled and monitored via systemd system services.

@@ -2,7 +2,8 @@
 multi-ear-wifi
 *************************************
 
-Simply switch between wireless access point mode (hotspot) or regular client mode to connect to an existing wireless network controlled via a bash script.
+Wireless access point mode control with trigger via GPIO pin 7.
+Simply switch between wireless access point mode (hotspot) or regular client mode to connect to an existing wireless network.
 
 .. code-block:: console
 

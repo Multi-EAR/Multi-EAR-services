@@ -4,7 +4,7 @@ import re
 from setuptools import setup, find_namespace_packages
 
 # Get README and remove badges.
-README = open('README.rst').read()
+README = open('multi_ear_services/README.rst').read()
 README = re.sub('----.*marker', '----', README, flags=re.DOTALL)
 
 DESCRIPTION = 'Multi-EAR python modules and scripts for Raspberry Pi OS (32-bit)'
