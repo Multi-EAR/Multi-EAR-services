@@ -6,6 +6,7 @@ https://github.com/pypa/sampleproject
 """
 
 # Always prefer setuptools over distutils
+import os
 import re
 from setuptools import setup, find_packages
 import pathlib
@@ -13,7 +14,7 @@ import pathlib
 here = pathlib.Path(__file__).parent.resolve()
 
 # Get the long description from the README file and remove badges
-README = (here / 'multi_ear_services/README.rst').read_text(encoding='utf-8')
+README = open('multi_ear_services/README.rst').read_text(encoding='utf-8')
 README = re.sub('----.*marker', '----', README, flags=re.DOTALL)
 
 
