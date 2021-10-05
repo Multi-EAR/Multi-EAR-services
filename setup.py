@@ -8,7 +8,7 @@ https://github.com/pypa/sampleproject
 # Always prefer setuptools over distutils
 import os
 import re
-from setuptools import setup, find_packages
+from setuptools import setup, find_namespace_packages
 import pathlib
 
 here = pathlib.Path(__file__).parent.resolve()
@@ -31,6 +31,9 @@ setup(
     download_url='https://github.com/Multi-EAR/Multi-EAR-services',
     license='GNU General Public License v3 (GPLv3)',
     license_file = 'LICENSE',
+    packages=find_namespace_packages(include=['multi-ear-services.*']),
+    include_package_data=True,
+    zip_safe=False,
     platforms = 'ARMv7',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
@@ -53,9 +56,6 @@ setup(
         'Tracker': 'https://github.com/Multi-EAR/Multi-EAR-services/issues',
     },
     keywords='multi-ear, raspberry pi, mems, gpio, timeseries, waveforms',
-    packages=find_packages(),
-    include_package_data=True,
-    zip_safe=False,
     entry_points={
         'console_scripts': ['multi-ear-uart=multi_ear_services.uart:uart_readout'],
     },
