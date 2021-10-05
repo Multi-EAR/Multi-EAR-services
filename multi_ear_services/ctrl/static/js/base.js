@@ -112,7 +112,7 @@ function statusUpdate() {
 
             if (response.stdout === "") {
                 obj_response.innerHTML = response.stderr
-                obj_status.innerHTML = 'Not found'
+                obj_status.innerHTML = 'not found'
                 continue;
             }
             obj_response.innerHTML = response.stdout
