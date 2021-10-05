@@ -1,9 +1,30 @@
 *************************************
-multi-ear-wifi
+Multi-EAR service - Wifi 
 *************************************
 
 Wireless access point mode control with trigger via GPIO pin 7.
 Simply switch between wireless access point mode (hotspot) or regular client mode to connect to an existing wireless network.
+
+
+Service
+=======
+
+:Service:
+    multi-ear-wifi.service
+:ExecStart:
+    /home/tud/.py37/bin/gpio-watch -v -e rising 7
+:Restart:
+    on-fail
+:SyslogIdentifier:
+    multi-ear-wifi
+:Log:
+    /var/log/multi-ear/wifi.log
+
+Usage
+=====
+
+Command line
+------------
 
 .. code-block:: console
 
@@ -32,19 +53,14 @@ The wireless access point mode can be controlled via the web service (see `multi
 
 GPIO pin monitoring is obtained via ``gpio-watch``
 
-:Service:
-    multi-ear-wifi.service
-:ExecStart:
-    /home/tud/.py37/bin/gpio-watch -v -e rising 7
-:Restart:
-    on-fail
-:SyslogIdentifier:
-    multi-ear-wifi
-:Log:
-    /var/log/multi-ear/wifi.log
-
 The executed script for GPIO-7 is
 
 .. code-block:: console
 
     multi-ear-wifi --enable
+
+
+Python
+------
+
+Not available.

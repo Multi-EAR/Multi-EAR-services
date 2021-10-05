@@ -1,10 +1,14 @@
 *************************************
-multi-ear-ctrl
+Multi-EAR service - CTRL 
 *************************************
 
 Simplified control, monitoring, documentation and data visualization via a web browser.
 
 The web service is started automatically via the ``multi-ear-ctrl.service`` in ``/etc/systemd/system`` via a ``uwsgi`` socket handled via ``nginx`` on the default http port 80.
+
+
+Service
+=======
 
 :Service:
     multi-ear-ctrl.service
@@ -16,6 +20,13 @@ The web service is started automatically via the ``multi-ear-ctrl.service`` in `
     multi-ear-ctrl
 :Log:
     /var/log/multi-ear/ctrl.log
+
+
+Usage
+=====
+
+Command line
+------------
 
 You can also manually start the web-service on `http://127.0.0.1:5000`_.
 
@@ -38,3 +49,11 @@ Start the web-service
 .. code-block:: console
 
     flask run
+
+
+Python
+------
+
+.. code-block:: python3
+
+    from multi_ear_services import ctrl
