@@ -337,10 +337,9 @@ function do_multi_ear_install
 {
     do_activate_python3_venv
     echo ".. pip install multi_ear" | tee -a $LOG_FILE
-    which pip >> $LOG_FILE 2>&1
     which pip3 >> $LOG_FILE 2>&1
-    which python >> $LOG_FILE 2>&1
     which python3 >> $LOG_FILE 2>&1
+    pip3 uninstall -y multi_ear_services . >> $LOG_FILE 2>&1
     pip3 install . >> $LOG_FILE 2>&1
     # add to .bashrc
     if ! grep -q "export FLASK_APP=multi_ear.ctrl" "/home/$USER/.bashrc"; then

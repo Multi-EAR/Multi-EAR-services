@@ -83,7 +83,7 @@ function statusUpdateLoop(content) {
 
     if (pb === null) { return; }
 
-    id = setInterval(frame, 100);
+    id = setInterval(frame, 150);  // ms, times 100 gives 15s
 
     function frame() {
         if (width == 100) {
