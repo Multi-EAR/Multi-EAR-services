@@ -107,7 +107,7 @@ function statusUpdate() {
             var obj_status = document.querySelector('#' + service + '-status')
             var obj_response = document.querySelector('#' + service + '-response > .accordion-body')
 
-            if (response.status === null ) continue
+            if (response.returncode === null ) continue
 
             if (response.stdout === "") {
                 obj_response.innerHTML = response.stderr
