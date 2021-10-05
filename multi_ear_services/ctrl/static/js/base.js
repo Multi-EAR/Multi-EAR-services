@@ -116,12 +116,9 @@ function statusUpdate() {
                 continue;
             }
             obj_response.innerHTML = response.stdout
-            stat = response.stdout.substring(
-                response.stdout.indexOf('Active: ') + 8,
-                response.stdout.indexOf(' since '),
-            )
-            obj_status.innerHTML = stat
-            if (stat.includes('active')) {
+            obj_status.innerHTML = response.status
+
+            if (response.status.includes('active')) {
                 if (obj_status.classList.contains('bg-secondary')) {
                     obj_status.classList.replace('bg-secondary', 'bg-success')
                 }

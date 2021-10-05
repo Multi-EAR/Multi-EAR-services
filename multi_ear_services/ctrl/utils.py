@@ -40,9 +40,17 @@ def systemd_status(service: str):
             stderr='Service not part of listed Multi-EAR services.',
         )
     else:
+        response = rpopen(['/usr/bin/systemctl', 'status', service])
+        if 'Active: ' in response['stdout']:
+            status = response['stdout'].split('<br>')[2].split('Active: ')[1]
+            if 'since' in status:
+                status = status.split(' since ')[0]
+        else:
+            status = None
         return dict(
             service=service,
-            **rpopen(['/usr/bin/systemctl', 'status', service]),
+            status=status,
+            **response,
         )
 
 
