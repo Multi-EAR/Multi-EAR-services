@@ -3,6 +3,7 @@ include README.rst
 include CONTRIBUTORS
 include LICENSE
 include setup.py
+include pyproject.toml
 
 include multi_ear_services/ctrl/browserconfig.xml
 include multi_ear_services/ctrl/favicon.ico
