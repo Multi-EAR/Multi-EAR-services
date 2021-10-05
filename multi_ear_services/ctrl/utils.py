@@ -4,8 +4,8 @@ import configparser
 
 
 services = ['multi-ear-ctrl',
-            'multi-ear-data',
-            'multi-ear-lora',
+            #  'multi-ear-data',
+            #  'multi-ear-lora',
             'multi-ear-uart',
             'multi-ear-wifi',
             'influxdb',

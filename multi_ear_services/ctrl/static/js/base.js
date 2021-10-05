@@ -113,23 +113,34 @@ function statusUpdate() {
             if (!response.success) {
                 obj_response.innerHTML = response.stderr
                 obj_status.innerHTML = 'Not found'
-                obj_status.classList.replace('bg-success', 'bg-warning')
                 continue;
             }
-
             obj_response.innerHTML = response.stdout
             stat = response.stdout.substring(
                 response.stdout.indexOf('Active: ') + 8,
                 response.stdout.indexOf(' since '),
             )
             obj_status.innerHTML = stat
-            if (!stat.includes('active')) obj_status.classList.replace('bg-success', 'bg-danger')
+            if (stat.includes('active')) {
+                if (obj_status.classList.contains('bg-secondary')) {
+                    obj_status.classList.replace('bg-secondary', 'bg-success')
+                }
+                if (obj_status.classList.contains('bg-danger')) {
+                    obj_status.classList.replace('bg-danger', 'bg-success')
+                }
+            } else {
+                if (obj_status.classList.contains('bg-secondary')) {
+                    obj_status.classList.replace('bg-secondary', 'bg-danger')
+                }
+                if (obj_status.classList.contains('bg-success')) {
+                    obj_status.classList.replace('bg-success', 'bg-danger')
+                }
+            }
         }
 
     })
 
 }
-
 
 
 function loadDashboard() {
