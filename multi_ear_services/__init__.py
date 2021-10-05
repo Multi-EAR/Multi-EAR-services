@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-multi_ear
+multi_ear_services
 
-Multi-EAR modules and services for Raspberry Pi OS (32-bit).
+Multi-EAR system services for the host Raspberry Pi OS LITE (32-bit) with sensorboard.
 
 :author:
     Pieter Smets (p.s.m.smets@tudelft.nl)
