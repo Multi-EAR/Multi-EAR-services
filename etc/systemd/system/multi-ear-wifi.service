@@ -6,7 +6,7 @@ After=network.target
 Type=simple
 User=tud
 Group=tud
-WorkingDirectory=/home/tud
+WorkingDirectory=/home/tud/
 Environment="VIRTUAL_ENV=/home/tud/.py37"
 Environment="PATH=$VIRTUAL_ENV/bin:$PATH"
 ExecStart=/home/tud/.py37/bin/gpio-watch -v -e rising 7

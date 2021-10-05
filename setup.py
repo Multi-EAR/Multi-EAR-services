@@ -55,7 +55,8 @@ setup(
         'multi_ear_services/wifi/multi-ear-wifi',
     ],
     data_files=[
-        ('config', ['multi_ear_services/ctrl/uwsgi.ini'])
+        ('multi-ear-services', ['multi_ear_services/ctrl/uwsgi.ini',
+                                'multi_ear_services/uart/influxdb.ini'])
     ],
     install_requires=[
         'pyserial>=3.5',

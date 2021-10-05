@@ -13,7 +13,7 @@ Service
 :Service:
     multi-ear-ctrl.service
 :ExecStart:
-    /home/tud/.py37/bin/uwsgi --ini /home/tud/.py37/share/multi_ear/ctrl/uwsgi.ini
+    /home/tud/.py37/bin/uwsgi --ini /home/tud/.py37/multi-ear-services/uwsgi.ini
 :Restart:
     always
 :SyslogIdentifier:
