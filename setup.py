@@ -55,7 +55,7 @@ setup(
         'multi_ear_services/wifi/multi-ear-wifi',
     ],
     data_files=[
-        ('multi-ear/ctrl', 'multi_ear_services/ctrl/uwsgi.ini')
+        ('config', ['multi_ear_services/ctrl/uwsgi.ini'])
     ],
     install_requires=[
         'pyserial>=3.5',
