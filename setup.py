@@ -53,7 +53,6 @@ setup(
         'Tracker': 'https://github.com/Multi-EAR/Multi-EAR-services/issues',
     },
     keywords='multi-ear, raspberry pi, mems, gpio, timeseries, waveforms',
-    ],
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
