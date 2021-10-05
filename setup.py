@@ -8,7 +8,7 @@ https://github.com/pypa/sampleproject
 # Always prefer setuptools over distutils
 import os
 import re
-from setuptools import setup, find_namespace_packages
+from setuptools import setup, find_namespace_packages, find_packages
 import pathlib
 
 here = pathlib.Path(__file__).parent.resolve()
@@ -30,8 +30,8 @@ setup(
     maintainer_email='mail@pietersmets.be',
     download_url='https://github.com/Multi-EAR/Multi-EAR-services',
     license='GNU General Public License v3 (GPLv3)',
-    license_file = 'LICENSE',
-    packages=find_namespace_packages(include=['multi-ear-services.*']),
+    packages=find_packages(),
+    # packages=find_namespace_packages(include=['multi-ear-services.*']),
     include_package_data=True,
     zip_safe=False,
     platforms = 'ARMv7',
@@ -82,5 +82,5 @@ setup(
         'relative_to': __file__,
         'write_to': os.path.join('multi_ear_services', 'version.py'),
     },
-    setup_requires=['setuptools_scm', 'flake8'],
+    setup_requires=['setuptools_scm'],
 )
