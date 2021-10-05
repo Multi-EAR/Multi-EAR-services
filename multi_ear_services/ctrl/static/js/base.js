@@ -118,12 +118,26 @@ function statusUpdate() {
             obj_response.innerHTML = response.stdout
             obj_status.innerHTML = response.status
 
+            if (response.status.includes('inactive')) {
+                if (obj_status.classList.contains('bg-secondary')) {
+                    obj_status.classList.replace('bg-secondary', 'bg-warning')
+                }
+                if (obj_status.classList.contains('bg-danger')) {
+                    obj_status.classList.replace('bg-danger', 'bg-warning')
+                }
+                if (obj_status.classList.contains('bg-success')) {
+                    obj_status.classList.replace('bg-success', 'bg-warning')
+                }
+            } else if (response.status.includes('active')) {
             if (response.status.includes('active')) {
                 if (obj_status.classList.contains('bg-secondary')) {
                     obj_status.classList.replace('bg-secondary', 'bg-success')
                 }
                 if (obj_status.classList.contains('bg-danger')) {
                     obj_status.classList.replace('bg-danger', 'bg-success')
+                }
+                if (obj_status.classList.contains('bg-warning')) {
+                    obj_status.classList.replace('bg-warning', 'bg-success')
                 }
             } else {
                 if (obj_status.classList.contains('bg-secondary')) {
@@ -132,6 +146,10 @@ function statusUpdate() {
                 if (obj_status.classList.contains('bg-success')) {
                     obj_status.classList.replace('bg-success', 'bg-danger')
                 }
+                if (obj_status.classList.contains('bg-warning')) {
+                    obj_status.classList.replace('bg-warning', 'bg-danger')
+                }
+
             }
         }
 
