@@ -99,18 +99,31 @@ function statusUpdateLoop(content) {
 
 function statusUpdate() {
 
+    var service, response, stat
+    var obj_status, obj_response
+
     getJSON("/_status")
     .then(function(data) {
 
         for (const [service, response] of Object.entries(data)) {
 
-            if (!response.success) continue;
+            obj_status = document.querySelector('#' + service + '-status')
+            obj_response = document.querySelector('#' + service + '-response > .accordion-body')
 
-            var service_stat = document.querySelector('#' + service + 'status')
-            var service_resp = document.querySelector('#' + service + 'response')
+            if (!response.success) {
+                obj_response.innerHTML = response.stderr
+                obj_status.innerHTML = 'Not found'
+                obj_status.classList.replace('bg-success', 'bg-warning')
+                continue;
+            }
 
-            service_resp.innerHTML = response.stdout
-            // service_resp.innerHTML = response.stdout
+            obj_response.innerHTML = response.stdout
+            stat = response.stdout.substring(
+                response.stdout.indexOf('Active: ') + 8,
+                response.stdout.indexOf(' since '),
+            )
+            obj_status.innerHTML = stat
+            if (!stat.includes('active')) obj_status.classList.replace('bg-success', 'bg-danger')
         }
 
     })

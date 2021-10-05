@@ -11,6 +11,7 @@ services = ['multi-ear-ctrl',
             'influxdb',
             'grafana',
             'telegraph',
+            'nginx',
             'hostapd',
             'dnsmasq']
 
