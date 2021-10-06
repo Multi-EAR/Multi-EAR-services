@@ -242,7 +242,7 @@ function loadTabContent(tab) {
     tabList.forEach(function (tab) {
 
         //statements suspected to throw exception.
-        var tooltip = new bootstrap.Tooltip(tab, {delay: { "show": 1000, "hide": 500 }});
+        //var tooltip = new bootstrap.Tooltip(tab, {delay: { "show": 1000, "hide": 500 }});
 
         tab.addEventListener('shown.bs.tab', function (event) {
             loadTabContent(tab);

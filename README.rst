@@ -48,7 +48,7 @@ Activate the Python3 virtual environment
 
 .. code-block:: console
 
-    source /home/tud/.py37/bin/activate
+    source ~/.py37/bin/activate
 
 
 Multi-EAR services
