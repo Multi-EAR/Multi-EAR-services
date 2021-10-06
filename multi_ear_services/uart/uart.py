@@ -30,8 +30,8 @@ _sampling_delta = np.timedelta64(np.int64(1e9/_sampling_rate))  # ns
 _hostname = socket.gethostname()
 
 
-def uart_readout(port='/dev/ttyAMA0', baudrate=115200, timeout=2,
-                 client: InfluxDBClient = None):
+def uart_readout(port='/dev/ttyAMA0', baudrate=115200, timeout=2.,
+                 config='influxdb.ini'):
     """
     Continuoisly read uart serial stream.
 
@@ -43,15 +43,15 @@ def uart_readout(port='/dev/ttyAMA0', baudrate=115200, timeout=2,
     baudrate : `int`, optional
         Serial port baudrate (default: 115200).
 
-    timeout : `int`, optional
-        Serial port timeout, in seconds (default: 1).
+    timeout : `float`, optional
+        Serial port read timeout, in seconds (default: 2.).
 
-    client : `InfluxDBClient`, optional
-        InfluxDB client for data storage.
+    config : `str`, optional
+        InfluxDB config file path (default: 'influxdb.ini').
     """
 
     # connect to influxDB data client
-    client = client or InfluxDBClient.from_config_file("influxdb.ini")
+    client = InfluxDBClient.from_config_file(config or "influxdb.ini")
     print(client)
 
     # connect to serial port
@@ -59,7 +59,7 @@ def uart_readout(port='/dev/ttyAMA0', baudrate=115200, timeout=2,
     print(ser)
 
     # wait while everythings gets set
-    time.sleep(2)
+    time.sleep(timeout)
 
     # init
     read_buffer = b""
@@ -322,12 +322,37 @@ def main():
         description=('Sensorboard serial readout via UART with '
                      'data storage in a local InfluxDB database.'),
     )
+
+    parser.add_argument(
+        '-b', '--baudrate', metavar='..', type=int, default=115200,
+        help='Serial port baudrate.'
+    )
+    parser.add_argument(
+        '-c', '--config', metavar='..', type=str, default='influxdb.ini',
+        help='Path to InfluxDB config file.'
+    )
+    parser.add_argument(
+        '-p', '--port', metavar='..', type=str, default='/dev/ttyAMA0',
+        help='Serial port.'
+    )
+    parser.add_argument(
+        '-t', '--timeout', metavar='..', type=float, default=2.,
+        help='Serial port read timeout, in seconds.'
+    )
+
     parser.add_argument(
         '--version', action='version', version=version,
         help='Print xcorr version and exit'
     )
+
     args = parser.parse_args()
-    uart_readout()
+
+    uart_readout(
+        port=args.port,
+        baudrate=args.baudrate,
+        timeout=args.timeout,
+        config=args.config,
+    )
 
 
 if __name__ == "__main__":
