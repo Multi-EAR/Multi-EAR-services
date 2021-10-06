@@ -70,8 +70,8 @@ def create_app(test_config=None):
             res = utils.systemd_status(service)
         return jsonify(res)
 
-    @app.route("/_wlan_access_point", methods=['POST'])
-    def wlan_access_point():
+    @app.route("/_wap_mode", methods=['POST'])
+    def wap_mode():
         action = request.args.get('action')
         if action == 'status':
             res = utils.status_wap()

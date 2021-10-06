@@ -19,7 +19,7 @@ function switchWiFiMode() {
         alert(toggle.checked ? 'Enabling' : 'Disabling' + 
               " wireless access point mode.\n\nThe device will reboot automatically in 5 sec.")
 
-        getJSON("/_wlan_access_point", { action: action  } , 'POST')
+        getJSON("/_wap_mode", { action: action  } , 'POST')
         .then(data => {
             console.log(data);
         });
