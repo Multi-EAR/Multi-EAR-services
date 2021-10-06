@@ -72,9 +72,19 @@ def create_app(test_config=None):
         res = utils.systemd_status(service)
         return json.dumps(res, indent=4)
 
-    @app.route("/_switch_wifi_mode")
-    def switch_wifi_mode():
-        res = rpopen(['ping', '-c', '4', 'www.google.com'])
+    @app.route("/_is_wireless_access_point_mode_enabled")
+    def is_wap_enabled():
+        res = utils.is_wap_enabled()
+        return json.dumps(res, indent=4)
+
+    @app.route("/_enable_wireless_access_point_mode")
+    def enable_wap():
+        res = utils.enable_wap()
+        return json.dumps(res, indent=4)
+
+    @app.route("/_disable_wireless_access_point_mode")
+    def disable_wap():
+        res = utils.disable_wap()
         return json.dumps(res, indent=4)
 
     return app

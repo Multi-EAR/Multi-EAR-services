@@ -63,6 +63,24 @@ def systemd_status_all():
     return status
 
 
+def is_wap_enabled():
+    """Returns True if wireless access point mode is enabled.
+    """
+    return rpopen(['home/tud/.py37/bin/multi-ear-wifi', '--status'])
+
+
+def enable_wap():
+    """Enable wireless access point mode.
+    """
+    return rpopen(['home/tud/.py37/bin/multi-ear-wifi', '--on'])
+
+
+def disable_wap():
+    """Disable wireless access point mode.
+    """
+    return rpopen(['home/tud/.py37/bin/multi-ear-wifi', '--off'])
+
+
 def rpopen(*args, **kwargs):
     """Wraps subprocess.Popen in a catch error statement.
     """
