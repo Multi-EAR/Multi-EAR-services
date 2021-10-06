@@ -63,7 +63,9 @@ function badUsage
 #
 function get_version
 {
-    ls $SCRIPTPATH/../lib/python3*/site-packages | grep "multi_ear_services-" | sed -En "s/multi_ear_services-(.*).dist-info/\1/p"
+    ls $SCRIPTPATH/../lib/python3*/site-packages | \ 
+    grep "multi_ear_services-" | \ 
+    sed -En "s/multi_ear_services-(.*).dist-info/\1/p"
 }
 
 
@@ -75,11 +77,115 @@ function version
 
 
 #
-# Returns True if wireless access point mode is enabled
+# Returns true if hostapd is active and enabled
 #
 function is_access_point_mode_enabled
 {
-    return false
+    local active=$( systemctl is-active hostapd )
+    local enabled=$( systemctl is-enabled hostapd )
+
+    if [ "$active" == "active" ] && [ "$enabled" == "enabled" ];
+    then
+        return true
+    else
+        return false
+    fi
+}
+
+
+#
+# Start hostapd
+#
+function do_start_hostapd
+{
+    local active=$( systemctl is-active hostapd )
+
+    case "$active" in
+        active)
+        echo "hostapd is already active."
+        ;;
+        inactive)
+        echo "hostapd (inactive) -> start."
+        sudo systemctl start hostapd
+        ;;
+        failed)
+        echo "hostapd (failed) -> restart."
+        sudo systemctl restart hostapd
+        ;;
+        exited)
+        echo "hostapd (exited) -> restart."
+        sudo systemctl restart hostapd
+        ;;
+        *) break
+    esac
+}
+
+
+#
+# Stop hostapd
+#
+function do_stop_hostapd
+{
+    local active=$( systemctl is-active hostapd )
+
+    case "$active" in
+        active)
+        echo "hostapd (active) -> stop."
+        sudo systemctl stop hostapd
+        ;;
+        inactive)
+        echo "hostapd is already stopped."
+        ;;
+        failed)
+        echo "hostapd (failed) -> stop."
+        sudo systemctl stop hostapd
+        ;;
+        exited)
+        echo "hostapd (exited) -> stop."
+        sudo systemctl stop hostapd
+        ;;
+        *) break
+    esac
+}
+
+
+#
+# Enable hostapd
+#
+function do_enable_hostapd
+{
+    local active=$( systemctl is-enabled hostapd )
+
+    case "$active" in
+        enabled)
+        echo "hostapd is already enabled."
+        ;;
+        disabled)
+        echo "hostapd (disabled) -> enable."
+        sudo systemctl enable hostapd
+        ;;
+        *) break
+    esac
+}
+
+
+#
+# Disable hostapd
+#
+function do_disable_hostapd
+{
+    local active=$( systemctl is-enabled hostapd )
+
+    case "$active" in
+        enabled)
+        echo "hostapd (enabled) -> disable."
+        sudo systemctl disable hostapd
+        ;;
+        disabled)
+        echo "hostapd is already disabled."
+        ;;
+        *) break
+    esac
 }
 
 
@@ -89,11 +195,10 @@ function is_access_point_mode_enabled
 function do_enable_access_point_mode
 {
     echo "Enable Multi-EAR Wi-Fi access point mode"
-    # sudo systemctl daemon-reload
-    # sudo systemctl enable hostapd
-    # sudo systemctl start hostapd
-    # sudo systemctl enable dnsmasq
-    # sudo systemctl start dnsmasq
+    do_start_hostapd
+    do_enable_hostapd
+    sleep 5
+    # sudo reboot
 }
 
 
@@ -102,12 +207,11 @@ function do_enable_access_point_mode
 #
 function do_disable_access_point_mode
 {
-    echo "Enable Multi-EAR Wi-Fi access point mode"
-    # sudo systemctl daemon-reload
-    # sudo systemctl enable hostapd
-    # sudo systemctl start hostapd
-    # sudo systemctl enable dnsmasq
-    # sudo systemctl start dnsmasq
+    echo "Disable Multi-EAR Wi-Fi access point mode"
+    do_stop_hostapd
+    do_disable_hostapd
+    sleep 5
+    # sudo reboot
 }
 
 
