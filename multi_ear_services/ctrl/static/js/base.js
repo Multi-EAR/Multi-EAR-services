@@ -99,7 +99,7 @@ function statusUpdateLoop(content) {
 
 function statusUpdate() {
 
-    getJSON("/_systemd_status", { service: all })
+    getJSON("/_systemd_status", { service: '*' })
     .then(function(data) {
 
         for (const [service, response] of Object.entries(data)) {

@@ -63,8 +63,8 @@ def create_app(test_config=None):
 
     @app.route("/_systemd_status", methods=['GET'])
     def systemd_status():
-        service = request.args.get('service') or 'all'
-        if service == 'all': 
+        service = request.args.get('service') or '*'
+        if service == '*': 
             res = utils.systemd_status_all()
         else:
             res = utils.systemd_status(service)
