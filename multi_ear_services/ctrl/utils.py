@@ -69,7 +69,7 @@ def is_wap_enabled():
     response = status_wap()
     if not response['success'] or response['stdout'] is None:
         return
-    return response['stdout'] == 'true'
+    return response['stdout'].lower() == 'true'
 
 
 def status_wap():
