@@ -1,0 +1,19 @@
+[Unit]
+Description=Multi-EAR wifi :: access point mode trigger on GPIO pin 7
+After=network.target
+ 
+[Service]
+Type=simple
+User=tud
+Group=tud
+WorkingDirectory=/home/tud/
+Environment="VIRTUAL_ENV=/home/tud/.py37"
+Environment="PATH=$VIRTUAL_ENV/bin:$PATH"
+ExecStart=/home/tud/.py37/bin/gpio-watch -v -e rising 7
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=multi-ear-wifi
+Restart=on-fail
+ 
+[Install]
+WantedBy=multi-user.target

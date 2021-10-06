@@ -1,0 +1,50 @@
+@charset "UTF-8";
+/*!
+ * base css
+ */
+
+body {
+  display: flex;
+  flex-wrap: nowrap;
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+html {
+  height: -webkit-fill-available;
+}
+
+main {
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  max-height: 100vh;
+  overflow-x: auto;
+  overflow-y: auto;
+}
+
+.bi {
+  vertical-align: -.125em;
+  pointer-events: none;
+  fill: currentColor;
+}
+
+.dropdown-toggle {
+  outline: 0;
+}
+
+.nav-flush .nav-link {
+  border-radius: 0;
+}
+
+.pcb {
+    position: fixed;
+    right: 1rem;
+    z-index: 1030;
+    vertical-align: middle;
+}
+
+.pcb img {
+    vertical-align: middle;
+}

@@ -1,0 +1,17 @@
+name: multi-ear
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.7
+  - numpy>=1.18
+  - pandas
+  - pyserial>=3.5
+  - gpiozero>=1.6
+  - uwsgi>=2.0
+  - flask>=2.0
+  - ipython
+  - flake8
+  - pip:
+    - Flask-Testing
+    - influxdb-client>=1.20

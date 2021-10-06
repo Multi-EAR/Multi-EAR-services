@@ -9,14 +9,412 @@
 # Email         : mail@pietersmets.be
 ##############################################################################
 
-# Current version
-VERSION="0.1"
+# Name of the script
+SCRIPT=$( basename "$0" )
+
+# Current version from git
+VERSION=$( git describe --tag --abbrev=0 )
 
 # Python virtual environment
-VIRTUAL_ENV="/opt/py37"
+VIRTUAL_ENV="/home/tud/.py37"
 
 # Log file
 LOG_FILE="$(pwd)/install.log"
+
+
+#
+# Message to display for usage and help.
+#
+function usage
+{
+    local txt=(
+"Multi-EAR system services install on a deployed Raspberry Pi OS LITE (32-bit)."
+"Usage: $SCRIPT [options] <install_step>"
+""
+"Install step:"
+"  all            Perform all of the following steps (default)."
+"  packages       Install all required packages via apt."
+"  configure      Configure all packages (make sure /etc is synced)."
+"  python         Create the Python3 virtual environment (py37) in $VIRTUAL_ENV."
+"  multi-ear      Install and enable the Multi-EAR software in $VIRTUAL_ENV."
+""
+"Options:"
+"  --help, -h     Print help."
+"  --version, -v  Print version."
+    )
+
+    printf "%s\n" "${txt[@]}"
+    exit 0
+}
+
+
+#
+# Message to display when bad usage.
+#
+function badUsage
+{
+    local message="$1"
+    local txt=(
+"For an overview of the command, execute:"
+"$SCRIPT --help"
+    )
+
+    [[ $message ]] && printf "$message\n"
+
+    printf "%s\n" "${txt[@]}"
+    exit -1
+}
+
+
+#
+# Message to display for version.
+#
+function version
+{
+    local txt=(
+"$SCRIPT $VERSION"
+    )
+
+    printf "%s\n" "${txt[@]}"
+    exit 0
+}
+
+
+#
+# Installs
+#
+function do_install_python3
+{
+    echo ".. install python3" | tee -a $LOG_FILE
+    sudo apt update >> $LOG_FILE 2>&1
+    sudo apt install -y libatlas-base-dev >> $LOG_FILE 2>&1
+    sudo apt install -y build-essential libssl-dev libffi-dev >> $LOG_FILE 2>&1
+    sudo apt install -y python3 python3-pip python3-dev python3-venv python3-setuptools >> $LOG_FILE 2>&1
+    sudo apt install -y python3-numpy python3-gpiozero python3-serial >> $LOG_FILE 2>&1
+    echo -e ".. done\n" >> $LOG_FILE 2>&1
+
+    echo ".. set pip trusted hosts and self update" >> $LOG_FILE 2>&1
+    cat <<EOF | sudo tee /etc/pip.conf >> $LOG_FILE 2>&1
+[global]
+extra-index-url=https://www.piwheels.org/simple
+trusted-host = pypi.org
+               pypi.python.org
+               files.pythonhosted.org
+EOF
+    python3 -m pip install --upgrade pip >> $LOG_FILE 2>&1
+    echo -e ".. done\n" >> $LOG_FILE 2>&1
+}
+
+
+function do_install_nginx
+{
+    echo ".. install nginx" | tee -a $LOG_FILE
+    sudo apt update >> $LOG_FILE 2>&1
+    sudo apt install -y nginx >> $LOG_FILE 2>&1
+    echo -e ".. done\n" >> $LOG_FILE 2>&1
+}
+
+
+function do_install_hostapd_dnsmasq
+{
+    echo ".. install hostapd dnsmasq" | tee -a $LOG_FILE
+    sudo apt update >> $LOG_FILE 2>&1
+    sudo apt install -y hostapd dnsmasq >> $LOG_FILE 2>&1
+    echo -e ".. done\n" >> $LOG_FILE 2>&1
+}
+
+
+function do_install_influxdb_telegraf
+{
+    echo ".. install influxdb" | tee -a $LOG_FILE
+    # add to apt
+    wget -qO- https://repos.influxdata.com/influxdb.key | sudo apt-key add - >> $LOG_FILE 2>&1
+    echo "deb https://repos.influxdata.com/debian $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/influxdb.list >> $LOG_FILE 2>&1
+    # install
+    sudo apt update >> $LOG_FILE 2>&1
+    sudo apt install -y influxdb telegraf >> $LOG_FILE 2>&1
+    echo -e ".. done\n" >> $LOG_FILE 2>&1
+}
+
+
+function do_install_grafana
+{
+    echo ".. install grafana" | tee -a $LOG_FILE
+    # add to apt
+    curl -s https://packages.grafana.com/gpg.key | sudo apt-key add - >> $LOG_FILE 2>&1
+    echo "deb https://packages.grafana.com/oss/deb stable main" | sudo tee /etc/apt/sources.list.d/grafana.list >> $LOG_FILE 2>&1
+    # install
+    sudo apt update >> $LOG_FILE 2>&1
+    sudo apt install -y grafana >> $LOG_FILE 2>&1
+    echo -e ".. done\n" >> $LOG_FILE 2>&1
+}
+
+
+function do_install
+{
+    do_install_python3
+    do_install_nginx
+    do_install_hostapd_dnsmasq
+    do_install_influxdb_telegraf
+    do_install_grafana
+}
+
+
+#
+# Python3 virtual environment
+#
+function do_create_python3_venv
+{
+    echo ".. create python3 venv in $VIRTUAL_ENV" | tee -a $LOG_FILE
+    # check if already exists
+    if [[ -d "$VIRTUAL_ENV" ]]
+    then
+        echo ".. found existing python3 venv in $VIRTUAL_ENV" >> $LOG_FILE 2>&1
+    else
+        mkdir -f $VIRTUAL_ENV >> $LOG_FILE 2>&1
+    fi
+    # force create environment
+    python3 -m venv --clear --prompt py37 $VIRTUAL_ENV >> $LOG_FILE 2>&1
+    # add to .bashrc
+    if ! grep -q "source $VIRTUAL_ENV/bin/activate" "/home/$USER/.bashrc"; then
+        echo "add source activate to .bashrc" >> $LOG_FILE 2>&1
+        echo -e "\n# Multi-EAR python3 venv\nsource $VIRTUAL_ENV/bin/activate" | tee -a /home/$USER/.bashrc >> $LOG_FILE 2>&1
+    else
+        echo "source activate already exists in .bashrc" >> $LOG_FILE 2>&1
+    fi
+    echo -e ".. done\n" >> $LOG_FILE 2>&1
+}
+
+
+function do_activate_python3_venv
+{
+    echo ".. activate python3 venv" | tee -a $LOG_FILE
+    source $VIRTUAL_ENV/bin/activate >> $LOG_FILE 2>&1
+    echo -e ".. done\n" >> $LOG_FILE 2>&1
+}
+
+
+function do_python3_venv
+{
+    do_create_python3_venv
+    # do_activate_python3_venv
+}
+
+
+#
+# Configure
+#
+function do_rsync_etc
+{
+    echo ".. rsync /etc" | tee -a $LOG_FILE
+    sudo rsync -amtv --chown=root:root etc / >> $LOG_FILE 2>&1
+    echo -e ".. done\n" >> $LOG_FILE 2>&1
+}
+
+
+function do_configure_rsyslog
+{
+    echo ".. configure rsyslog" | tee -a $LOG_FILE
+    sudo mkdir -p /var/log/multi-ear >> $LOG_FILE 2>&1
+    sudo chown -r $USER:$USER /var/log/multi-ear >> $LOG_FILE 2>&1
+    sudo systemctl restart rsyslog >> $LOG_FILE 2>&1
+    echo -e ".. done\n" >> $LOG_FILE 2>&1
+}
+
+
+function do_configure_nginx
+{
+    echo ".. configure nginx" | tee -a $LOG_FILE
+    # remove default nginx site
+    sudo rm -f /etc/nginx/sites-enabled/default
+    sudo rm -f /etc/nginx/sites-available/default
+    # test
+    sudo service nginx configtest
+    # enable and start service
+    sudo systemctl unmask nginx >> $LOG_FILE 2>&1
+    sudo systemctl enable nginx >> $LOG_FILE 2>&1
+    sudo systemctl start nginx >> $LOG_FILE 2>&1
+    sudo systemctl restart nginx >> $LOG_FILE 2>&1
+    echo -e ".. done\n" >> $LOG_FILE 2>&1
+}
+
+
+function do_configure_hostapd_dnsmasq
+{
+    echo ".. configure hostapd dnsmasq" | tee -a $LOG_FILE
+    sudo systemctl stop hostapd >> $LOG_FILE 2>&1
+    sudo systemctl stop dnsmasq >> $LOG_FILE 2>&1
+    echo -e ".. done\n" >> $LOG_FILE 2>&1
+}
+
+
+function do_configure_influxdb
+{
+    echo ".. configure influxdb" | tee -a $LOG_FILE
+    # enable and start service
+    sudo systemctl unmask influxdb >> $LOG_FILE 2>&1
+    sudo systemctl enable influxdb >> $LOG_FILE 2>&1
+    sudo systemctl start influxdb >> $LOG_FILE 2>&1
+    # configure
+    sudo cp etc/influxdb/influxdb.conf /etc/influxdb/influxdb.conf >> $LOG_FILE 2>&1
+    # restart service
+    sudo systemctl start influxdb >> $LOG_FILE 2>&1
+    echo -e ".. done\n" >> $LOG_FILE 2>&1
+
+    # configure, enable service, create database
+}
+
+
+function do_configure_telegraf
+{
+    echo ".. configure telegraf" | tee -a $LOG_FILE
+    # enable and start service
+    sudo systemctl unmask telegraf >> $LOG_FILE 2>&1
+    sudo systemctl enable telegraf >> $LOG_FILE 2>&1
+    sudo systemctl start telegraf >> $LOG_FILE 2>&1
+    # configure
+    sudo cp etc/telegraf/telegraf.conf /etc/telegraf/telegraf.conf >> $LOG_FILE 2>&1
+    # restart service
+    sudo systemctl start telegraf >> $LOG_FILE 2>&1
+    echo -e ".. done\n" >> $LOG_FILE 2>&1
+}
+
+
+function do_configure_grafana
+{
+    echo ".. configure grafana" | tee -a $LOG_FILE
+    # plugins 
+    sudo grafana-cli plugins install grafana-clock-panel
+    # enable and start service
+    sudo systemctl unmask grafana >> $LOG_FILE 2>&1
+    sudo systemctl enable grafana >> $LOG_FILE 2>&1
+    sudo systemctl start grafana >> $LOG_FILE 2>&1
+    # configure
+    sudo cp etc/grafana/grafana.conf /etc/grafana/grafana.ini >> $LOG_FILE 2>&1
+    # restart service
+    sudo systemctl start grafana >> $LOG_FILE 2>&1
+    echo -e ".. done\n" >> $LOG_FILE 2>&1
+
+    # configure, enable service, link to database
+}
+
+
+function do_daemon_reload
+{
+    sudo systemctl daemon-reload >> $LOG_FILE 2>&1
+}
+
+
+function do_configure
+{
+    do_rsync_etc
+    do_daemon_reload
+    do_configure_nginx
+    do_configure_hostapd_dnsmasq
+    do_configure_influxdb
+    do_configure_telegraf
+    do_configure_grafana
+}
+
+
+#
+# Multi-EAR software
+#
+function do_gpio_watch_install
+{
+    echo ".. clone and make gpio-watch" | tee -a $LOG_FILE
+    git clone https://github.com/larsks/gpio-watch.git >> $LOG_FILE 2>&1
+    cd gpio-watch >> $LOG_FILE 2>&1
+    make >> $LOG_FILE 2>&1
+    cp gpio-watch $VIRTUAL_ENV/bin >> $LOG_FILE 2>&1
+    cd .. >> $LOG_FILE 2>&1
+    rm -rf gpio-watch >> $LOG_FILE 2>&1
+    echo -e ".. done\n" >> $LOG_FILE 2>&1
+}
+
+
+function do_multi_ear_install
+{
+    do_activate_python3_venv
+    echo ".. pip install multi_ear" | tee -a $LOG_FILE
+    which pip3 >> $LOG_FILE 2>&1
+    which python3 >> $LOG_FILE 2>&1
+    pip3 uninstall -y multi_ear_services . >> $LOG_FILE 2>&1
+    pip3 install . >> $LOG_FILE 2>&1
+    # add to .bashrc
+    if ! grep -q "export FLASK_APP=multi_ear.ctrl" "/home/$USER/.bashrc"; then
+        echo "export FLASK_APP=multi_ear.ctrl" >> $LOG_FILE 2>&1
+    fi
+    if ! grep -q "export FLASK_ENV=production" "/home/$USER/.bashrc"; then
+        echo "export FLASK_ENV=production" >> $LOG_FILE 2>&1
+    fi
+    echo -e ".. done\n" >> $LOG_FILE 2>&1
+}
+
+
+function do_multi_ear_services
+{
+    echo ".. setup multi-ear systemd services" | tee -a $LOG
+
+    do_daemon_reload
+
+    services=$(ls etc/system.d/system/multi-ear-*.service)
+
+    for service in $services
+    do
+        echo ".. setup systemd $service" >> $LOG_FILE 2>&1
+        do_systemd_service $service >> $LOG_FILE 2>&1
+        echo -e ".. done\n" >> $LOG_FILE 2>&1
+    done
+}
+
+
+function do_systemd_service
+{
+    local service=$1
+
+    local enabled=$( sudo systemctl is-enabled $service )
+    local active=$( sudo systemctl is-active $service )
+
+    if [ "$enabled" != "enabled" ];
+    then
+        sudo systemctl unmask $service >> $LOG_FILE 2>&1
+        sudo systemctl enable $service >> $LOG_FILE 2>&1
+    fi
+
+    if [ "$active" != "active" ];
+    then
+        sudo systemctl start $service >> $LOG_FILE 2>&1
+    else
+        sudo systemctl restart $service >> $LOG_FILE 2>&1
+    fi
+}
+
+
+function do_multi_ear
+{
+    do_activate_python3_venv
+    do_gpio_watch_install
+    do_multi_ear_install
+    do_multi_ear_services
+}
+
+
+#
+# Process options
+#
+while (( $# ));
+do
+    case "$1" in
+        --help | -h) usage
+        ;;
+        --version | -v) version
+        ;;
+        *) break
+    esac
+    shift
+done
+
 
 #
 # Check if current user is tud
@@ -34,189 +432,33 @@ if id -u pi >/dev/null 2>&1; then
     exit -1
 fi
 
-#
-# Apt update
-#
-function apt_update
-{
-    echo ".. apt update" | tee -a $LOG_FILE
-    sudo apt update >> $LOG_FILE 2>&1
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
-}
 
-#
-# Apt upgrade
-#
-function apt_upgrade
-{
-    echo ".. apt upgrade" | tee -a $LOG_FILE
-    sudo apt upgrade -y >> $LOG_FILE 2>&1
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
-}
-
-#
-# Apt autoremove
-#
-function apt_autoremove
-{
-    echo ".. apt autoremove" | tee -a $LOG_FILE
-    sudo apt autoremove -y >> $LOG_FILE 2>&1
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
-}
-
-#
-# Apt sequence
-#
-function apt_sequence
-{
-    apt_update
-    apt_upgrade
-    apt_autoremove
-}
-
-#
-# Install python3
-#
-function install_python3
-{
-    echo ".. apt install python3"
-    sudo apt update >> $LOG_FILE 2>&1
-    sudo apt install -y python3 python3-pip python3-venv >> $LOG_FILE 2>&1
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
-
-    echo ".. set pip trusted hosts and self update"
-    cat <<EOF | sudo tee -a /etc/pip.conf
-trusted-host = pypi.org
-               pypi.python.org
-               files.pythonhosted.org
-EOF
-    python3 -m pip install --upgrade pip >> $LOG_FILE 2>&1
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
-}
-
-#
-# Install numpy and blas
-#
-function install_numpy_blas
-{
-    echo ".. apt install python3-numpy with BLAS support"
-    sudo apt update >> $LOG_FILE 2>&1
-    sudo apt install -y libatlas-base-dev >> $LOG_FILE 2>&1
-    sudo apt install -y python3-numpy >> $LOG_FILE 2>&1
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
-}
-
-#
-# Install influxdb
-#
-function install_influxdb
-{
-    echo ".. apt install influxdb"
-    # add to apt
-    wget -qO- https://repos.influxdata.com/influxdb.key | sudo apt-key add - >> $LOG_FILE 2>&1
-    echo "deb https://repos.influxdata.com/debian $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/influxdb.list >> $LOG_FILE 2>&1
-    # install
-    sudo apt update >> $LOG_FILE 2>&1
-    sudo apt install -y influxdb >> $LOG_FILE 2>&1
-    # enable and start service
-    sudo systemctl unmask influxdb >> $LOG_FILE 2>&1
-    sudo systemctl enable influxdb >> $LOG_FILE 2>&1
-    sudo systemctl start influxdb >> $LOG_FILE 2>&1
-    # configure
-    sudo cp etc/influxdb/influxdb.conf /etc/influxdb/influxdb.conf >> $LOG_FILE 2>&1
-    # restart service
-    sudo systemctl start influxdb >> $LOG_FILE 2>&1
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
-
-    # configure, enable service, create database
-}
-
-#
-# Install grafana
-#
-function install_grafana
-{
-    echo ".. apt install grafana"
-    # add to apt
-    curl https://packages.grafana.com/gpg.key | sudo apt-key add - >> $LOG_FILE 2>&1
-    echo "deb https://packages.grafana.com/oss/deb stable main" | sudo tee -a /etc/apt/sources.list.d/grafana.list >> $LOG_FILE 2>&1
-    # install
-    sudo apt update >> $LOG_FILE 2>&1
-    sudo apt install -y grafana >> $LOG_FILE 2>&1
-    # enable and start service
-    sudo systemctl unmask grafana >> $LOG_FILE 2>&1
-    sudo systemctl enable grafana >> $LOG_FILE 2>&1
-    sudo systemctl start grafana >> $LOG_FILE 2>&1
-    # configure
-    sudo cp etc/grafana/grafana.conf /etc/grafana/grafana.ini >> $LOG_FILE 2>&1
-    # restart service
-    sudo systemctl start grafana >> $LOG_FILE 2>&1
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
-
-    # configure, enable service, link to database
-}
-
-#
-# Create python3 virtual environment
-#
-function create_python3_venv
-{
-    echo ".. create python3 venv in $VIRTUAL_ENV" | tee -a $LOG_FILE
-    sudo mkdir $VIRTUAL_ENV >> $LOG_FILE 2>&1
-    sudo chown -R $USER:$USER $VIRTUAL_ENV >> $LOG_FILE 2>&1
-    python3 -m venv $VIRTUAL_ENV >> $LOG_FILE 2>&1
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
-}
-
-#
-# Activate python3 virtual environment
-#
-function activate_python3_venv
-{
-    echo ".. activate python3 venv" | tee -a $LOG_FILE
-    if ! grep -q "source $VIRTUAL_ENV/bin/activate" "/home/$USER/.bashrc"; then
-        echo "add source activate to .bashrc" >> $LOG_FILE 2>&1
-        echo -e "\n# Multi-EAR python3 venv\nsource $VIRTUAL_ENV/bin/activate" | tee -a /home/$USER/.bashrc >> $LOG_FILE 2>&1
-    else
-        echo "source activate already exists in .bashrc" >> $LOG_FILE 2>&1
-    fi
-    source $VIRTUAL_ENV/bin/activate >> $LOG_FILE 2>&1
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
-}
-
-#
-# Multi-EAR services
-#
-function install_services
-{
-    echo ".. setup services" | tee -a $LOG_FILE
-    DIR="/opt/services"
-    sudo mkdir $DIR >> $LOG_FILE 2>&1
-    sudo chown -R $USER:$USER $DIR >> $LOG_FILE 2>&1
-
-    echo ".... multi-ear-uart.service" | tee -a $LOG_FILE
-    cd services/uart
-    bash install.sh $VIRTUAL_ENV $LOG_FILE
-    cd ../..
-
-    echo ".... multi-ear-ctrl.service" | tee -a $LOG_FILE
-    cd services/ctrl
-    bash install.sh $VIRTUAL_ENV $LOG_FILE
-    cd ../..
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
-}
-
-#
-# Setup sequence
-#
-echo "Multi-EAR software install v$VERSION" | tee $LOG_FILE
-install_python3
-install_numpy_blas
-install_influxdb
-install_grafana
-create_python3_venv
-activate_python3_venv
-install_services
-echo  "install complete" | tee -a $LOG_FILE
+# Perform one step or the entire workflow
+case "${1}" in
+    all|'')
+    rm -f $LOG_FILE
+    echo "Multi-EAR Software Install Tool v${VERSION}" | tee $LOG_FILE
+    do_install
+    do_configure
+    do_python3_venv
+    do_gpio_watch
+    do_multi_ear
+    echo "Multi-EAR software install completed" | tee -a $LOG_FILE
+    ;;
+    packages) do_install
+    ;;
+    etc) do_rsync_etc
+    ;;
+    configure|config) do_configure
+    ;;
+    python|python3) do_python3_venv
+    ;;
+    gpio-watch) do_gpio_watch
+    ;;
+    multi-ear) do_multi_ear
+    ;;
+    *) badUsage "Unknown command ${1}." | tee $LOG_FILE
+    ;;
+esac
 
 exit 0
