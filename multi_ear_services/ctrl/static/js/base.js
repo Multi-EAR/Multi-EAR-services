@@ -121,7 +121,7 @@ function statusUpdate() {
             obj_response.innerHTML = response.stdout
             obj_status.innerHTML = response.status
 
-            if (response.status.includes('inactive')) {
+            if (response.status.includes('activating') || response.status.includes('inactive')) {
                 if (!obj_status.classList.contains('bg-warning')) {
                     obj_status.classList.remove('bg-secondary', 'bg-success', 'bg-danger')
                     obj_status.classList.add('bg-warning')
