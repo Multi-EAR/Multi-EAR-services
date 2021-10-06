@@ -86,9 +86,9 @@ function is_access_point_mode_enabled
 
     if [ "$active" == "active" ] && [ "$enabled" == "enabled" ];
     then
-        return true
+        return 1 
     else
-        return false
+        return 0
     fi
 }
 
