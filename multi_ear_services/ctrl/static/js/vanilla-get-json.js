@@ -1,12 +1,12 @@
 /*
  * Usage:
- * getJSON("https://jsonplaceholder.typicode.com/comments", { postId: 1})
+ * getJSON("https://jsonplaceholder.typicode.com/comments", { postId: 1}, 'GET'| 'POST')
  *  .then(data => {
  *    console.log(data);
  *  });
  */
 
-function getJSON(url, qs_params) {
+function getJSON(url, qs_params, qs_type) {
 
     function buildQueryString(params) {
 
@@ -17,9 +17,10 @@ function getJSON(url, qs_params) {
     return new Promise((resolve, reject) => {
 
         const qs = qs_params ? '?' + buildQueryString(qs_params) : '';
+        const type = qs_type ? qs_type : 'GET';
         const req = new XMLHttpRequest();
 
-        req.open('GET', `${url}${qs}`);
+        req.open(type, `${url}${qs}`);
 
         req.onload = function() {
 
