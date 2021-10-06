@@ -61,33 +61,30 @@ def create_app(test_config=None):
         }
         return jsonify(resp)
 
-    @app.route("/_status")
-    def api_status_all():
-        res = utils.systemd_status_all()
+    @app.route("/_systemd_status", methods=['GET'])
+    def systemd_status():
+        service = request.args.get('service') or 'all'
+        if service == 'all': 
+            res = utils.systemd_status_all()
+        else:
+            res = utils.systemd_status(service)
         return jsonify(res)
 
-    @app.route("/_status/<service>")
-    def api_status(service: str):
-        res = utils.systemd_status(service)
+    @app.route("/_wlan_access_point", methods=['POST'])
+    def wlan_access_point():
+        action = request.args.get('action')
+        if action == 'status':
+            res = utils.status_wap()
+        elif action in ('on', 'enable', 'true'):
+            res = utils.enable_wap()
+        elif action in ('off', 'disable', 'false'):
+            res = utils.disable_wap()
+        else:
+            res = None
         return jsonify(res)
 
-    @app.route("/_is_wap_enabled")
-    def is_wap_enabled():
-        res = utils.status_wap()
-        return jsonify(res)
-
-    @app.route("/_enable_wap")
-    def enable_wap():
-        res = utils.enable_wap()
-        return jsonify(res)
-
-    @app.route("/_disable_wap")
-    def disable_wap():
-        res = utils.disable_wap()
-        return jsonify(res)
-
-    @app.route("/_wpa_supplicant", methods=['GET', 'POST'])
-    def wpa_supplicant(): 
+    @app.route("/_wpa_supplicant", methods=['POST'])
+    def wpa_supplicant():
         ssid = request.args.get('ssid')
         passphrase = request.args.get('passphrase')
         if ssid and passphrase:

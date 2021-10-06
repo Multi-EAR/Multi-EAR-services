@@ -19,7 +19,7 @@ function switchWiFiMode() {
         alert(toggle.checked ? 'Enabling' : 'Disabling' + 
               " wireless access point mode.\n\nThe device will reboot automatically in 5 sec.")
 
-        getJSON("/_" + action + "_wap")
+        getJSON("/_wlan_access_point", { action: action  } , 'POST')
         .then(data => {
             console.log(data);
         });
@@ -65,8 +65,7 @@ function validateWiFiForm() {
 function processWifiForm(form) {
     var ssid = form.elements["inputSSID"].value
     var psk = form.elements["inputPSK"].value
-    alert("ssid = " + ssid + "; psk = " + psk);
-    getJSON("/_wpa_supplicant", { ssid: ssid, passphrase: psk })
+    getJSON("/_wpa_supplicant", { ssid: ssid, passphrase: psk }, 'POST')
     .then(data => {
         console.log(data);
     });
@@ -100,7 +99,7 @@ function statusUpdateLoop(content) {
 
 function statusUpdate() {
 
-    getJSON("/_status")
+    getJSON("/_systemd_status", { service: all })
     .then(function(data) {
 
         for (const [service, response] of Object.entries(data)) {
