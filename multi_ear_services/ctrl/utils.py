@@ -66,6 +66,15 @@ def systemd_status_all():
 def is_wap_enabled():
     """Returns True if wireless access point mode is enabled.
     """
+    response = status_wap()
+    if not response['success'] or response['stdout'] is None:
+        return
+    return response['stdout'] == 'true'
+
+
+def status_wap():
+    """Returns True if wireless access point mode is enabled.
+    """
     return rpopen(['home/tud/.py37/bin/multi-ear-wifi', '--status'])
 
 

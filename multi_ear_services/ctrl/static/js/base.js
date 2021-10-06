@@ -1,15 +1,20 @@
 /* global bootstrap: false */
 
+function capitalize(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+
 function switchWiFiMode() {
 
-    var toggle = document.querySelector('#wirelessAccessPoint')
-
+    let toggle = document.querySelector('#wirelessAccessPoint')
     toggle.addEventListener('click', function (event) {
 
         var action, resp
 
         action = toggle.checked ? 'enable' : 'disable'
-        resp = confirm("Are you sure to " + action + " the wireless access point mode?\n\nThis will reboot the device.")
+        resp = confirm("Are you sure to " + action +
+                       " the wireless access point mode?\n\nThis will reboot the device.")
 
         if (resp == false) {
             event.preventDefault();
@@ -17,15 +22,13 @@ function switchWiFiMode() {
             return false;
         }
 
-        action = toggle.checked ? 'Enabling' : 'Disabling'
-        alert(action + " wireless access point mode.\n\nThe device will reboot automatically in 5 sec.")
+        alert(toggle.checked ? 'Enabling' : 'Disabling' + 
+              " wireless access point mode.\n\nThe device will reboot automatically in 5 sec.")
 
-/*
-        getJSON("/_switch_wifi_mode")
+        getJSON("/_" + action + "_wap")
         .then(data => {
             console.log(data);
         });
-*/
 
     }, false)
 
@@ -214,17 +217,19 @@ function loadTabContent(tab) {
     .finally(function() {
         switch (tab.id) {
             case "dashboard-tab":
-                console.log("dashboard script")
                 loadDashboard()
+                break;
             case "wifi-tab":
-                console.log("wifi script")
+                switchWiFiMode()
                 showPasswordToggle()
                 validateWiFiForm()
-                switchWiFiMode()
+                break;
             case "status-tab":
-                console.log("status script")
                 statusUpdate()
                 statusUpdateLoop()
+                break;
+            default:
+                // do nothing
         }
     });
 }

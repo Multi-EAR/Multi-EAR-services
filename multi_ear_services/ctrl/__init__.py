@@ -39,7 +39,7 @@ def create_app(test_config=None):
         return dict(
             hostname=socket.gethostname(),
             version=version,
-            wireless_access_point=True,
+            wireless_access_point=utils.is_wap_enabled(),
             services=utils.services,
             hostapd=dict(utils.parse_config(hostapd)['default']),
         )
@@ -72,17 +72,17 @@ def create_app(test_config=None):
         res = utils.systemd_status(service)
         return json.dumps(res, indent=4)
 
-    @app.route("/_is_wireless_access_point_mode_enabled")
+    @app.route("/_is_wap_enabled")
     def is_wap_enabled():
-        res = utils.is_wap_enabled()
+        res = utils.status_wap()
         return json.dumps(res, indent=4)
 
-    @app.route("/_enable_wireless_access_point_mode")
+    @app.route("/_enable_wap")
     def enable_wap():
         res = utils.enable_wap()
         return json.dumps(res, indent=4)
 
-    @app.route("/_disable_wireless_access_point_mode")
+    @app.route("/_disable_wap")
     def disable_wap():
         res = utils.disable_wap()
         return json.dumps(res, indent=4)
