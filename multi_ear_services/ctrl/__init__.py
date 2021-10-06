@@ -1,8 +1,7 @@
 # absolute imports
 import os
-import json
 import socket
-from flask import Flask, render_template
+from flask import Flask, jsonify, request, render_template
 
 # relative imports
 try:
@@ -60,31 +59,41 @@ def create_app(test_config=None):
             "tab": tab,
             "html": html,
         }
-        return json.dumps(resp, indent=4)
+        return jsonify(resp)
 
     @app.route("/_status")
     def api_status_all():
         res = utils.systemd_status_all()
-        return json.dumps(res, indent=4)
+        return jsonify(res)
 
     @app.route("/_status/<service>")
     def api_status(service: str):
         res = utils.systemd_status(service)
-        return json.dumps(res, indent=4)
+        return jsonify(res)
 
     @app.route("/_is_wap_enabled")
     def is_wap_enabled():
         res = utils.status_wap()
-        return json.dumps(res, indent=4)
+        return jsonify(res)
 
     @app.route("/_enable_wap")
     def enable_wap():
         res = utils.enable_wap()
-        return json.dumps(res, indent=4)
+        return jsonify(res)
 
     @app.route("/_disable_wap")
     def disable_wap():
         res = utils.disable_wap()
-        return json.dumps(res, indent=4)
+        return jsonify(res)
+
+    @app.route("/_wpa_supplicant", methods=['GET', 'POST'])
+    def wpa_supplicant(): 
+        ssid = request.args.get('ssid')
+        passphrase = request.args.get('passphrase')
+        if ssid and passphrase:
+            res = utils.wlan_ssid_passphrase(ssid, passphrase)
+        else:
+            res = None
+        return jsonify(res)
 
     return app

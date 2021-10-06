@@ -90,6 +90,14 @@ def disable_wap():
     return rpopen(['/home/tud/.py37/bin/multi-ear-wifi', '--off'])
 
 
+def wlan_ssid_passphrase(ssid: str, passphrase: str):
+    """Add Wi-Fi ssid and passphrase and connect without rebooting.
+    """
+    # disable_wap()
+    return rpopen(['/usr/bin/sudo', '/usr/bin/raspi-config', 'nonint',
+                   'do_wifi_ssid_passphrase', ssid, passphrase])
+
+
 def rpopen(*args, **kwargs):
     """Wraps subprocess.Popen in a catch error statement.
     """

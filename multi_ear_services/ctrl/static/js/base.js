@@ -1,10 +1,4 @@
 /* global bootstrap: false */
-
-function capitalize(str) {
-    return str.charAt(0).toUpperCase() + str.slice(1);
-}
-
-
 function switchWiFiMode() {
 
     let toggle = document.querySelector('#wirelessAccessPoint')
@@ -69,9 +63,13 @@ function validateWiFiForm() {
 
 
 function processWifiForm(form) {
-    ssid = form.elements["inputSSID"].value
-    psk = form.elements["inputPSK"].value
+    var ssid = form.elements["inputSSID"].value
+    var psk = form.elements["inputPSK"].value
     alert("ssid = " + ssid + "; psk = " + psk);
+    getJSON("/_wpa_supplicant", { ssid: ssid, passphrase: psk })
+    .then(data => {
+        console.log(data);
+    });
 }
 
 
@@ -196,18 +194,15 @@ function loadDashboard() {
 }
 
 
-
 function loadTabContent(tab) {
     // nav-tab set?
-    if (tab === undefined) {
-        var tab = document.querySelector('#nav-tabs > .active')
-    }
+    if (tab === undefined) var tab = document.querySelector('#nav-tabs > .active')
 
     // get nav-content div
     var content = document.querySelector('#nav-content');
 
     // clear content on load
-    content.innerHTML = '' 
+    content.innerHTML = ''
 
     // lazy load new content and trigger tab related functions
     getJSON("/_tab/" + tab.getAttribute("aria-controls"))
