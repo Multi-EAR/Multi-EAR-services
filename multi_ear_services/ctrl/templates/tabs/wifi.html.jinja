@@ -9,7 +9,7 @@
     <div class="row mb-3 justify-content-end">
       <div class="col-md-9">
         <div class="form-check form-switch">
-          <input class="form-check-input" type="checkbox" id="wirelessAccessPoint" {% if wireless_access_point %}checked{% endif %} {% if wireless_access_point is none %}disabled{% endif %}>
+          <input class="form-check-input" type="checkbox" id="wirelessAccessPoint" {% if wireless_access_point %}checked {% endif %}{% if wireless_access_point is none %}disabled {% endif %}>
           <label class="form-check-label" for="hotspotWiFiMode">wireless access point mode</label>
         </div>
       </div>
