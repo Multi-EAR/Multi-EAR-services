@@ -129,11 +129,20 @@ function do_install_nginx
 }
 
 
-function do_install_hostapd_dnsmasq
+function do_install_dnsmasq
 {
-    echo ".. install hostapd dnsmasq" | tee -a $LOG_FILE
+    echo ".. install dnsmasq" | tee -a $LOG_FILE
     sudo apt update >> $LOG_FILE 2>&1
-    sudo apt install -y hostapd dnsmasq >> $LOG_FILE 2>&1
+    sudo apt install -y dnsmasq >> $LOG_FILE 2>&1
+    echo -e ".. done\n" >> $LOG_FILE 2>&1
+}
+
+
+function do_install_hostapd
+{
+    echo ".. install hostapd" | tee -a $LOG_FILE
+    sudo apt update >> $LOG_FILE 2>&1
+    sudo apt install -y hostapd >> $LOG_FILE 2>&1
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
 
@@ -168,7 +177,8 @@ function do_install
 {
     do_install_python3
     do_install_nginx
-    do_install_hostapd_dnsmasq
+    do_install_dnsmasq
+    do_install_hostapd
     do_install_influxdb_telegraf
     do_install_grafana
 }
@@ -253,11 +263,23 @@ function do_configure_nginx
 }
 
 
-function do_configure_hostapd_dnsmasq
+function do_configure_dnsmasq
 {
-    echo ".. configure hostapd dnsmasq" | tee -a $LOG_FILE
+    echo ".. configure dnsmasq" | tee -a $LOG_FILE
+    sudo systemctl unmask dnsmasq >> $LOG_FILE 2>&1
+    sudo systemctl enable dnsmasq >> $LOG_FILE 2>&1
+    sudo systemctl start dnsmasq >> $LOG_FILE 2>&1
+    sudo systemctl restart dnsmasq >> $LOG_FILE 2>&11
+    echo -e ".. done\n" >> $LOG_FILE 2>&1
+}
+
+
+function do_configure_hostapd
+{
+    echo ".. configure hostapd" | tee -a $LOG_FILE
+    sudo systemctl unmask hostapd >> $LOG_FILE 2>&1
     sudo systemctl stop hostapd >> $LOG_FILE 2>&1
-    sudo systemctl stop dnsmasq >> $LOG_FILE 2>&1
+    sudo systemctl disable hostapd >> $LOG_FILE 2>&1
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
 
@@ -324,10 +346,11 @@ function do_configure
     do_rsync_etc
     do_daemon_reload
     do_configure_nginx
-    do_configure_hostapd_dnsmasq
+    do_configure_dnsmasq
+    do_configure_hostapd
     do_configure_influxdb
-    do_configure_telegraf
-    do_configure_grafana
+    # do_configure_telegraf
+    # do_configure_grafana
 }
 
 
