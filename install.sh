@@ -13,13 +13,27 @@
 SCRIPT=$( basename "$0" )
 
 # Current version from git
-VERSION=$( git describe --tag --abbrev=0 )
+VERSION=$( git describe --tag --abbrev=0 2>&1 )
 
 # Python virtual environment
 VIRTUAL_ENV="/home/tud/.py37"
 
 # Log file
 LOG_FILE="$(pwd)/install.log"
+
+
+#
+# Check if device is a Raspberry Pi
+#
+function is_raspberry_pi
+{
+    local pi=""
+    if [ -f /proc/device-tree/model ];
+    then
+        pi=$( cat /proc/device-tree/model | tr '\0' '\n' | grep "Raspberry Pi" )
+    fi
+    echo $pi
+}
 
 
 #
@@ -417,12 +431,23 @@ done
 
 
 #
+# Check if device is Raspberry Pi
+#
+if [ "x$( is_raspberry_pi )" == "x" ];
+then
+    echo "Error: device is not a Raspberry Pi!"
+    exit 1
+fi
+
+
+#
 # Check if current user is tud
 #
 if [ $USER != "tud" ]; then
     echo "Script must be run as user: tud" | tee -a $LOG_FILE
     exit -1
 fi
+
 
 #
 # Check for default user pi

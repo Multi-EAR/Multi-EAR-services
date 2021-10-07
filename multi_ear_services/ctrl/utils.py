@@ -90,12 +90,19 @@ def disable_wap():
     return rpopen(['/home/tud/.py37/bin/multi-ear-wifi', '--off'])
 
 
-def wlan_ssid_passphrase(ssid: str, passphrase: str):
+def wlan_ssid_passphrase(ssid: str, passphrase: str, method='raspi-config'):
     """Add Wi-Fi ssid and passphrase and connect without rebooting.
     """
     # disable_wap()
-    return rpopen(['/usr/bin/sudo', '/usr/bin/raspi-config', 'nonint',
-                   'do_wifi_ssid_passphrase', ssid, passphrase])
+    if method == 'raspi-config':
+        return rpopen(['/usr/bin/sudo', '/usr/bin/raspi-config', 'nonint',
+                       'do_wifi_ssid_passphrase', ssid, passphrase])
+    else:
+        return rpopen([
+            '/usr/bin/wpa_passphrase', ssid, passphrase, '|',
+            '/usr/bin/sed', '3d', '|', '/usr/bin/sudo', '/usr/bin/tee',
+            '-a', '/etc/wpa_supplicant/wpa_supplicant.conf'
+        ])
 
 
 def rpopen(*args, **kwargs):

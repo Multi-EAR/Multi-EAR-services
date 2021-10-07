@@ -1,18 +1,31 @@
 #!/bin/bash
 
 ##############################################################################
-# Script Name	: install.sh
-# Description	: Automatic software installation for the Multi-EAR platform
-#                 given a prepared install of RASPBERRY PI OS LITE (32-bit).
-# Args          : n.a.
+# Script Name	: multi-ear-wifi
+# Description	: Simply switch between wireless access point mode (hotspot)
+#                 or regular wlan client mode to connect to an existing
+#                 wireless network.
 # Author       	: Pieter Smets
 # Email         : mail@pietersmets.be
 ##############################################################################
 
 # Name and path of the script
-SCRIPT=$( readlink -f $0 )
-SCRIPTPATH=$( dirname $SCRIPT )
-SCRIPT=$(basename $SCRIPT)
+SCRIPT=$(basename $0)
+SCRIPTPATH=$(dirname $0)
+
+
+#
+# Check if device is a Raspberry Pi
+#
+function is_raspberry_pi
+{
+    local pi=""
+    if [ -f /proc/device-tree/model ];
+    then
+        pi=$( cat /proc/device-tree/model | tr '\0' '\n' | grep "Raspberry Pi" )
+    fi
+    echo $pi
+}
 
 
 #
@@ -243,6 +256,17 @@ do
     esac
     shift
 done
+
+
+#
+# Check if device is Raspberry Pi
+#
+if [ "x$( is_raspberry_pi )" == "x" ];
+then
+    echo "Error: device is not a Raspberry Pi!"
+    exit 1
+fi
+
 
 #
 # Perform action
