@@ -76,9 +76,9 @@ function badUsage
 #
 function get_version
 {
-    ls $SCRIPTPATH/../lib/python3*/site-packages | \ 
-    grep "multi_ear_services-" | \ 
-    sed -En "s/multi_ear_services-(.*).dist-info/\1/p"
+    local packages="${SCRIPTPATH}/../lib/python3*/site-packages"
+    local package="multi_ear_services-"
+    ls $packages | grep $package | sed -En "s/$package(.*).dist-info/\1/p"
 }
 
 
