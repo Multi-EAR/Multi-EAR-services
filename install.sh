@@ -115,7 +115,6 @@ trusted-host = pypi.org
                pypi.python.org
                files.pythonhosted.org
 EOF
-    python3 -m pip install --upgrade pip >> $LOG_FILE 2>&1
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
 
@@ -206,6 +205,8 @@ function do_create_python3_venv
     else
         echo "source activate already exists in .bashrc" >> $LOG_FILE 2>&1
     fi
+    do_activate_python3_venv
+    python3 -m pip install --upgrade pip >> $LOG_FILE 2>&1
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
 
