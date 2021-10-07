@@ -254,7 +254,7 @@ function do_configure_nginx
     sudo rm -f /etc/nginx/sites-enabled/default
     sudo rm -f /etc/nginx/sites-available/default
     # test
-    sudo service nginx configtest
+    sudo service nginx configtest >> $LOG_FILE 2>&1
     # enable and start service
     sudo systemctl unmask nginx >> $LOG_FILE 2>&1
     sudo systemctl enable nginx >> $LOG_FILE 2>&1
@@ -269,8 +269,7 @@ function do_configure_dnsmasq
     echo ".. configure dnsmasq" | tee -a $LOG_FILE
     sudo systemctl unmask dnsmasq >> $LOG_FILE 2>&1
     sudo systemctl enable dnsmasq >> $LOG_FILE 2>&1
-    sudo systemctl start dnsmasq >> $LOG_FILE 2>&1
-    sudo systemctl restart dnsmasq >> $LOG_FILE 2>&11
+    sudo systemctl restart dnsmasq >> $LOG_FILE 2>&1
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
 
