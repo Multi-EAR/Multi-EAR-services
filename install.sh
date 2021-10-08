@@ -206,7 +206,7 @@ function do_create_python3_venv
         echo "source activate already exists in .bashrc" >> $LOG_FILE 2>&1
     fi
     do_activate_python3_venv
-    python3 -m pip install --upgrade pip >> $LOG_FILE 2>&1
+    $VIRTUAL_ENV/bin/python3 -m pip install --upgrade pip >> $LOG_FILE 2>&1
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
 
@@ -233,6 +233,15 @@ function do_rsync_etc
 {
     echo ".. rsync /etc" | tee -a $LOG_FILE
     sudo rsync -amtv --chown=root:root etc / >> $LOG_FILE 2>&1
+    echo -e ".. done\n" >> $LOG_FILE 2>&1
+}
+
+
+function do_init_log
+{
+    echo ".. init /var/log/multi-ear" | tee -a $LOG_FILE
+    sudo mkdir -p /var/log/multi-ear >> $LOG_FILE 2>&1
+    sudo chown -R $USER:$USER /var/log/multi-ear >> $LOG_FILE 2>&1
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
 
@@ -344,6 +353,7 @@ function do_daemon_reload
 function do_configure
 {
     do_rsync_etc
+    do_init_log
     do_daemon_reload
     do_configure_nginx
     do_configure_dnsmasq
@@ -373,18 +383,28 @@ function do_gpio_watch_install
 function do_multi_ear_install
 {
     do_activate_python3_venv
+
+    local pip=$VIRTUAL_ENV/bin/pip3
+    local python=$VIRTUAL_ENV/bin/python3
+    local env_var 
+
     echo ".. pip install multi_ear" | tee -a $LOG_FILE
-    which pip3 >> $LOG_FILE 2>&1
-    which python3 >> $LOG_FILE 2>&1
-    pip3 uninstall -y multi_ear_services . >> $LOG_FILE 2>&1
-    pip3 install . >> $LOG_FILE 2>&1
+    $pip uninstall -y multi_ear_services . >> $LOG_FILE 2>&1
+    $pip install . >> $LOG_FILE 2>&1
     # add to .bashrc
-    if ! grep -q "export FLASK_APP=multi_ear.ctrl" "/home/$USER/.bashrc"; then
-        echo "export FLASK_APP=multi_ear.ctrl" >> $LOG_FILE 2>&1
+    env_var="FLASK_APP=multi_ear_services.ctrl"
+    if ! grep -q "export $export_cmd" "/home/$USER/.bashrc";
+    then
+        echo "Add \"export $env_var\" to .bashrc" >> $LOG_FILE 2>&1
+        echo "export $env_var" >> /home/$USER/.bashrc
     fi
-    if ! grep -q "export FLASK_ENV=production" "/home/$USER/.bashrc"; then
-        echo "export FLASK_ENV=production" >> $LOG_FILE 2>&1
+    env_var="FLASK_ENV=production"
+    if ! grep -q "export $env_var" "/home/$USER/.bashrc";
+    then
+        echo "Add \"export $env_var\" to .bashrc" >> $LOG_FILE 2>&1
+        echo "export $env_var" >> /home/$USER/.bashrc
     fi
+
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
 
@@ -496,6 +516,8 @@ case "${1}" in
     packages) do_install
     ;;
     etc) do_rsync_etc
+    ;;
+    log) do_init_log
     ;;
     configure|config) do_configure
     ;;
