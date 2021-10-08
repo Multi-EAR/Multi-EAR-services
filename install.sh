@@ -286,6 +286,7 @@ function do_configure_dnsmasq
 function do_configure_hostapd
 {
     echo ".. configure hostapd" | tee -a $LOG_FILE
+    sudo sed -i -s "s/^ssid=.*/ssid=$HOSTNAME/" /etc/hostapd/hostapd.conf >> $LOG_FILE 2>&1
     sudo systemctl unmask hostapd >> $LOG_FILE 2>&1
     sudo systemctl stop hostapd >> $LOG_FILE 2>&1
     sudo systemctl disable hostapd >> $LOG_FILE 2>&1
