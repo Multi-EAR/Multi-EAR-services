@@ -450,7 +450,7 @@ function do_systemd_service
 function do_multi_ear
 {
     do_activate_python3_venv
-    do_gpio_watch_install
+    # do_gpio_watch_install
     do_multi_ear_install
     do_multi_ear_services
 }
@@ -508,7 +508,6 @@ case "${1}" in
     do_install
     do_configure
     do_python3_venv
-    do_gpio_watch
     do_multi_ear
     echo "Multi-EAR software install completed" | tee -a $LOG_FILE
     ;;
@@ -521,8 +520,6 @@ case "${1}" in
     configure|config) do_configure
     ;;
     python|python3) do_python3_venv
-    ;;
-    gpio-watch) do_gpio_watch
     ;;
     multi-ear) do_multi_ear
     ;;
