@@ -31,9 +31,9 @@ Type ``bash install.sh --help`` for the usage.
     Install step:
       all            Perform all of the following steps (default).
       packages       Install all required packages via apt.
-      config         Configure all packages (make sure /etc is synced).
-      python3        Create the Python3 virtual environment (py37) in /home/tud/.py37.
-      multi-ear      Install and enable the Multi-EAR software in /home/tud/.py37.
+      configure      Configure all packages (make sure /etc is synced).
+      python         Create the Python3 virtual environment (py37).
+      multi-ear      Install and enable the Multi-EAR software.
 
     Options:
       --help, -h     Print help.
