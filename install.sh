@@ -276,9 +276,7 @@ function do_configure_nginx
 function do_configure_dnsmasq
 {
     echo ".. configure dnsmasq" | tee -a $LOG_FILE
-    sudo systemctl unmask dnsmasq >> $LOG_FILE 2>&1
-    sudo systemctl enable dnsmasq >> $LOG_FILE 2>&1
-    sudo systemctl restart dnsmasq >> $LOG_FILE 2>&1
+    sudo systemctl disable dnsmasq >> $LOG_FILE 2>&1
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
 

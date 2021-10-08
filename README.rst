@@ -58,7 +58,7 @@ Multi-EAR services
 - ``multi-ear-data`` : data transfer to the central database
 - ``multi-ear-lora`` : remote monitoring of the device via LoRaWAN
 - ``multi-ear-uart`` : sensorboard serial readout and local data storage
-- ``multi-ear-wifi`` : wireless access point mode control with trigger via GPIO pin 7
+- ``multi-ear-wifi`` : automatically generates a wlan hotspot when no a valid ssid is in range
 
 
 Multi-EAR services are controlled and monitored via systemd system services.

@@ -63,37 +63,9 @@ def systemd_status_all():
     return status
 
 
-def is_wap_enabled():
-    """Returns True if wireless access point mode is enabled.
-    """
-    response = status_wap()
-    if not response['success'] or response['stdout'] is None:
-        return
-    return response['stdout'].lower() == 'true'
-
-
-def status_wap():
-    """Returns True if wireless access point mode is enabled.
-    """
-    return rpopen(['/home/tud/.py37/bin/multi-ear-wifi', '--status'])
-
-
-def enable_wap():
-    """Enable wireless access point mode.
-    """
-    return rpopen(['/home/tud/.py37/bin/multi-ear-wifi', '--on'])
-
-
-def disable_wap():
-    """Disable wireless access point mode.
-    """
-    return rpopen(['/home/tud/.py37/bin/multi-ear-wifi', '--off'])
-
-
-def wlan_ssid_passphrase(ssid: str, passphrase: str, method='raspi-config'):
+def wlan_ssid_passphrase(ssid: str, passphrase: str, method=None):
     """Add Wi-Fi ssid and passphrase and connect without rebooting.
     """
-    # disable_wap()
     if method == 'raspi-config':
         return rpopen(['/usr/bin/sudo', '/usr/bin/raspi-config', 'nonint',
                        'do_wifi_ssid_passphrase', ssid, passphrase])

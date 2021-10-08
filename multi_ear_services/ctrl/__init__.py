@@ -38,7 +38,6 @@ def create_app(test_config=None):
         return dict(
             hostname=socket.gethostname(),
             version=version,
-            wireless_access_point=utils.is_wap_enabled(),
             services=utils.services,
             hostapd=dict(utils.parse_config(hostapd)['default']),
         )
@@ -68,19 +67,6 @@ def create_app(test_config=None):
             res = utils.systemd_status_all()
         else:
             res = utils.systemd_status(service)
-        return jsonify(res)
-
-    @app.route("/_wap_mode", methods=['POST'])
-    def wap_mode():
-        action = request.args.get('action')
-        if action == 'status':
-            res = utils.status_wap()
-        elif action in ('on', 'enable', 'true'):
-            res = utils.enable_wap()
-        elif action in ('off', 'disable', 'false'):
-            res = utils.disable_wap()
-        else:
-            res = None
         return jsonify(res)
 
     @app.route("/_wpa_supplicant", methods=['POST'])
