@@ -58,16 +58,18 @@ Multi-EAR services
 - ``multi-ear-data`` : data transfer to the central database
 - ``multi-ear-lora`` : remote monitoring of the device via LoRaWAN
 - ``multi-ear-uart`` : sensorboard serial readout and local data storage
-- ``multi-ear-wifi`` : automatically generates a wlan hotspot when no a valid ssid is in range
+- ``multi-ear-wifi`` : automatically generates a Wi-Fi hotspot when no known SSID is in range
 
 
-Multi-EAR services are controlled and monitored via systemd system services.
+Multi-EAR services are controlled and monitored via systemd_ system services.
+
+.. _systemd: https://wiki.archlinux.org/title/Systemd#Using_units
 
 Check the status of a service
 
 .. code-block:: console
 
-    sudo systemctl status multi-ear-uart
+    systemctl status multi-ear-uart.service
 
 Log files are generated per services in ``/var/log/multi-ear/`` and can be filtered in ``journalctl``.
 Check the ``multi-ear-uart`` system logs

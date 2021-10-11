@@ -1,5 +1,5 @@
 [Unit]
-Description=Automatically generates a Wi-Fi hotspot when no a valid ssid is in range
+Description=Automatically generates a Wi-Fi hotspot when no known SSID is in range
 After=multi-user.target
 Wants=multi-ear-wifi.target
 
