@@ -1,5 +1,5 @@
 *************************************
-Multi-EAR services - Wifi 
+Multi-EAR services - Wi-Fi 
 *************************************
 
 The Multi-EAR automatically connects to known wireless networks in range.
@@ -7,7 +7,7 @@ If no known network is in range the Multi-EAR creates it's own wireless network 
 
 Checkout _raspberryconnect!
 
-.. _raspberryconnect: https://www.raspberryconnect.com/projects/65-raspberrypi-hotspot-accesspoints/157-raspberry-pi-auto-wifi-hotspot-switch-internet
+.. _raspberryconnect: https://www.raspberryconnect.com/projects/65-raspberrypi-hotspot-accesspoints/158-raspberry-pi-auto-wifi-hotspot-switch-direct-connection
 
 
 Service

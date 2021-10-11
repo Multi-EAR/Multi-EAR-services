@@ -421,7 +421,8 @@ function do_multi_ear_services
 
     do_daemon_reload
 
-    services=$(ls etc/systemd/system)
+    local services=$(ls etc/systemd/system)
+    local service
 
     for service in $services
     do
