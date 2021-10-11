@@ -36,8 +36,6 @@ function isRaspberryPi
     then
         echo "Error: device is not a Raspberry Pi!"
         exit 1
-    else
-        echo $pi
     fi
 }
 
