@@ -1,7 +1,7 @@
 [Unit]
 Description=Automatically generates a Wi-Fi hotspot when no a valid ssid is in range
 After=multi-user.target
-Wants=multi-ear-sync.target
+Wants=multi-ear-wifi.target
 
 [Service]
 Type=oneshot
