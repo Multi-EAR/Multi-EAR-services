@@ -458,7 +458,6 @@ function do_systemd_service
 function do_multi_ear
 {
     do_activate_python3_venv
-    # do_gpio_watch_install
     do_multi_ear_install
     do_multi_ear_services
 }
