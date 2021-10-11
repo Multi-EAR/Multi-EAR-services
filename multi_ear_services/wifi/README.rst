@@ -9,9 +9,13 @@ Checkout _raspberryconnect!
 
 .. _raspberryconnect: https://www.raspberryconnect.com/projects/65-raspberrypi-hotspot-accesspoints/158-raspberry-pi-auto-wifi-hotspot-switch-direct-connection
 
+The Wi-Fi hotspot systemd .service is triggered via a .timer unit.
+
 
 Service
 =======
+
+https://www.man7.org/linux/man-pages/man5/systemd.service.5.html
 
 :Service:
     multi-ear-wifi.service
@@ -27,3 +31,18 @@ Service
     multi-ear-wifi
 :Log:
     /var/log/multi-ear/wifi.log
+
+
+Timer
+=====
+
+https://www.man7.org/linux/man-pages/man5/systemd.timer.5.html
+
+:Timer:
+    multi-ear-wifi.timer
+:OnCalendar:
+    5min
+:AccuracySec:
+    1sec
+:Persistent:
+    true
