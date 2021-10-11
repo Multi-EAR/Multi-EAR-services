@@ -2,9 +2,8 @@
 Multi-EAR services - Wifi 
 *************************************
 
-The Multi-EAR automatilly connects to known wireless networks if they are in range.
-If no known network is in range the Multi-EAR simply creates it's own wireless network with ``ssid=$HOSTNAME`` and ``passphrase=multi-ear``.
-
+The Multi-EAR automatically connects to known wireless networks in range.
+If no known network is in range the Multi-EAR creates it's own wireless network with ``ssid=$HOSTNAME`` and ``passphrase=multi-ear``.
 
 Checkout _raspberryconnect!
 
