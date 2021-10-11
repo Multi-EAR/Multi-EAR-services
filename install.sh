@@ -103,17 +103,23 @@ function version
 #
 # Installs
 #
+function do_install_libs
+{
+    echo ".. install libs" | tee -a $LOG_FILE
+    sudo apt update >> $LOG_FILE 2>&1
+    sudo apt install -y libatlas-base-dev >> $LOG_FILE 2>&1
+    sudo apt install -y build-essential libssl-dev libffi-dev >> $LOG_FILE 2>&1
+    echo -e ".. done\n" >> $LOG_FILE 2>&1
+}
+
 function do_install_python3
 {
     echo ".. install python3" | tee -a $LOG_FILE
     sudo apt update >> $LOG_FILE 2>&1
-    sudo apt install -y libatlas-base-dev >> $LOG_FILE 2>&1
-    sudo apt install -y build-essential libssl-dev libffi-dev >> $LOG_FILE 2>&1
     sudo apt install -y python3 python3-pip python3-dev python3-venv python3-setuptools >> $LOG_FILE 2>&1
     sudo apt install -y python3-numpy python3-gpiozero python3-serial >> $LOG_FILE 2>&1
     echo -e ".. done\n" >> $LOG_FILE 2>&1
-
-    echo ".. set pip trusted hosts and self update" >> $LOG_FILE 2>&1
+    echo ".. set pip trusted hosts" >> $LOG_FILE 2>&1
     cat <<EOF | sudo tee /etc/pip.conf >> $LOG_FILE 2>&1
 [global]
 extra-index-url=https://www.piwheels.org/simple
@@ -155,7 +161,7 @@ function do_install_dnsmasq
 
 function do_install_influxdb_telegraf
 {
-    echo ".. install influxdb" | tee -a $LOG_FILE
+    echo ".. install influxdb & telegraf" | tee -a $LOG_FILE
     # add to apt
     wget -qO- https://repos.influxdata.com/influxdb.key | sudo apt-key add - >> $LOG_FILE 2>&1
     echo "deb https://repos.influxdata.com/debian $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/influxdb.list >> $LOG_FILE 2>&1
@@ -181,6 +187,7 @@ function do_install_grafana
 
 function do_install
 {
+    do_install_libs
     do_install_python3
     do_install_nginx
     do_install_dnsmasq
@@ -213,6 +220,7 @@ function do_create_python3_venv
         echo "source activate already exists in .bashrc" >> $LOG_FILE 2>&1
     fi
     do_activate_python3_venv
+    echo ".. self-update pip" >> $LOG_FILE 2>&1
     $VIRTUAL_ENV/bin/python3 -m pip install --upgrade pip >> $LOG_FILE 2>&1
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
@@ -230,6 +238,46 @@ function do_python3_venv
 {
     do_create_python3_venv
     # do_activate_python3_venv
+}
+
+#
+# Systemd service actions
+#
+function do_systemd_service_unmask
+{
+    if systemctl -all list-unit-files $1.service | grep "$1.service masked" >/dev/null 2>&1;
+    then
+	sudo systemctl unmask $1.service >> $LOG_FILE 2>&1
+    fi
+}
+
+
+function do_systemd_service_start
+{
+    if systemctl -all list-unit-files $1.service | grep "$1.service disabled" >/dev/null 2>&1;
+    then
+	sudo systemctl enable $1.service >> $LOG_FILE 2>&1
+	sudo systemctl start $1.service >> $LOG_FILE 2>&1
+    fi
+}
+
+
+function do_systemd_service_restart
+{
+    if [ "$(systemctl is-active $1)" == "active" ];
+    then
+        sudo systemctl restart $1.service >> $LOG_FILE 2>&1
+    fi
+}
+
+
+function do_systemd_service_stop
+{
+    if systemctl -all list-unit-files $1.service | grep "$1.service enabled" >/dev/null 2>&1;
+    then
+	sudo systemctl disable $1.service >> $LOG_FILE 2>&1
+	sudo systemctl stop $1.service >> $LOG_FILE 2>&1
+    fi
 }
 
 
@@ -269,13 +317,13 @@ function do_configure_nginx
     # remove default nginx site
     sudo rm -f /etc/nginx/sites-enabled/default
     sudo rm -f /etc/nginx/sites-available/default
+    # unmask
+    do_systemd_service_unmask "nginx"
+    do_systemd_service_start "nginx"
     # test
     sudo service nginx configtest >> $LOG_FILE 2>&1
     # enable and start service
-    sudo systemctl unmask nginx >> $LOG_FILE 2>&1
-    sudo systemctl enable nginx >> $LOG_FILE 2>&1
-    sudo systemctl start nginx >> $LOG_FILE 2>&1
-    sudo systemctl restart nginx >> $LOG_FILE 2>&1
+    do_systemd_service_restart "nginx"
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
 
@@ -283,7 +331,8 @@ function do_configure_nginx
 function do_configure_dnsmasq
 {
     echo ".. configure dnsmasq" | tee -a $LOG_FILE
-    sudo systemctl disable dnsmasq >> $LOG_FILE 2>&1
+    do_systemd_service_unmask "dnsmasq"
+    do_systemd_service_stop "dnsmasq"
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
 
@@ -292,8 +341,8 @@ function do_configure_hostapd
 {
     echo ".. configure hostapd" | tee -a $LOG_FILE
     sudo sed -i -s "s/^ssid=.*/ssid=$HOSTNAME/" /etc/hostapd/hostapd.conf >> $LOG_FILE 2>&1
-    sudo systemctl unmask hostapd >> $LOG_FILE 2>&1
-    sudo systemctl stop hostapd >> $LOG_FILE 2>&1
+    do_systemd_service_unmask "hostapd"
+    do_systemd_service_stop "hostapd"
     # sudo systemctl disable hostapd >> $LOG_FILE 2>&1
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
@@ -303,13 +352,12 @@ function do_configure_influxdb
 {
     echo ".. configure influxdb" | tee -a $LOG_FILE
     # enable and start service
-    sudo systemctl unmask influxdb >> $LOG_FILE 2>&1
-    sudo systemctl enable influxdb >> $LOG_FILE 2>&1
-    sudo systemctl start influxdb >> $LOG_FILE 2>&1
+    do_systemd_service_unmask "influxdb"
+    do_systemd_service_start "influxdb"
     # configure
     sudo cp etc/influxdb/influxdb.conf /etc/influxdb/influxdb.conf >> $LOG_FILE 2>&1
     # restart service
-    sudo systemctl start influxdb >> $LOG_FILE 2>&1
+    do_systemd_service_restart "influxdb"
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 
     # configure, enable service, create database
@@ -320,13 +368,12 @@ function do_configure_telegraf
 {
     echo ".. configure telegraf" | tee -a $LOG_FILE
     # enable and start service
-    sudo systemctl unmask telegraf >> $LOG_FILE 2>&1
-    sudo systemctl enable telegraf >> $LOG_FILE 2>&1
-    sudo systemctl start telegraf >> $LOG_FILE 2>&1
+    do_systemd_service_unmask "telegraf"
+    do_systemd_service_start "telegraf"
     # configure
     sudo cp etc/telegraf/telegraf.conf /etc/telegraf/telegraf.conf >> $LOG_FILE 2>&1
     # restart service
-    sudo systemctl start telegraf >> $LOG_FILE 2>&1
+    do_systemd_service_restart "telegraf"
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
 
@@ -337,13 +384,12 @@ function do_configure_grafana
     # plugins 
     sudo grafana-cli plugins install grafana-clock-panel
     # enable and start service
-    sudo systemctl unmask grafana >> $LOG_FILE 2>&1
-    sudo systemctl enable grafana >> $LOG_FILE 2>&1
-    sudo systemctl start grafana >> $LOG_FILE 2>&1
+    do_systemd_service_unmask "grafana"
+    do_systemd_service_start "grafana"
     # configure
     sudo cp etc/grafana/grafana.conf /etc/grafana/grafana.ini >> $LOG_FILE 2>&1
     # restart service
-    sudo systemctl start grafana >> $LOG_FILE 2>&1
+    do_systemd_service_restart "grafana"
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 
     # configure, enable service, link to database
@@ -437,8 +483,8 @@ function do_systemd_service
 {
     local service=$1
 
-    local enabled=$( sudo systemctl is-enabled $service )
-    local active=$( sudo systemctl is-active $service )
+    local enabled=$( systemctl is-enabled $service )
+    local active=$( systemctl is-active $service )
 
     if [ "$enabled" != "enabled" ];
     then
