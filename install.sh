@@ -25,14 +25,20 @@ LOG_FILE="$(pwd)/install.log"
 #
 # Check if device is a Raspberry Pi
 #
-function is_raspberry_pi
+function isRaspberryPi
 {
     local pi=""
     if [ -f /proc/device-tree/model ];
     then
         pi=$( cat /proc/device-tree/model | tr '\0' '\n' | grep "Raspberry Pi" )
     fi
-    echo $pi
+    if [ "x${pi}" == "x" ];
+    then
+        echo "Error: device is not a Raspberry Pi!"
+        exit 1
+    else
+        echo $pi
+    fi
 }
 
 
@@ -128,20 +134,21 @@ function do_install_nginx
 }
 
 
-function do_install_dnsmasq
-{
-    echo ".. install dnsmasq" | tee -a $LOG_FILE
-    sudo apt update >> $LOG_FILE 2>&1
-    sudo apt install -y dnsmasq >> $LOG_FILE 2>&1
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
-}
-
-
 function do_install_hostapd
 {
     echo ".. install hostapd" | tee -a $LOG_FILE
     sudo apt update >> $LOG_FILE 2>&1
     sudo apt install -y hostapd >> $LOG_FILE 2>&1
+    echo -e ".. done\n" >> $LOG_FILE 2>&1
+}
+
+
+function do_install_dnsmasq
+{
+    echo ".. install dnsmasq" | tee -a $LOG_FILE
+    sudo apt update >> $LOG_FILE 2>&1
+    sudo apt install -y dnsmasq >> $LOG_FILE 2>&1
+    sudo apt purge -y dns-root-data >> $LOG_FILE 2>&1
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
 
@@ -287,7 +294,7 @@ function do_configure_hostapd
     sudo sed -i -s "s/^ssid=.*/ssid=$HOSTNAME/" /etc/hostapd/hostapd.conf >> $LOG_FILE 2>&1
     sudo systemctl unmask hostapd >> $LOG_FILE 2>&1
     sudo systemctl stop hostapd >> $LOG_FILE 2>&1
-    sudo systemctl disable hostapd >> $LOG_FILE 2>&1
+    # sudo systemctl disable hostapd >> $LOG_FILE 2>&1
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
 
@@ -475,11 +482,7 @@ done
 #
 # Check if device is Raspberry Pi
 #
-if [ "x$( is_raspberry_pi )" == "x" ];
-then
-    echo "Error: device is not a Raspberry Pi!"
-    exit 1
-fi
+isRaspberryPi
 
 
 #

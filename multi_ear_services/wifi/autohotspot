@@ -3,20 +3,40 @@
 # You may share this script on the condition a reference to RaspberryConnect.com 
 # must be included in copies or derivatives of this script. 
 
-# Network Wifi & Hotspot with Internet
-# A script to switch between a wifi network and an Internet routed Hotspot
+# Network Wi-Fi & Hotspot with Internet
+# A script to switch between a Wi-Fi network and an Internet routed Hotspot
 # A Raspberry Pi with a network port required for Internet in hotspot mode.
 # Works at startup or with a seperate timer or manually without a reboot
 # Other setup required find out more at
 # http://www.raspberryconnect.com
 
+#
+# Check if device is a Raspberry Pi
+#
+function isRaspberryPi
+{
+    local pi=""
+    if [ -f /proc/device-tree/model ];
+    then
+        pi=$( cat /proc/device-tree/model | tr '\0' '\n' | grep "Raspberry Pi" )
+    fi
+    if [ "x${pi}" == "x" ];
+    then
+        echo "Error: device is not a Raspberry Pi!"
+        exit 1
+    else
+        echo $pi
+    fi
+}
+isRaspberryPi
+
 wifidev="wlan0" #device name to use. Default is wlan0.
 ethdev="eth0" #Ethernet port to use with IP tables
-#use the command: iw dev ,to see wifi interface name 
+#use the command: iw dev ,to see Wi-Fi interface name 
 
 IFSdef=$IFS
 cnt=0
-# These four lines capture the wifi networks the RPi is setup to use
+# These four lines capture the Wi-Fi networks the RPi is setup to use
 wpassid=$(awk '/ssid="/{ print $0 }' /etc/wpa_supplicant/wpa_supplicant.conf | awk -F'ssid=' '{ print $2 }' | sed 's/\r//g'| awk 'BEGIN{ORS=","} {print}' | sed 's/\"/''/g' | sed 's/,$//')
 IFS=","
 ssids=($wpassid)
@@ -65,11 +85,11 @@ KillHotspot()
 
 ChkWifiUp()
 {
-	echo "Checking WiFi connection ok"
+	echo "Checking Wi-Fi connection ok"
         sleep 20 # give time for connection to be completed to router
 	if ! wpa_cli -i "$wifidev" status | grep 'ip_address' >/dev/null 2>&1
-        then # Failed to connect to wifi (check your wifi settings, password etc)
-	       echo 'Wifi failed to connect, falling back to Hotspot.'
+        then # Failed to connect to Wi-Fi (check your Wi-Fi settings, password etc)
+	       echo 'Wi-Fi failed to connect, falling back to Hotspot.'
                wpa_cli terminate "$wifidev" >/dev/null 2>&1
 	       createAdHocNetwork
 	fi
@@ -103,7 +123,7 @@ FindSSID()
 # Check to see what SSID's and MAC addresses are in range
 ssidChk=('NoSSid')
 i=0; j=0
-until [ $i -eq 1 ] #wait for wifi if busy, usb wifi is slower.
+until [ $i -eq 1 ] #wait for Wi-Fi if busy, usb Wi-Fi is slower.
 do
         ssidreply=$((iw dev "$wifidev" scan ap-force | egrep "^BSS|SSID:") 2>&1) >/dev/null 2>&1 
         # echo "SSid's in range: " $ssidreply
@@ -143,12 +163,12 @@ do
      if (echo "$ssidreply" | grep -F -- "$ssid") >/dev/null 2>&1
      then
 	      # Valid SSid found, passing to script
-              echo "Valid SSID Detected, assesing Wifi status"
+              echo "Valid SSID Detected, assesing Wi-Fi status"
               ssidChk=$ssid
               return 0
       else
 	      # No Network found, NoSSid issued"
-              echo "No SSid found, assessing WiFi status"
+              echo "No SSid found, assessing Wi-Fi status"
               ssidChk='NoSSid'
      fi
 done
@@ -156,9 +176,9 @@ done
 
 NoDevice()
 {
-	# if no wifi device,ie usb wifi removed, activate wifi so when it is
-	# reconnected wifi to a router will be available
-	echo "No wifi device connected"
+	# if no Wi-Fi device,ie usb Wi-Fi removed, activate Wi-Fi so when it is
+	# reconnected Wi-Fi to a router will be available
+	echo "No Wi-Fi device connected"
 	wpa_supplicant -B -i "$wifidev" -c /etc/wpa_supplicant/wpa_supplicant.conf >/dev/null 2>&1
 	exit 1
 }
@@ -166,21 +186,21 @@ NoDevice()
 chksys
 FindSSID
 
-# Create Hotspot or connect to valid wifi networks
+# Create Hotspot or connect to valid Wi-Fi networks
 if [ "$ssidChk" != "NoSSid" ]
 then
        echo 0 > /proc/sys/net/ipv4/ip_forward #deactivate ip forwarding
        if systemctl status hostapd | grep "(running)" >/dev/null 2>&1
        then #hotspot running and ssid in range
               KillHotspot
-              echo "Hotspot Deactivated, Bringing Wifi Up"
+              echo "Hotspot Deactivated, Bringing Wi-Fi Up"
               wpa_supplicant -B -i "$wifidev" -c /etc/wpa_supplicant/wpa_supplicant.conf >/dev/null 2>&1
               ChkWifiUp
        elif { wpa_cli -i "$wifidev" status | grep 'ip_address'; } >/dev/null 2>&1
        then #Already connected
-              echo "Wifi already connected to a network"
-       else #ssid exists and no hotspot running connect to wifi network
-              echo "Connecting to the WiFi Network"
+              echo "Wi-Fi already connected to a network"
+       else #ssid exists and no hotspot running connect to Wi-Fi network
+              echo "Connecting to the Wi-Fi Network"
               wpa_supplicant -B -i "$wifidev" -c /etc/wpa_supplicant/wpa_supplicant.conf >/dev/null 2>&1
               ChkWifiUp
        fi
@@ -190,7 +210,7 @@ else # ssid or MAC address not in range
               echo "Hostspot already active"
        elif { wpa_cli status | grep "$wifidev"; } >/dev/null 2>&1
        then
-              echo "Cleaning wifi files and Activating Hotspot"
+              echo "Cleaning Wi-Fi files and Activating Hotspot"
               wpa_cli terminate >/dev/null 2>&1
               ip addr flush "$wifidev"
               ip link set dev "$wifidev" down
