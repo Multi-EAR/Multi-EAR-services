@@ -46,4 +46,4 @@ Entry-points
 Scripts
 ==================
 
-- ``multi-ear-wifi`` : wireless access point mode control with trigger via GPIO pin 7
+- ``multi-ear-wifi`` : automatically generates an wlan hotspot when no a valid ssid is in range

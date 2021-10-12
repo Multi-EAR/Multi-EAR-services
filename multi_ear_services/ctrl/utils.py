@@ -1,19 +1,33 @@
 # absolute imports
-import subprocess
+import os
+from subprocess import Popen, PIPE
 import configparser
 
 
-services = ['multi-ear-ctrl',
-            #  'multi-ear-data',
-            #  'multi-ear-lora',
-            'multi-ear-uart',
-            'multi-ear-wifi',
-            'influxdb',
-            'grafana',
-            'telegraph',
-            'nginx',
-            'hostapd',
-            'dnsmasq']
+services = ['multi-ear-ctrl.service',
+            #  'multi-ear-data.service',
+            #  'multi-ear-data.timer',
+            #  'multi-ear-lora.service',
+            #  'multi-ear-lora.timer',
+            'multi-ear-uart.service',
+            'multi-ear-wifi.service',
+            'multi-ear-wifi.timer',
+            'nginx.service',
+            'influxdb.service',
+            'grafana.service',
+            'telegraph.service',
+            'dnsmasq.service',
+            'hostapd.service']
+
+
+def is_raspberry_pi():
+    """Checks if the device is a Rasperry Pi
+    """
+    if not os.path.exists('/proc/device-tree/model'):
+        return False
+    with open('/proc/device-tree/model') as f:
+        model = f.read()
+    return model.startswith('Raspberry Pi')
 
 
 def parse_config(config_path: str, **kwargs):
@@ -40,9 +54,9 @@ def systemd_status(service: str):
             stderr='Service not part of listed Multi-EAR services.',
         )
     else:
-        response = rpopen(['/usr/bin/systemctl', 'status', service])
-        if response['stdout'] and 'Active: ' in response['stdout']:
-            status = response['stdout'].split('<br>')[2].split('Active: ')[1]
+        r = _popen(['/usr/bin/systemctl', 'status', service])
+        if r['stdout'] and 'Active: ' in r['stdout']:
+            status = r['stdout'].split('<br>')[2].split('Active: ')[1]
             if 'since' in status:
                 status = status.split(' since ')[0]
         else:
@@ -50,7 +64,7 @@ def systemd_status(service: str):
         return dict(
             service=service,
             status=status,
-            **response,
+            **r,
         )
 
 
@@ -63,68 +77,54 @@ def systemd_status_all():
     return status
 
 
-def is_wap_enabled():
-    """Returns True if wireless access point mode is enabled.
-    """
-    response = status_wap()
-    if not response['success'] or response['stdout'] is None:
-        return
-    return response['stdout'].lower() == 'true'
-
-
-def status_wap():
-    """Returns True if wireless access point mode is enabled.
-    """
-    return rpopen(['/home/tud/.py37/bin/multi-ear-wifi', '--status'])
-
-
-def enable_wap():
-    """Enable wireless access point mode.
-    """
-    return rpopen(['/home/tud/.py37/bin/multi-ear-wifi', '--on'])
-
-
-def disable_wap():
-    """Disable wireless access point mode.
-    """
-    return rpopen(['/home/tud/.py37/bin/multi-ear-wifi', '--off'])
-
-
-def wlan_ssid_passphrase(ssid: str, passphrase: str):
+def wlan_ssid_passphrase(ssid: str, passphrase: str, method=None):
     """Add Wi-Fi ssid and passphrase and connect without rebooting.
     """
-    # disable_wap()
-    return rpopen(['/usr/bin/sudo', '/usr/bin/raspi-config', 'nonint',
-                   'do_wifi_ssid_passphrase', ssid, passphrase])
+    if method == 'raspi-config':
+        # Forces direct connection
+        return _popen(['/usr/bin/sudo', '/usr/bin/raspi-config', 'nonint',
+                       'do_wifi_ssid_passphrase', ssid, passphrase])
+    else:
+        # Requires autohotspot trigger
+        return _popen(['/home/tud/.py37/bin/append_wpa_supplicant',
+                       ssid, passphrase])
 
 
-def rpopen(*args, **kwargs):
-    """Wraps subprocess.Popen in a catch error statement.
+def _popen(*args, **kwargs):
+
+    """Wraps Popen and Popen.communicate() in a catch error statement and
+    returns a serialized dictionary object for jsonify.
     """
-
-    # subprocess command
-    try:
-        p = subprocess.Popen(
-            *args, **kwargs, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
-    except OSError:
-        return {
-            "success": False,
-            "returncode": None,
-            "stdout": None,
-            "stderr": None,
+    def _resp(**kwargs):
+        r = {
+            'success': False,
+            'returncode': None,
+            'stdout': None,
+            'stderr': None,
+            **kwargs,
         }
+        return r
 
-    # wait for process to finish;
-    # this also sets the returncode variable inside 'p'
-    stdout, stderr = p.communicate()
+    try:
+        p = Popen(*args, **kwargs, stdout=PIPE, stderr=PIPE)
+    except OSError:
+        return _resp()
 
-    # construct return dict
-    r = dict(
-        success=p.returncode == 0,
-        returncode=p.returncode,
-        stdout="<br>".join(stdout.decode("utf-8").split("\n")),
-        stderr="<br>".join(stderr.decode("utf-8").split("\n")),
-    )
+    try:
+        # wait for process to finish;
+        # this also sets the returncode variable inside 'p'
+        stdout, stderr = p.communicate()
+
+        # construct return dict
+        r = _resp(
+            success=p.returncode == 0,
+            returncode=p.returncode,
+            stdout="<br>".join(stdout.decode("utf-8").split("\n")),
+            stderr="<br>".join(stderr.decode("utf-8").split("\n")),
+        )
+    except OSError as e:
+        r = _resp(returncode=e.errno, stderr=e.strerror)
+    except Exception:
+        r = _resp()
 
     return r

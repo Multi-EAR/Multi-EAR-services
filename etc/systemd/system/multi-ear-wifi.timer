@@ -1,0 +1,9 @@
+[Unit]
+Description=Multi-EAR Wi-Fi scheduled script execution
+
+[Timer]
+OnActiveSec=150sec
+OnUnitActiveSec=150sec
+
+[Install]
+WantedBy=timers.target

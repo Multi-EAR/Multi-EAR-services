@@ -1,6 +1,6 @@
 [Unit]
-Description=Multi-EAR ctrl :: local web service
-After=network.target
+Description=Multi-EAR control, monitoring, documentation and data visualization via a web browser
+After=multi-user.target
  
 [Service]
 Type=simple

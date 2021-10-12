@@ -1,35 +1,12 @@
 /* global bootstrap: false */
-function switchWiFiMode() {
 
-    let toggle = document.querySelector('#wirelessAccessPoint')
-    toggle.addEventListener('click', function (event) {
-
-        var action, resp
-
-        action = toggle.checked ? 'enable' : 'disable'
-        resp = confirm("Are you sure to " + action +
-                       " the wireless access point mode?\n\nThis will reboot the device.")
-
-        if (resp == false) {
-            event.preventDefault();
-            event.stopPropagation();
-            return false;
-        }
-
-        alert(toggle.checked ? 'Enabling' : 'Disabling' + 
-              " wireless access point mode.\n\nThe device will reboot automatically in 5 sec.")
-
-        getJSON("/_wap_mode", { action: action  } , 'POST')
-        .then(data => {
-            console.log(data);
-        });
-
-    }, false)
-
+function resetWifiForm(form) {
+    form.reset()
+    form.classList.remove('was-validated')
+    form.querySelector('button[type=submit]').disabled = false;
 }
 
-
-function validateWiFiForm() {
+function validateWifiForm() {
 
     // Fetch all the forms we want to apply custom Bootstrap validation styles to
     var forms = document.querySelectorAll('.needs-validation')
@@ -53,9 +30,7 @@ function validateWiFiForm() {
         }, false)
 
         form.addEventListener('reset', function (event) {
-            form.reset()
-            form.classList.remove('was-validated')
-            form.querySelector('button[type=submit]').disabled = false;
+            resetWifiForm(form)
         }, false)
 
     })
@@ -63,36 +38,38 @@ function validateWiFiForm() {
 
 
 function processWifiForm(form) {
+
     var ssid = form.elements["inputSSID"].value
     var psk = form.elements["inputPSK"].value
+
     getJSON("/_wpa_supplicant", { ssid: ssid, passphrase: psk }, 'POST')
     .then(data => {
+        if (data === null) return
         console.log(data);
+        alert("\"" + ssid + "\" added to the list of known wireless networks.")
+        resetWifiForm(form)
     });
 }
 
 
-function statusUpdateLoop(content) {
-    // init
-    let id = null;
+function statusUpdateLoop() {
+
+    const progressbar = document.querySelector('#statusUpdater')
+    if (progressbar === null) { return; }
+
+    clearInterval(statusUpdater);
     let width = 0;
 
-    clearInterval(id);
+    statusUpdater = setInterval(progressBarWidth, 150);  // ms, times 100 gives 15s
 
-    const pb = document.querySelector('#update')
-
-    if (pb === null) { return; }
-
-    id = setInterval(frame, 150);  // ms, times 100 gives 15s
-
-    function frame() {
+    function progressBarWidth() {
         if (width == 100) {
             width = 0;
-            statusUpdate(content)
+            statusUpdate()
         } else {
             width++;
         }
-        pb.style.width = width + '%'; 
+        progressbar.style.width = width + '%'; 
       }
 }
 
@@ -102,14 +79,17 @@ function statusUpdate() {
     getJSON("/_systemd_status", { service: '*' })
     .then(function(data) {
 
+        if (data === null) return
+
         for (const [service, response] of Object.entries(data)) {
 
-            var obj_status = document.querySelector('#' + service + '-status')
-            var obj_response = document.querySelector('#' + service + '-response > .accordion-body')
+            var id = '#' + service.replace('.', '-')
+            var obj_status = document.querySelector(id + '-status')
+            var obj_response = document.querySelector(id + '-response > .accordion-body')
 
-            if (response.returncode === null ) continue
+            if (response.returncode === null) continue
 
-            if (response.stdout === "") {
+            if (response.returncode === 4) {
                 obj_response.innerHTML = response.stderr
                 obj_status.innerHTML = 'not found'
                 if (!obj_status.classList.contains('bg-secondary')) {
@@ -121,15 +101,15 @@ function statusUpdate() {
             obj_response.innerHTML = response.stdout
             obj_status.innerHTML = response.status
 
-            if (response.status.includes('activating') || response.status.includes('inactive')) {
-                if (!obj_status.classList.contains('bg-warning')) {
-                    obj_status.classList.remove('bg-secondary', 'bg-success', 'bg-danger')
-                    obj_status.classList.add('bg-warning')
-                }
-            } else if (response.status.includes('active')) {
+           if (response.returncode === 0) {
                 if (!obj_status.classList.contains('bg-success')) {
                     obj_status.classList.remove('bg-secondary', 'bg-warning', 'bg-danger')
                     obj_status.classList.add('bg-success')
+                }
+            } else if (response.status.includes('activating') || response.status.includes('inactive')) {
+                if (!obj_status.classList.contains('bg-warning')) {
+                    obj_status.classList.remove('bg-secondary', 'bg-success', 'bg-danger')
+                    obj_status.classList.add('bg-warning')
                 }
             } else {
                 if (!obj_status.classList.contains('bg-danger')) {
@@ -194,6 +174,7 @@ function loadDashboard() {
 
 
 function loadTabContent(tab) {
+
     // nav-tab set?
     if (tab === undefined) var tab = document.querySelector('#nav-tabs > .active')
 
@@ -203,9 +184,13 @@ function loadTabContent(tab) {
     // clear content on load
     content.innerHTML = ''
 
+    // stop status progressbar interval
+    clearInterval(statusUpdater);
+
     // lazy load new content and trigger tab related functions
     getJSON("/_tab/" + tab.getAttribute("aria-controls"))
     .then(function(data) {
+        if (data === null) return
         content.innerHTML = data.html
     })
     .finally(function() {
@@ -214,9 +199,8 @@ function loadTabContent(tab) {
                 loadDashboard()
                 break;
             case "wifi-tab":
-                switchWiFiMode()
                 showPasswordToggle()
-                validateWiFiForm()
+                validateWifiForm()
                 break;
             case "status-tab":
                 statusUpdate()
@@ -227,6 +211,9 @@ function loadTabContent(tab) {
         }
     });
 }
+
+// globals
+let statusUpdater = null;
 
 (function () {
     'use strict'
