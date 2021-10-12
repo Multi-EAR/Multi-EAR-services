@@ -54,36 +54,27 @@ function processWifiForm(form) {
 
 function statusUpdateLoop() {
 
-    let interval = null;
+    const progressbar = document.querySelector('#statusUpdater')
+    if (progressbar === null) { return; }
+
+    clearInterval(statusUpdater);
     let width = 0;
 
-    clearInterval(interval);
+    statusUpdater = setInterval(progressBarWidth, 150);  // ms, times 100 gives 15s
 
-    const pb = document.querySelector('#update')
-
-    if (pb === null) { return; }
-
-    interval = setInterval(progressBar, 150);  // ms, times 100 gives 15s
-
-    function progressBar() {
+    function progressBarWidth() {
         if (width == 100) {
             width = 0;
-            statusUpdate(interval)
+            statusUpdate()
         } else {
             width++;
         }
-        pb.style.width = width + '%'; 
+        progressbar.style.width = width + '%'; 
       }
 }
 
 
-function statusUpdate(interval) {
-
-    var tab = document.querySelector('#nav-tabs > .active')
-    if (tab.getAttribute("aria-controls") !== 'status') {
-        clearInterval(interval);
-        return
-    }
+function statusUpdate() {
 
     getJSON("/_systemd_status", { service: '*' })
     .then(function(data) {
@@ -183,6 +174,7 @@ function loadDashboard() {
 
 
 function loadTabContent(tab) {
+
     // nav-tab set?
     if (tab === undefined) var tab = document.querySelector('#nav-tabs > .active')
 
@@ -191,6 +183,9 @@ function loadTabContent(tab) {
 
     // clear content on load
     content.innerHTML = ''
+
+    // stop status progressbar interval
+    clearInterval(statusUpdater);
 
     // lazy load new content and trigger tab related functions
     getJSON("/_tab/" + tab.getAttribute("aria-controls"))
@@ -216,6 +211,9 @@ function loadTabContent(tab) {
         }
     });
 }
+
+// globals
+let statusUpdater = null;
 
 (function () {
     'use strict'
