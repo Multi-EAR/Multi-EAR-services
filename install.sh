@@ -243,19 +243,21 @@ function do_python3_venv
 #
 function do_systemd_service_unmask
 {
-    if systemctl -all list-unit-files $1.service | grep "$1.service masked" >/dev/null 2>&1;
+    if systemctl -all list-unit-files $1 | grep "$1 masked" >/dev/null 2>&1;
     then
-	sudo systemctl unmask $1.service >> $LOG_FILE 2>&1
+	sudo systemctl unmask $1 >> $LOG_FILE 2>&1
     fi
 }
 
 
 function do_systemd_service_start
 {
-    if systemctl -all list-unit-files $1.service | grep "$1.service disabled" >/dev/null 2>&1;
+    do_systemd_service_unmask $1
+
+    if systemctl -all list-unit-files $1 | grep "$1 disabled" >/dev/null 2>&1;
     then
-	sudo systemctl enable $1.service >> $LOG_FILE 2>&1
-	sudo systemctl start $1.service >> $LOG_FILE 2>&1
+	sudo systemctl enable $1 >> $LOG_FILE 2>&1
+	sudo systemctl start $1 >> $LOG_FILE 2>&1
     fi
 }
 
@@ -264,17 +266,19 @@ function do_systemd_service_restart
 {
     if [ "$(systemctl is-active $1)" == "active" ];
     then
-        sudo systemctl restart $1.service >> $LOG_FILE 2>&1
+        sudo systemctl restart $1 >> $LOG_FILE 2>&1
     fi
 }
 
 
 function do_systemd_service_stop
 {
-    if systemctl -all list-unit-files $1.service | grep "$1.service enabled" >/dev/null 2>&1;
+    do_systemd_service_unmask $1
+
+    if systemctl -all list-unit-files $1 | grep "$1 enabled" >/dev/null 2>&1;
     then
-	sudo systemctl disable $1.service >> $LOG_FILE 2>&1
-	sudo systemctl stop $1.service >> $LOG_FILE 2>&1
+	sudo systemctl disable $1 >> $LOG_FILE 2>&1
+	sudo systemctl stop $1 >> $LOG_FILE 2>&1
     fi
 }
 
@@ -304,7 +308,7 @@ function do_configure_rsyslog
     echo ".. configure rsyslog" | tee -a $LOG_FILE
     sudo mkdir -p /var/log/multi-ear >> $LOG_FILE 2>&1
     sudo chown -r $USER:$USER /var/log/multi-ear >> $LOG_FILE 2>&1
-    sudo systemctl restart rsyslog >> $LOG_FILE 2>&1
+    do_systemd_service_restart "rsyslog.service"
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
 
@@ -315,13 +319,12 @@ function do_configure_nginx
     # remove default nginx site
     sudo rm -f /etc/nginx/sites-enabled/default
     sudo rm -f /etc/nginx/sites-available/default
-    # unmask
-    do_systemd_service_unmask "nginx"
-    do_systemd_service_start "nginx"
+    # unmask and start
+    do_systemd_service_start "nginx.service"
     # test
     sudo service nginx configtest >> $LOG_FILE 2>&1
     # enable and start service
-    do_systemd_service_restart "nginx"
+    do_systemd_service_restart "nginx.service"
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
 
@@ -329,8 +332,7 @@ function do_configure_nginx
 function do_configure_dnsmasq
 {
     echo ".. configure dnsmasq" | tee -a $LOG_FILE
-    do_systemd_service_unmask "dnsmasq"
-    do_systemd_service_stop "dnsmasq"
+    do_systemd_service_stop "dnsmasq.service"
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
 
@@ -339,9 +341,7 @@ function do_configure_hostapd
 {
     echo ".. configure hostapd" | tee -a $LOG_FILE
     sudo sed -i -s "s/^ssid=.*/ssid=$HOSTNAME/" /etc/hostapd/hostapd.conf >> $LOG_FILE 2>&1
-    do_systemd_service_unmask "hostapd"
-    do_systemd_service_stop "hostapd"
-    # sudo systemctl disable hostapd >> $LOG_FILE 2>&1
+    do_systemd_service_stop "hostapd.service"
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
 
@@ -349,12 +349,8 @@ function do_configure_hostapd
 function do_configure_influxdb
 {
     echo ".. configure influxdb" | tee -a $LOG_FILE
-    # enable and start service
-    do_systemd_service_unmask "influxdb"
-    do_systemd_service_start "influxdb"
-    # configure
+    do_systemd_service_start "influxdb.service"
     sudo cp etc/influxdb/influxdb.conf /etc/influxdb/influxdb.conf >> $LOG_FILE 2>&1
-    # restart service
     do_systemd_service_restart "influxdb"
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 
@@ -365,13 +361,9 @@ function do_configure_influxdb
 function do_configure_telegraf
 {
     echo ".. configure telegraf" | tee -a $LOG_FILE
-    # enable and start service
-    do_systemd_service_unmask "telegraf"
-    do_systemd_service_start "telegraf"
-    # configure
+    do_systemd_service_start "telegraf.service"
     sudo cp etc/telegraf/telegraf.conf /etc/telegraf/telegraf.conf >> $LOG_FILE 2>&1
-    # restart service
-    do_systemd_service_restart "telegraf"
+    do_systemd_service_restart "telegraf.service"
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
 
@@ -381,13 +373,9 @@ function do_configure_grafana
     echo ".. configure grafana" | tee -a $LOG_FILE
     # plugins 
     sudo grafana-cli plugins install grafana-clock-panel
-    # enable and start service
-    do_systemd_service_unmask "grafana"
-    do_systemd_service_start "grafana"
-    # configure
+    do_systemd_service_start "grafana.service"
     sudo cp etc/grafana/grafana.conf /etc/grafana/grafana.ini >> $LOG_FILE 2>&1
-    # restart service
-    do_systemd_service_restart "grafana"
+    do_systemd_service_restart "grafana.service"
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 
     # configure, enable service, link to database
@@ -470,32 +458,10 @@ function do_multi_ear_services
 
     for service in $services
     do
-        echo ".. setup systemd $service" >> $LOG_FILE 2>&1
-        do_systemd_service $service >> $LOG_FILE 2>&1
+        echo ".. enable and start systemd $service" >> $LOG_FILE 2>&1
+        do_systemd_service_start $service >> $LOG_FILE 2>&1
         echo -e ".. done\n" >> $LOG_FILE 2>&1
     done
-}
-
-
-function do_systemd_service
-{
-    local service=$1
-
-    local enabled=$( systemctl is-enabled $service )
-    local active=$( systemctl is-active $service )
-
-    if [ "$enabled" != "enabled" ];
-    then
-        sudo systemctl unmask $service >> $LOG_FILE 2>&1
-        sudo systemctl enable $service >> $LOG_FILE 2>&1
-    fi
-
-    if [ "$active" != "active" ];
-    then
-        sudo systemctl start $service >> $LOG_FILE 2>&1
-    else
-        sudo systemctl restart $service >> $LOG_FILE 2>&1
-    fi
 }
 
 
