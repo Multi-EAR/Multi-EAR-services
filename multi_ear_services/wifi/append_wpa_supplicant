@@ -1,16 +1,16 @@
 #!/bin/bash
 
 ##############################################################################
-# Script Name	: append_to_wpa_supplicant
-# Description	: Append an ssid and the encrypted passphrase to the
-#                 wpa_supplicant list.
+# Script Name	: append_wpa_supplicant
+# Description	: Append an ssid and the auto-encrypted passphrase to the
+#                 wpa_supplicant configuration file.
 # Args          : <ssid> <passphrase>
 # Author       	: Pieter Smets
 # Email         : mail@pietersmets.be
 ##############################################################################
 
 # Set script name
-SCRIPT="append_to_wpa_supplicant"
+SCRIPT="append_wpa_supplicant"
 
 # Init
 CONF="/etc/wpa_supplicant/wpa_supplicant.conf"
@@ -20,20 +20,19 @@ function badUsage
 {
     local message="$1"
     local txt=(
-"Append an ssid and the encrypted passphrase to the wpa_supplicant list $CONF."
+"Append an ssid and the auto-encrypted passphrase to the wpa_supplicant configuration file."
 "Usage: $SCRIPT <ssid> <passphrase>"
     )
 
-    [[ $message ]] && printf "$message\n"
+    [[ $message ]] && printf "\n$message\n"
 
     printf "%s\n" "${txt[@]}"
     exit -1
 }
 
-
 # Check input arguments
 if (($# != 2 )); then
-    badUsage "Illegal number of argument"
+    badUsage "Illegal number of arguments"
 fi
 
 
@@ -42,7 +41,7 @@ if [ -f $CONF ];
 then
     echo "" | sudo tee -a $CONF
 else
-    badUsage "$CONF doesn't exist"
+    badUsage "wpa_supplicant configuration file \"$CONF\" doesn't exist!"
 fi
 
 

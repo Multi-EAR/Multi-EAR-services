@@ -86,7 +86,7 @@ def wlan_ssid_passphrase(ssid: str, passphrase: str, method=None):
                        'do_wifi_ssid_passphrase', ssid, passphrase])
     else:
         # Requires autohotspot trigger
-        return _popen(['/home/tud/.py37/bin/append_to_wpa_supplicant',
+        return _popen(['/home/tud/.py37/bin/append_wpa_supplicant',
                        ssid, passphrase])
 
 
