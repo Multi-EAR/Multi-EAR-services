@@ -2,9 +2,8 @@
 Description=Multi-EAR Wi-Fi scheduled script execution
 
 [Timer]
-OnCalendar=5min
-AccuracySec=1sec
-Persistent=true
+OnActiveSec=5min
+OnUnitActiveSec=5min
 
 [Install]
 WantedBy=timers.target

@@ -259,6 +259,7 @@ function do_systemd_service_start
 	sudo systemctl enable $1 >> $LOG_FILE 2>&1
 	sudo systemctl start $1 >> $LOG_FILE 2>&1
     fi
+    sudo systemctl status $1 >> $LOG_FILE 2>&1
 }
 
 
@@ -268,6 +269,7 @@ function do_systemd_service_restart
     then
         sudo systemctl restart $1 >> $LOG_FILE 2>&1
     fi
+    sudo systemctl status $1 >> $LOG_FILE 2>&1
 }
 
 
@@ -280,6 +282,7 @@ function do_systemd_service_stop
 	sudo systemctl disable $1 >> $LOG_FILE 2>&1
 	sudo systemctl stop $1 >> $LOG_FILE 2>&1
     fi
+    sudo systemctl status $1 >> $LOG_FILE 2>&1
 }
 
 
@@ -385,6 +388,7 @@ function do_configure_grafana
 function do_daemon_reload
 {
     sudo systemctl daemon-reload >> $LOG_FILE 2>&1
+    sudo systemctl reset-failed >> $LOG_FILE 2>&1
 }
 
 
