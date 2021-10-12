@@ -1,34 +1,4 @@
 /* global bootstrap: false */
-function switchWiFiMode() {
-
-    let toggle = document.querySelector('#wirelessAccessPoint')
-    toggle.addEventListener('click', function (event) {
-
-        var action, resp
-
-        action = toggle.checked ? 'enable' : 'disable'
-        resp = confirm("Are you sure to " + action +
-                       " the wireless access point mode?\n\nThis will reboot the device.")
-
-        if (resp == false) {
-            event.preventDefault();
-            event.stopPropagation();
-            return false;
-        }
-
-        alert(toggle.checked ? 'Enabling' : 'Disabling' + 
-              " wireless access point mode.\n\nThe device will reboot automatically in 5 sec.")
-
-        getJSON("/_wap_mode", { action: action  } , 'POST')
-        .then(data => {
-            console.log(data);
-        });
-
-    }, false)
-
-}
-
-
 function validateWiFiForm() {
 
     // Fetch all the forms we want to apply custom Bootstrap validation styles to
@@ -214,7 +184,6 @@ function loadTabContent(tab) {
                 loadDashboard()
                 break;
             case "wifi-tab":
-                switchWiFiMode()
                 showPasswordToggle()
                 validateWiFiForm()
                 break;

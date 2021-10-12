@@ -268,8 +268,8 @@ function do_systemd_service_restart
     if [ "$(systemctl is-active $1)" == "active" ];
     then
         sudo systemctl restart $1 >> $LOG_FILE 2>&1
+        sudo systemctl status $1 >> $LOG_FILE 2>&1
     fi
-    sudo systemctl status $1 >> $LOG_FILE 2>&1
 }
 
 
@@ -428,6 +428,7 @@ function do_multi_ear_install
     echo ".. pip install multi_ear" | tee -a $LOG_FILE
     $pip uninstall -y multi_ear_services . >> $LOG_FILE 2>&1
     $pip install . >> $LOG_FILE 2>&1
+    do_systemd_service_restart "multi-ear-ctrl.service" >> $LOG_FILE 2>&1
     # add to .bashrc
     env_var="FLASK_APP=multi_ear_services.ctrl"
     if ! grep -q "export $export_cmd" "/home/$USER/.bashrc";
