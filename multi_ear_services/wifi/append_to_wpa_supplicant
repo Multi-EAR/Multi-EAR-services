@@ -1,0 +1,53 @@
+#!/bin/bash
+
+##############################################################################
+# Script Name	: append_to_wpa_supplicant
+# Description	: Append an ssid and the encrypted passphrase to the
+#                 wpa_supplicant list.
+# Args          : <ssid> <passphrase>
+# Author       	: Pieter Smets
+# Email         : mail@pietersmets.be
+##############################################################################
+
+# Set script name
+SCRIPT="append_to_wpa_supplicant"
+
+# Init
+CONF="/etc/wpa_supplicant/wpa_supplicant.conf"
+
+# Message to display when bad usage.
+function badUsage
+{
+    local message="$1"
+    local txt=(
+"Append an ssid and the encrypted passphrase to the wpa_supplicant list $CONF."
+"Usage: $SCRIPT <ssid> <passphrase>"
+    )
+
+    [[ $message ]] && printf "$message\n"
+
+    printf "%s\n" "${txt[@]}"
+    exit -1
+}
+
+
+# Check input arguments
+if (($# != 2 )); then
+    badUsage "Illegal number of argument"
+fi
+
+
+# Add empty line if wpa_supplicant.conf exists
+if [ -f $CONF ];
+then
+    echo "" | sudo tee -a $CONF
+else
+    badUsage "$CONF doesn't exist"
+fi
+
+
+# Encrypt psk and add to wpa_supplicant.conf
+wpa_passphrase $1 $2 |  sed '3d;2i\\tscan_ssid=1' | sudo tee -a $CONF
+
+# Done
+exit 0

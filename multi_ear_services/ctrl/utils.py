@@ -54,7 +54,7 @@ def systemd_status(service: str):
             stderr='Service not part of listed Multi-EAR services.',
         )
     else:
-        r = _popencomm(['/usr/bin/systemctl', 'status', service])
+        r = _popen(['/usr/bin/systemctl', 'status', service])
         if r['stdout'] and 'Active: ' in r['stdout']:
             status = r['stdout'].split('<br>')[2].split('Active: ')[1]
             if 'since' in status:
@@ -82,30 +82,17 @@ def wlan_ssid_passphrase(ssid: str, passphrase: str, method=None):
     """
     if method == 'raspi-config':
         # Forces direct connection
-        return _popencomm(['/usr/bin/sudo', '/usr/bin/raspi-config', 'nonint',
-                           'do_wifi_ssid_passphrase', ssid, passphrase])
+        return _popen(['/usr/bin/sudo', '/usr/bin/raspi-config', 'nonint',
+                       'do_wifi_ssid_passphrase', ssid, passphrase])
     else:
-        p1 = _popen(['/usr/bin/wpa_passphrase', ssid, passphrase])
-        p2 = _popen(['/usr/bin/sed', "'3d;2i\\tscan_ssid=1'"], stdin=p1)
-        p3 = _popen(['/usr/bin/sudo', '/usr/bin/tee', '-a',
-                     '/etc/wpa_supplicant/wpa_supplicant.conf'], stdin=p2)
-        return _pcomm(p3)
+        # Requires autohotspot trigger
+        return _popen(['/home/tud/.py37/bin/append_to_wpa_supplicant',
+                       ssid, passphrase])
 
 
-def _popen(*args, stdin=None, stdout=PIPE, stderr=PIPE, **kwargs):
-    """Wraps subprocess.Popen in a catch error statement.
-    """
-    if isinstance(stdin, Popen):
-        stdin = stdin.stdout
-    try:
-        p = Popen(*args, **kwargs, stdin=stdin, stdout=stdout, stderr=stderr)
-    except OSError:
-        return
-    return p
+def _popen(*args, **kwargs):
 
-
-def _pcomm(p):
-    """Wraps subprocess.Popen.communicate() in a catch error statement and
+    """Wraps Popen and Popen.communicate() in a catch error statement and
     returns a serialized dictionary object for jsonify.
     """
     def _resp(**kwargs):
@@ -118,7 +105,9 @@ def _pcomm(p):
         }
         return r
 
-    if not isinstance(p, Popen):
+    try:
+        p = Popen(*args, **kwargs, stdout=PIPE, stderr=PIPE)
+    except OSError:
         return _resp()
 
     try:
@@ -139,9 +128,3 @@ def _pcomm(p):
         r = _resp()
 
     return r
-
-
-def _popencomm(*args, **kwargs):
-    """Wraps _popen and _pcomm in one command.
-    """
-    return _pcomm(_popen(*args, **kwargs))
