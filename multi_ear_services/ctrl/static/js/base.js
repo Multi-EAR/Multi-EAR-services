@@ -60,7 +60,7 @@ function statusUpdateLoop() {
     clearInterval(statusUpdater);
     let width = 0;
 
-    statusUpdater = setInterval(progressBarWidth, 150);  // ms, times 100 gives 15s
+    statusUpdater = setInterval(progressBarWidth, 100);  // ms, times 100 gives 10s
 
     function progressBarWidth() {
         if (width == 100) {
