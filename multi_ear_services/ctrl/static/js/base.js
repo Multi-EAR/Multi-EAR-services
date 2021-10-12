@@ -74,8 +74,9 @@ function statusUpdate() {
 
         for (const [service, response] of Object.entries(data)) {
 
-            var obj_status = document.querySelector('#' + service + '-status')
-            var obj_response = document.querySelector('#' + service + '-response > .accordion-body')
+            var id = '#' + service.replace('.', '-')
+            var obj_status = document.querySelector(id + '-status')
+            var obj_response = document.querySelector(id + '-response > .accordion-body')
 
             if (response.returncode === null) continue
 

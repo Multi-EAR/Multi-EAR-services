@@ -8,20 +8,21 @@
 
 <div class="accordion accordion-flush" id="multi-ear-status">
   {% for service in services %}
+  {% set id = (service|replace('.', '-')) %}
   <div class="accordion-item">
-    <h2 class="accordion-header" id="{{service}}">
-      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#{{service}}-response"
-       aria-expanded="false" aria-controls="{{service}}-response">
+    <h2 class="accordion-header" id="{{id}}">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#{{id}}-response"
+       aria-expanded="false" aria-controls="{{id}}-response">
         <div class"row row-cols-2">
-          <div class="col d-flex"><div class="py-1" id="{{service}}-name">{{service}}</div></div>
+          <div class="col d-flex"><div class="py-1" id="{{id}}-name">{{id}}</div></div>
           <div class="col d-flex">
-              <div class="py-1"><span class="badge badge-status bg-secondary" id="{{service}}-status">[STATUS]</span></div>
-              <div class="py-1 ms-2 d-none"><span class="badge badge-version bg-primary" id="{{service}}-version">[VERSION]</span></div>
+              <div class="py-1"><span class="badge badge-status bg-secondary" id="{{id}}-status">[STATUS]</span></div>
+              <div class="py-1 ms-2 d-none"><span class="badge badge-version bg-primary" id="{{id}}-version">[VERSION]</span></div>
           </div>
         </div>
       </button>
     </h2>
-    <div id="{{service}}-response" class="accordion-collapse collapse" aria-labelledby="{{service}}-response" data-bs-parent="#status">
+    <div id="{{id}}-response" class="accordion-collapse collapse" aria-labelledby="{{id}}-response" data-bs-parent="#status">
       <div class="accordion-body">[RESPONSE]</div>
     </div>
   </div>
