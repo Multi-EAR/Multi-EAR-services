@@ -39,14 +39,14 @@ fi
 # Add empty line if wpa_supplicant.conf exists
 if [ -f $CONF ];
 then
-    echo "" | sudo tee -a $CONF
+    echo "" | /usr/bin/sudo /usr/bin/tee -a $CONF
 else
     badUsage "wpa_supplicant configuration file \"$CONF\" doesn't exist!"
 fi
 
 
 # Encrypt psk and add to wpa_supplicant.conf
-wpa_passphrase $1 $2 |  sed '3d;2i\\tscan_ssid=1' | sudo tee -a $CONF
+/usr/bin/wpa_passphrase $1 $2 |  /usr/bin/sed '3d;2i\\tscan_ssid=1' | /usr/bin/sudo /usr/bin/tee -a $CONF
 
 # Done
 exit 0
