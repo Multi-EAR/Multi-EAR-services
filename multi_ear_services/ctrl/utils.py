@@ -70,14 +70,15 @@ def wlan_ssid_passphrase(ssid: str, passphrase: str, method=None):
     """Add Wi-Fi ssid and passphrase and connect without rebooting.
     """
     if method == 'raspi-config':
+        # Forces direct connection
         return rpopen(['/usr/bin/sudo', '/usr/bin/raspi-config', 'nonint',
                        'do_wifi_ssid_passphrase', ssid, passphrase])
     else:
-        return rpopen([
-            '/usr/bin/wpa_passphrase', ssid, passphrase, '|',
-            '/usr/bin/sed', '3d', '|', '/usr/bin/sudo', '/usr/bin/tee',
-            '-a', '/etc/wpa_supplicant/wpa_supplicant.conf'
-        ])
+        return rpopen(['/usr/bin/wpa_passphrase', ssid, passphrase, '|',
+                       '/usr/bin/sed', '3d', '|',
+                       '/usr/bin/sed', "'2i\        scan_ssid=1'",
+                       '/usr/bin/sudo', '/usr/bin/tee', '-a', 
+                       '/etc/wpa_supplicant/wpa_supplicant.conf'])
 
 
 def rpopen(*args, **kwargs):
