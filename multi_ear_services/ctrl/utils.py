@@ -1,6 +1,6 @@
 # absolute imports
 import os
-import subprocess
+from subprocess import Popen, PIPE
 import configparser
 
 
@@ -54,9 +54,9 @@ def systemd_status(service: str):
             stderr='Service not part of listed Multi-EAR services.',
         )
     else:
-        response = rpopen(['/usr/bin/systemctl', 'status', service])
-        if response['stdout'] and 'Active: ' in response['stdout']:
-            status = response['stdout'].split('<br>')[2].split('Active: ')[1]
+        r = _popencomm(['/usr/bin/systemctl', 'status', service])
+        if r['stdout'] and 'Active: ' in r['stdout']:
+            status = r['stdout'].split('<br>')[2].split('Active: ')[1]
             if 'since' in status:
                 status = status.split(' since ')[0]
         else:
@@ -64,7 +64,7 @@ def systemd_status(service: str):
         return dict(
             service=service,
             status=status,
-            **response,
+            **r,
         )
 
 
@@ -82,43 +82,66 @@ def wlan_ssid_passphrase(ssid: str, passphrase: str, method=None):
     """
     if method == 'raspi-config':
         # Forces direct connection
-        return rpopen(['/usr/bin/sudo', '/usr/bin/raspi-config', 'nonint',
-                       'do_wifi_ssid_passphrase', ssid, passphrase])
+        return _popencomm(['/usr/bin/sudo', '/usr/bin/raspi-config', 'nonint',
+                           'do_wifi_ssid_passphrase', ssid, passphrase])
     else:
-        return rpopen(['/usr/bin/wpa_passphrase', ssid, passphrase, '|',
-                       '/usr/bin/sed', '3d;2i\        scan_ssid=1', '|',
-                       '/usr/bin/sed', '1i\\', '|',
-                       '/usr/bin/sudo', '/usr/bin/tee', '-a',
-                       '/etc/wpa_supplicant/wpa_supplicant.conf'])
+        p1 = _popen(['/usr/bin/wpa_passphrase', ssid, passphrase])
+        p2 = _popen(['/usr/bin/sed', "'3d;2i\\tscan_ssid=1'"], stdin=p1)
+        p3 = _popen(['/usr/bin/sudo', '/usr/bin/tee', '-a',
+                     '/etc/wpa_supplicant/wpa_supplicant.conf'], stdin=p2)
+        return _pcomm(p3)
 
 
-def rpopen(*args, **kwargs):
+def _popen(*args, stdin=None, stdout=PIPE, stderr=PIPE, **kwargs):
     """Wraps subprocess.Popen in a catch error statement.
     """
-
-    # subprocess command
+    if isinstance(stdin, Popen):
+        stdin = stdin.stdout
     try:
-        p = subprocess.Popen(
-            *args, **kwargs, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
+        p = Popen(*args, **kwargs, stdin=stdin, stdout=stdout, stderr=stderr)
     except OSError:
-        return {
-            "success": False,
-            "returncode": None,
-            "stdout": None,
-            "stderr": None,
+        return
+    return p
+
+
+def _pcomm(p):
+    """Wraps subprocess.Popen.communicate() in a catch error statement and
+    returns a serialized dictionary object for jsonify.
+    """
+    def _resp(**kwargs):
+        r = {
+            'success': False,
+            'returncode': None,
+            'stdout': None,
+            'stderr': None,
+            **kwargs,
         }
+        return r
 
-    # wait for process to finish;
-    # this also sets the returncode variable inside 'p'
-    stdout, stderr = p.communicate()
+    if not isinstance(p, Popen):
+        return _resp()
 
-    # construct return dict
-    r = dict(
-        success=p.returncode == 0,
-        returncode=p.returncode,
-        stdout="<br>".join(stdout.decode("utf-8").split("\n")),
-        stderr="<br>".join(stderr.decode("utf-8").split("\n")),
-    )
+    try:
+        # wait for process to finish;
+        # this also sets the returncode variable inside 'p'
+        stdout, stderr = p.communicate()
+
+        # construct return dict
+        r = _resp(
+            success=p.returncode == 0,
+            returncode=p.returncode,
+            stdout="<br>".join(stdout.decode("utf-8").split("\n")),
+            stderr="<br>".join(stderr.decode("utf-8").split("\n")),
+        )
+    except OSError as e:
+        r = _resp(returncode=e.errno, stderr=e.strerror)
+    except Exception:
+        r = _resp()
 
     return r
+
+
+def _popencomm(*args, **kwargs):
+    """Wraps _popen and _pcomm in one command.
+    """
+    return _pcomm(_popen(*args, **kwargs))
