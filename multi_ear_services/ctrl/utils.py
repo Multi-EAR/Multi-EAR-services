@@ -4,8 +4,10 @@ import configparser
 
 
 services = ['multi-ear-ctrl.service',
-            #  'multi-ear-data',
-            #  'multi-ear-lora',
+            #  'multi-ear-data.service',
+            #  'multi-ear-data.timer',
+            #  'multi-ear-lora.service',
+            #  'multi-ear-lora.timer',
             'multi-ear-uart.service',
             'multi-ear-wifi.service',
             'multi-ear-wifi.timer',

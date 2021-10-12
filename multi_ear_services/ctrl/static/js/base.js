@@ -77,9 +77,9 @@ function statusUpdate() {
             var obj_status = document.querySelector('#' + service + '-status')
             var obj_response = document.querySelector('#' + service + '-response > .accordion-body')
 
-            if (response.returncode === null ) continue
+            if (response.returncode === null) continue
 
-            if (response.stdout === "") {
+            if (response.returncode === 4) {
                 obj_response.innerHTML = response.stderr
                 obj_status.innerHTML = 'not found'
                 if (!obj_status.classList.contains('bg-secondary')) {
@@ -91,15 +91,15 @@ function statusUpdate() {
             obj_response.innerHTML = response.stdout
             obj_status.innerHTML = response.status
 
-            if (response.status.includes('activating') || response.status.includes('inactive')) {
-                if (!obj_status.classList.contains('bg-warning')) {
-                    obj_status.classList.remove('bg-secondary', 'bg-success', 'bg-danger')
-                    obj_status.classList.add('bg-warning')
-                }
-            } else if (response.status.includes('active')) {
+           if (response.returncode === 0) {
                 if (!obj_status.classList.contains('bg-success')) {
                     obj_status.classList.remove('bg-secondary', 'bg-warning', 'bg-danger')
                     obj_status.classList.add('bg-success')
+                }
+            } else if (response.status.includes('activating') || response.status.includes('inactive')) {
+                if (!obj_status.classList.contains('bg-warning')) {
+                    obj_status.classList.remove('bg-secondary', 'bg-success', 'bg-danger')
+                    obj_status.classList.add('bg-warning')
                 }
             } else {
                 if (!obj_status.classList.contains('bg-danger')) {
