@@ -3,17 +3,18 @@ import subprocess
 import configparser
 
 
-services = ['multi-ear-ctrl',
+services = ['multi-ear-ctrl.service',
             #  'multi-ear-data',
             #  'multi-ear-lora',
-            'multi-ear-uart',
-            'multi-ear-wifi',
-            'influxdb',
-            'grafana',
-            'telegraph',
-            'nginx',
-            'hostapd',
-            'dnsmasq']
+            'multi-ear-uart.service',
+            'multi-ear-wifi.service',
+            'multi-ear-wifi.timer',
+            'nginx.service',
+            'influxdb.service',
+            'grafana.service',
+            'telegraph.service',
+            'dnsmasq.service',
+            'hostapd.service']
 
 
 def parse_config(config_path: str, **kwargs):
