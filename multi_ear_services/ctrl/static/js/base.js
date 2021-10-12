@@ -54,21 +54,21 @@ function processWifiForm(form) {
 
 function statusUpdateLoop() {
 
-    let updater = null;
+    let interval = null;
     let width = 0;
 
-    clearInterval(updater);
+    clearInterval(interval);
 
     const pb = document.querySelector('#update')
 
     if (pb === null) { return; }
 
-    updater = setInterval(frame, 150);  // ms, times 100 gives 15s
+    interval = setInterval(progressBar, 150);  // ms, times 100 gives 15s
 
-    function frame() {
+    function progressBar() {
         if (width == 100) {
             width = 0;
-            statusUpdate(updater)
+            statusUpdate(interval)
         } else {
             width++;
         }
@@ -77,11 +77,11 @@ function statusUpdateLoop() {
 }
 
 
-function statusUpdate(updater) {
+function statusUpdate(interval) {
 
     var tab = document.querySelector('#nav-tabs > .active')
-    if (tab.getAttribute("aria-controls") !== 'status-tab') {
-        clearInterval(updater);
+    if (tab.getAttribute("aria-controls") !== 'status') {
+        clearInterval(interval);
         return
     }
 
