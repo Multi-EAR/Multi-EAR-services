@@ -38,36 +38,37 @@ function validateWifiForm() {
 
 
 function processWifiForm(form) {
+
     var ssid = form.elements["inputSSID"].value
     var psk = form.elements["inputPSK"].value
+
     getJSON("/_wpa_supplicant", { ssid: ssid, passphrase: psk }, 'POST')
     .then(data => {
         if (data === null) return
         console.log(data);
-        alert(ssid + " added to the list of known wireless networks.")
+        alert("\"" + ssid + "\" added to the list of known wireless networks.")
         resetWifiForm(form)
     });
 }
 
 
-function statusUpdateLoop(content) {
+function statusUpdateLoop() {
 
-    // init
-    let id = null;
+    let updater = null;
     let width = 0;
 
-    clearInterval(id);
+    clearInterval(updater);
 
     const pb = document.querySelector('#update')
 
     if (pb === null) { return; }
 
-    id = setInterval(frame, 150);  // ms, times 100 gives 15s
+    updater = setInterval(frame, 150);  // ms, times 100 gives 15s
 
     function frame() {
         if (width == 100) {
             width = 0;
-            statusUpdate(content)
+            statusUpdate(updater)
         } else {
             width++;
         }
@@ -76,10 +77,16 @@ function statusUpdateLoop(content) {
 }
 
 
-function statusUpdate() {
+function statusUpdate(updater) {
+
+    var tab = document.querySelector('#nav-tabs > .active')
+    if (tab.getAttribute("aria-controls") !== 'status-tab') {
+        clearInterval(updater);
+        return
+    }
 
     getJSON("/_systemd_status", { service: '*' })
-    .finally(function(data) {
+    .then(function(data) {
 
         if (data === null) return
 
