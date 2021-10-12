@@ -356,8 +356,6 @@ function do_configure_influxdb
     sudo cp etc/influxdb/influxdb.conf /etc/influxdb/influxdb.conf >> $LOG_FILE 2>&1
     do_systemd_service_restart "influxdb"
     echo -e ".. done\n" >> $LOG_FILE 2>&1
-
-    # configure, enable service, create database
 }
 
 
@@ -374,14 +372,11 @@ function do_configure_telegraf
 function do_configure_grafana
 {
     echo ".. configure grafana" | tee -a $LOG_FILE
-    # plugins 
     sudo grafana-cli plugins install grafana-clock-panel
     do_systemd_service_start "grafana.service"
     sudo cp etc/grafana/grafana.conf /etc/grafana/grafana.ini >> $LOG_FILE 2>&1
     do_systemd_service_restart "grafana.service"
     echo -e ".. done\n" >> $LOG_FILE 2>&1
-
-    # configure, enable service, link to database
 }
 
 
