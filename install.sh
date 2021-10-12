@@ -27,15 +27,12 @@ LOG_FILE="$(pwd)/install.log"
 #
 function isRaspberryPi
 {
-    local pi=""
-    if [ -f /proc/device-tree/model ];
+    if cat /proc/device-tree/model 2>&1 | tr '\0' '\n' | grep "Raspberry Pi" >/dev/null 2>&1;
     then
-        pi=$( cat /proc/device-tree/model | tr '\0' '\n' | grep "Raspberry Pi" )
-    fi
-    if [ "x${pi}" == "x" ];
-    then
+        return
+    else
         echo "Error: device is not a Raspberry Pi!"
-        exit 1
+        exit -1
     fi
 }
 

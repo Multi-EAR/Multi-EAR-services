@@ -1,4 +1,5 @@
 # absolute imports
+import os
 import subprocess
 import configparser
 
@@ -17,6 +18,16 @@ services = ['multi-ear-ctrl.service',
             'telegraph.service',
             'dnsmasq.service',
             'hostapd.service']
+
+
+def is_raspberry_pi():
+    """Checks if the device is a Rasperry Pi
+    """
+    if not os.path.exists('/proc/device-tree/model'):
+        return False
+    with open('/proc/device-tree/model') as f:
+        model = f.read()
+    return model.startswith('Raspberry Pi')
 
 
 def parse_config(config_path: str, **kwargs):
@@ -75,9 +86,9 @@ def wlan_ssid_passphrase(ssid: str, passphrase: str, method=None):
                        'do_wifi_ssid_passphrase', ssid, passphrase])
     else:
         return rpopen(['/usr/bin/wpa_passphrase', ssid, passphrase, '|',
-                       '/usr/bin/sed', '3d', '|',
-                       '/usr/bin/sed', "'2i\        scan_ssid=1'",
-                       '/usr/bin/sudo', '/usr/bin/tee', '-a', 
+                       '/usr/bin/sed', '3d;2i\        scan_ssid=1', '|',
+                       '/usr/bin/sed', '1i\\', '|',
+                       '/usr/bin/sudo', '/usr/bin/tee', '-a',
                        '/etc/wpa_supplicant/wpa_supplicant.conf'])
 
 

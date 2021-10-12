@@ -1,5 +1,12 @@
 /* global bootstrap: false */
-function validateWiFiForm() {
+
+function resetWifiForm(form) {
+    form.reset()
+    form.classList.remove('was-validated')
+    form.querySelector('button[type=submit]').disabled = false;
+}
+
+function validateWifiForm() {
 
     // Fetch all the forms we want to apply custom Bootstrap validation styles to
     var forms = document.querySelectorAll('.needs-validation')
@@ -23,9 +30,7 @@ function validateWiFiForm() {
         }, false)
 
         form.addEventListener('reset', function (event) {
-            form.reset()
-            form.classList.remove('was-validated')
-            form.querySelector('button[type=submit]').disabled = false;
+            resetWifiForm(form)
         }, false)
 
     })
@@ -37,12 +42,16 @@ function processWifiForm(form) {
     var psk = form.elements["inputPSK"].value
     getJSON("/_wpa_supplicant", { ssid: ssid, passphrase: psk }, 'POST')
     .then(data => {
+        if (data === null) return
         console.log(data);
+        alert(ssid + " added to the list of known wireless networks.")
+        resetWifiForm(form)
     });
 }
 
 
 function statusUpdateLoop(content) {
+
     // init
     let id = null;
     let width = 0;
@@ -71,6 +80,8 @@ function statusUpdate() {
 
     getJSON("/_systemd_status", { service: '*' })
     .then(function(data) {
+
+        if (data === null) return
 
         for (const [service, response] of Object.entries(data)) {
 
@@ -177,6 +188,7 @@ function loadTabContent(tab) {
     // lazy load new content and trigger tab related functions
     getJSON("/_tab/" + tab.getAttribute("aria-controls"))
     .then(function(data) {
+        if (data === null) return
         content.innerHTML = data.html
     })
     .finally(function() {
@@ -186,7 +198,7 @@ function loadTabContent(tab) {
                 break;
             case "wifi-tab":
                 showPasswordToggle()
-                validateWiFiForm()
+                validateWifiForm()
                 break;
             case "status-tab":
                 statusUpdate()

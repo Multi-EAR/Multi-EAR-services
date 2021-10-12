@@ -31,6 +31,9 @@ def create_app(test_config=None):
     except OSError:
         pass
 
+    # check if host is a Raspberry Pi
+    is_rpi = utils.is_raspberry_pi()
+
     # template globals
     @app.context_processor
     def inject_stage_and_region():
@@ -53,27 +56,30 @@ def create_app(test_config=None):
             html = render_template(f"tabs/{tab}.html.jinja")
         except FileNotFoundError:
             html = None
-        resp = {
+        res = {
             "succes": True if html else False,
             "tab": tab,
             "html": html,
         }
-        return jsonify(resp)
+        return jsonify(res)
 
     @app.route("/_systemd_status", methods=['GET'])
     def systemd_status():
         service = request.args.get('service') or '*'
-        if service == '*': 
-            res = utils.systemd_status_all()
+        if is_rpi:
+            if is_rpi and service == '*': 
+                res = utils.systemd_status_all()
+            else:
+                res = utils.systemd_status(service)
         else:
-            res = utils.systemd_status(service)
+             res = None
         return jsonify(res)
 
     @app.route("/_wpa_supplicant", methods=['POST'])
     def wpa_supplicant():
         ssid = request.args.get('ssid')
         passphrase = request.args.get('passphrase')
-        if ssid and passphrase:
+        if is_rpi and ssid and passphrase:
             res = utils.wlan_ssid_passphrase(ssid, passphrase)
         else:
             res = None
