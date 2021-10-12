@@ -79,7 +79,7 @@ function statusUpdateLoop(content) {
 function statusUpdate() {
 
     getJSON("/_systemd_status", { service: '*' })
-    .then(function(data) {
+    .finally(function(data) {
 
         if (data === null) return
 
