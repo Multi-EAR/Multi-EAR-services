@@ -96,6 +96,78 @@ function version
 
 
 #
+# Systemd service actions
+#
+function do_systemd_service_unmask
+{
+    if systemctl -all list-unit-files $1 | grep "$1 masked" >/dev/null 2>&1;
+    then
+	sudo systemctl unmask $1 >> $LOG_FILE 2>&1
+    fi
+}
+
+
+function do_systemd_service_start
+{
+    do_systemd_service_unmask $1
+
+    if systemctl -all list-unit-files $1 | grep "$1 disabled" >/dev/null 2>&1;
+    then
+	sudo systemctl enable $1 >> $LOG_FILE 2>&1
+	sudo systemctl start $1 >> $LOG_FILE 2>&1
+    fi
+    sudo systemctl status $1 >> $LOG_FILE 2>&1
+}
+
+
+function do_systemd_service_restart
+{
+    if [ "$(systemctl is-active $1)" == "active" ];
+    then
+        sudo systemctl restart $1 >> $LOG_FILE 2>&1
+        sudo systemctl status $1 >> $LOG_FILE 2>&1
+    fi
+}
+
+
+function do_systemd_service_stop
+{
+    do_systemd_service_unmask $1
+
+    if systemctl -all list-unit-files $1 | grep "$1 enabled" >/dev/null 2>&1;
+    then
+	sudo systemctl disable $1 >> $LOG_FILE 2>&1
+	sudo systemctl stop $1 >> $LOG_FILE 2>&1
+    fi
+    sudo systemctl status $1 >> $LOG_FILE 2>&1
+}
+
+
+#
+# Bashrc helpers
+#
+function export_environment_variable
+{
+    local VAR="$1"
+    local VALUE="$2"
+
+    if grep -q "export $VAR=$VALUE" /home/$USER/.bashrc >/dev/null 2>&1;
+    then
+        echo "export $VAR=$VALUE already exists in .bashrc" >> $LOG_FILE 2>&1
+    else
+        if grep -q "export $VAR=" /home/$USER/.bashrc >/dev/null 2>&1;
+        then
+            echo "export $VAR=$VALUE updated in .bashrc" >> $LOG_FILE 2>&1
+            sed -i -s "s/^export $VAR=.*/export $VAR=$VALUE/" /home/$USER/.bashrc >> $LOG_FILE 2>&1
+        else
+            echo "export $VAR=$VALUE added to .bashrc" >> $LOG_FILE 2>&1
+            echo "export $VAR=$VALUE" >> /home/$USER/.bashrc
+        fi
+    fi
+}
+
+
+#
 # Installs
 #
 function do_install_libs
@@ -106,6 +178,7 @@ function do_install_libs
     sudo apt install -y build-essential libssl-dev libffi-dev >> $LOG_FILE 2>&1
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
+
 
 function do_install_python3
 {
@@ -195,9 +268,10 @@ function do_install
 #
 # Python3 virtual environment
 #
-function do_create_python3_venv
+function do_python3_venv
 {
     echo ".. create python3 venv in $VIRTUAL_ENV" | tee -a $LOG_FILE
+
     # check if already exists
     if [[ -d "$VIRTUAL_ENV" ]]
     then
@@ -205,18 +279,30 @@ function do_create_python3_venv
     else
         mkdir -f $VIRTUAL_ENV >> $LOG_FILE 2>&1
     fi
+
     # force create environment
-    python3 -m venv --clear --prompt py37 $VIRTUAL_ENV >> $LOG_FILE 2>&1
-    # add to .bashrc
-    if ! grep -q "source $VIRTUAL_ENV/bin/activate" "/home/$USER/.bashrc"; then
+    /usr/bin/python3 -m venv --clear --prompt py37 $VIRTUAL_ENV >> $LOG_FILE 2>&1
+
+    # add virtual environment activation to .bashrc
+    if ! grep -q "source $VIRTUAL_ENV/bin/activate" /home/$USER/.bashrc; then
         echo "add source activate to .bashrc" >> $LOG_FILE 2>&1
         echo -e "\n# Multi-EAR python3 venv\nsource $VIRTUAL_ENV/bin/activate" | tee -a /home/$USER/.bashrc >> $LOG_FILE 2>&1
     else
         echo "source activate already exists in .bashrc" >> $LOG_FILE 2>&1
     fi
+
     do_activate_python3_venv
+
+    local PIP="$VIRTUAL_ENV/bin/python3 -m pip install"
+
     echo ".. self-update pip" >> $LOG_FILE 2>&1
-    $VIRTUAL_ENV/bin/python3 -m pip install --upgrade pip >> $LOG_FILE 2>&1
+    $PIP --upgrade pip >> $LOG_FILE 2>&1
+
+    echo ".. pre-install build-system requirements" >> $LOG_FILE 2>&1
+    $PIP install "setuptools>=45" --upgrade >> $LOG_FILE 2>&1
+    $PIP install "setuptools_scm>=6.2" --upgrade >> $LOG_FILE 2>&1
+    $PIP install "wheel" --upgrade >> $LOG_FILE 2>&1
+
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
 
@@ -226,60 +312,6 @@ function do_activate_python3_venv
     echo ".. activate python3 venv" | tee -a $LOG_FILE
     source $VIRTUAL_ENV/bin/activate >> $LOG_FILE 2>&1
     echo -e ".. done\n" >> $LOG_FILE 2>&1
-}
-
-
-function do_python3_venv
-{
-    do_create_python3_venv
-    # do_activate_python3_venv
-}
-
-#
-# Systemd service actions
-#
-function do_systemd_service_unmask
-{
-    if systemctl -all list-unit-files $1 | grep "$1 masked" >/dev/null 2>&1;
-    then
-	sudo systemctl unmask $1 >> $LOG_FILE 2>&1
-    fi
-}
-
-
-function do_systemd_service_start
-{
-    do_systemd_service_unmask $1
-
-    if systemctl -all list-unit-files $1 | grep "$1 disabled" >/dev/null 2>&1;
-    then
-	sudo systemctl enable $1 >> $LOG_FILE 2>&1
-	sudo systemctl start $1 >> $LOG_FILE 2>&1
-    fi
-    sudo systemctl status $1 >> $LOG_FILE 2>&1
-}
-
-
-function do_systemd_service_restart
-{
-    if [ "$(systemctl is-active $1)" == "active" ];
-    then
-        sudo systemctl restart $1 >> $LOG_FILE 2>&1
-        sudo systemctl status $1 >> $LOG_FILE 2>&1
-    fi
-}
-
-
-function do_systemd_service_stop
-{
-    do_systemd_service_unmask $1
-
-    if systemctl -all list-unit-files $1 | grep "$1 enabled" >/dev/null 2>&1;
-    then
-	sudo systemctl disable $1 >> $LOG_FILE 2>&1
-	sudo systemctl stop $1 >> $LOG_FILE 2>&1
-    fi
-    sudo systemctl status $1 >> $LOG_FILE 2>&1
 }
 
 
@@ -350,7 +382,17 @@ function do_configure_influxdb
 {
     echo ".. configure influxdb" | tee -a $LOG_FILE
     do_systemd_service_start "influxdb.service"
-    sudo cp etc/influxdb/influxdb.conf /etc/influxdb/influxdb.conf >> $LOG_FILE 2>&1
+    # create local admin
+    local INFLUX_USER='admin'
+    local INFLUX_PASSWORD="$(< /dev/urandom tr -dc A-Z-a-z-0-9 | head -c12)"
+    export_environment_variable "INFLUX_USER" "$INFLUX_USER"
+    export_environment_variable "INFLUX_PASSWORD" "$INFLUX_PASSWORD"
+    # create database
+    cat <<EOF | influx >> $LOG_FILE 2>&1
+exit
+EOF
+    # enforce settings 
+    sudo mv /etc/influxdb/multi-ear.conf /etc/influxdb/influxdb.conf >> $LOG_FILE 2>&1
     do_systemd_service_restart "influxdb"
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
@@ -420,25 +462,13 @@ function do_multi_ear_install
 
     local pip=$VIRTUAL_ENV/bin/pip3
     local python=$VIRTUAL_ENV/bin/python3
-    local env_var 
 
     echo ".. pip install multi_ear" | tee -a $LOG_FILE
     $pip uninstall -y multi_ear_services . >> $LOG_FILE 2>&1
     $pip install . >> $LOG_FILE 2>&1
     do_systemd_service_restart "multi-ear-ctrl.service" >> $LOG_FILE 2>&1
-    # add to .bashrc
-    env_var="FLASK_APP=multi_ear_services.ctrl"
-    if ! grep -q "export $export_cmd" "/home/$USER/.bashrc";
-    then
-        echo "Add \"export $env_var\" to .bashrc" >> $LOG_FILE 2>&1
-        echo "export $env_var" >> /home/$USER/.bashrc
-    fi
-    env_var="FLASK_ENV=production"
-    if ! grep -q "export $env_var" "/home/$USER/.bashrc";
-    then
-        echo "Add \"export $env_var\" to .bashrc" >> $LOG_FILE 2>&1
-        echo "export $env_var" >> /home/$USER/.bashrc
-    fi
+    export_environment_variable "FLASK_APP" "multi_ear_services.ctrl"
+    export_environment_variable "FLASK_ENV" "production"
 
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }

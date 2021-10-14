@@ -1,7 +1,7 @@
 # absolute imports
 import os
 from subprocess import Popen, PIPE
-import configparser
+from configparser import ConfigParser, MissingSectionHeaderError
 
 
 services = ['multi-ear-ctrl.service',
@@ -30,18 +30,17 @@ def is_raspberry_pi():
     return model.startswith('Raspberry Pi')
 
 
-def parse_config(config_path: str, **kwargs):
+def parse_conf(conf_path: str, **kwargs):
     """
     """
-    config = configparser.ConfigParser(**kwargs)
+    conf = ConfigParser(**kwargs)
     try:
-        config.read(config_path)
-    except configparser.MissingSectionHeaderError:
-        with open(config_path, 'r') as f:
-            config_string = '[default]\n' + f.read()
-            config = configparser.ConfigParser()
-            config.read_string(config_string)
-    return config
+        conf.read(conf_path)
+    except MissingSectionHeaderError:
+        with open(conf_path, 'r') as f:
+            conf_string = '[default]\n' + f.read()
+            conf.read_string(conf_string)
+    return conf
 
 
 def systemd_status(service: str):

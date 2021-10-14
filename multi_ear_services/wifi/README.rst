@@ -40,9 +40,7 @@ https://www.man7.org/linux/man-pages/man5/systemd.timer.5.html
 
 :Timer:
     multi-ear-wifi.timer
-:OnCalendar:
+:OnActiveSec:
     5min
-:AccuracySec:
-    1sec
-:Persistent:
-    true
+:OnUnitActiveSec:
+    5min

@@ -37,12 +37,13 @@ def create_app(test_config=None):
     # template globals
     @app.context_processor
     def inject_stage_and_region():
-        hostapd = ('' if app.debug else '/') + 'etc/hostapd/hostapd.conf'
+        etc = os.path.dirname(os.path.abspath(__file__)) + '/../../etc' if app.debug else '/etc'
+        hostapd = etc + '/hostapd/hostapd.conf'
         return dict(
             hostname=socket.gethostname(),
             version=version,
             services=utils.services,
-            hostapd=dict(utils.parse_config(hostapd)['default']),
+            hostapd=dict(utils.parse_conf(hostapd)['default']),
         )
 
     # routes
