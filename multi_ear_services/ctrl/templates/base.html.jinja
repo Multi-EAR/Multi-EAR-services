@@ -2,88 +2,133 @@
 <!doctype html>
 <html lang="en">
 <head>
-    {% block head %}
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="">
-    <meta name="author" content="Multi-EAR">
+  {% block head %}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="Multi-EAR">
 
-    <meta name="mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
 
-    <title>{% block title %}{% endblock %} {% if hostname %}{{hostname}}{% endif %}</title>
+  <title>{% block title %}{% endblock %} {% if hostname %}{{hostname}}{% endif %}</title>
 
-    <!-- Favicon -->
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='icon/apple-touch-icon.png') }}">
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='icon/favicon-32x32.png') }}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='icon/favicon-16x16.png') }}">
-    <link rel="manifest" href="site.webmanifest">
-    <link rel="mask-icon" href="{{ url_for('static', filename='icon/safari-pinned-tab.svg') }}" color="#00a6d6">
-    <meta name="msapplication-TileColor" content="#da532c">
-    <meta name="theme-color" content="#ffffff">
+  <!-- Favicon -->
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='icon/apple-touch-icon.png') }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='icon/favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='icon/favicon-16x16.png') }}">
+  <link rel="manifest" href="site.webmanifest">
+  <link rel="mask-icon" href="{{ url_for('static', filename='icon/safari-pinned-tab.svg') }}" color="#00a6d6">
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
 
-    <!-- Bootstrap core CSS -->
-    <link rel= "stylesheet" type="text/css" href= "{{ url_for('static', filename='css/bootstrap.min.css') }}">
-    <link rel= "stylesheet" type="text/css" href="{{ url_for('static', filename='css/bootstrap-icons.css') }}">
-    <link rel= "stylesheet" type="text/css" href="{{ url_for('static', filename='css/show-password-toggle.min.css') }}">
-    <link rel= "stylesheet" type="text/css" href="{{ url_for('static', filename='css/base.css') }}">
+  <!-- Bootstrap core CSS -->
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/bootstrap-icons.css') }}">
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/show-password-toggle.min.css') }}">
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/base.css') }}">
 
-    <!-- Custom styles for this template -->
-    {% block styles %}{% endblock %}
+  <!-- Custom styles for this template -->
+  {% block styles %}{% endblock %}
 
-    {% endblock %}
+  {% endblock %}
 </head>
 <body>
-    <nav class="d-flex flex-column flex-shrink-0 bg-dark" style="width: 4.5rem;">
-        <!-- sidebar top -->
-        <a href="/" class="d-block px-2 py-3 link-light text-decoration-none text-center" onclick="return false;">
-            <b class="fs-5" style="line-height: .8;">Multi<br>EAR</b>
-        </a>
-        <!-- sidebar nav -->
-        <div class="nav nav-pills nav-flush flex-column mb-auto text-center" id="nav-tabs" role="tablist"
-         aria-orientation="vertical" style="font-size: 1.5rem">
-            <button class="nav-link active py-3 border-bottom" id="home-tab" data-bs-toggle="tab" data-bs-target="#home"
-             type="button" role="tab" aria-controls="home" aria-selected="true">
-                <i class="bi bi-house-door text-light" alt="Home"></i>
-            </button>
-            <button class="nav-link py-3 border-bottom" id="tools-tab" data-bs-toggle="tab" data-bs-target="#sensors"
-             type="button" role="tab" aria-controls="sensors" aria-selected="false">
-                <i class="bi bi-cpu text-light" alt="Sensors"></i>
-            </button>
-            <button class="nav-link py-3 border-bottom" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard"
-             type="button" role="tab" aria-controls="dashboard" aria-selected="false">
-                <i class="bi bi-speedometer2 text-light" alt="Dashboard"></i>
-            </button>
-            <button class="nav-link py-3 border-bottom" id="wifi-tab" data-bs-toggle="tab" data-bs-target="#wifi"
-             type="button" role="tab" aria-controls="wifi" aria-selected="false">
-                <i class="bi bi-wifi text-light" alt="Wi-Fi"></i>
-            </button>
-            <button class="nav-link py-3 border-bottom" id="status-tab" data-bs-toggle="tab" data-bs-target="#status"
-             type="button" role="tab" aria-controls="status" aria-selected="false">
-                <i class="bi bi-journal-code text-light" alt="Status"></i>
-            </button>
-        </div>
-        <!-- sidebar bottom -->
-        <ul class="nav nav-pills nav-flush flex-column mt-auto text-center border-top">
-            <li>
-                <a href="https://github.com/Multi-EAR" class="nav-link py-3" title="" target="_blank" rel="noopener noreferrer">
-                    <i class="bi bi-github text-light" alt="Github" style="font-size: 1.5rem;"></i>
-                </a>
-            </li>
+  <nav class="navbar navbar-expand-lg d-md-none navbar-dark bg-dark">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#" onclick="return false;">{{hostname}}</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navTop"
+       aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navTop">
+        <ul class="navbar-nav">
+          <li class="nav-item">
+            <a class="nav-link active" aria-current="page" href="#home" id="home-nav" aria-controls="home">
+              <i class="bi bi-house-door" alt="Home"></i> Home
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#sensors" id="sensors-nav" aria-controls="sensors">
+              <i class="bi bi-cpu" alt="Sensors"></i> Sensors
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#dashboard" id="dashboard-nav" aria-controls="dashboard">
+              <i class="bi bi-speedometer2" alt="Dashboard"></i> Dashboard
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#wifi" id="wifi-nav" aria-controls="wifi">
+              <i class="bi bi-wifi" alt="Wi-Fi"></i> Wi-Fi
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#status" id="status-nav" aria-controls="status">
+              <i class="bi bi-journal-code" alt="Status"></i> Status
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="https://github.com/Multi-EAR" title="" target="_blank"
+             rel="noopener noreferrer">
+              <i class="bi bi-github" alt="Github"></i> Code
+            </a>
+          </li>
         </ul>
-    </nav>
-    <main class="container-fluid bg-light ps-4">
-        {% block main %}<div class="tab-content" id="nav-content">..</div>{% endblock %}
-    </main>
+      </div>
+    </div>
+  </nav>
+  <nav class="d-none d-md-flex flex-column flex-shrink-0 bg-dark" style="width: 4.5rem;">
+    <!-- sidebar top -->
+    <a href="/" class="d-block px-2 py-3 link-light text-decoration-none text-center" onclick="return false;">
+      <b class="fs-5" style="line-height: .8;">Multi<br>EAR</b>
+    </a>
+    <!-- sidebar nav -->
+    <div class="nav nav-pills nav-flush flex-column mb-auto text-center" id="navLeft" role="tablist"
+     aria-orientation="vertical" style="font-size: 1.5rem">
+      <button class="nav-link active py-3 border-bottom" id="home-tab" data-bs-toggle="tab" data-bs-target="#home"
+       type="button" role="tab" aria-controls="home" aria-selected="true">
+        <i class="bi bi-house-door text-light" alt="Home"></i>
+      </button>
+      <button class="nav-link py-3 border-bottom" id="sensors-tab" data-bs-toggle="tab" data-bs-target="#sensors"
+       type="button" role="tab" aria-controls="sensors" aria-selected="false">
+        <i class="bi bi-cpu text-light" alt="Sensors"></i>
+      </button>
+      <button class="nav-link py-3 border-bottom" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard"
+       type="button" role="tab" aria-controls="dashboard" aria-selected="false">
+        <i class="bi bi-speedometer2 text-light" alt="Dashboard"></i>
+      </button>
+      <button class="nav-link py-3 border-bottom" id="wifi-tab" data-bs-toggle="tab" data-bs-target="#wifi"
+       type="button" role="tab" aria-controls="wifi" aria-selected="false">
+        <i class="bi bi-wifi text-light" alt="Wi-Fi"></i>
+      </button>
+      <button class="nav-link py-3 border-bottom" id="status-tab" data-bs-toggle="tab" data-bs-target="#status"
+       type="button" role="tab" aria-controls="status" aria-selected="false">
+        <i class="bi bi-journal-code text-light" alt="Status"></i>
+      </button>
+    </div>
+    <!-- sidebar bottom -->
+    <ul class="nav nav-pills nav-flush flex-column mt-auto text-center border-top">
+      <li>
+        <a href="https://github.com/Multi-EAR" class="nav-link py-3" title="" target="_blank"
+         rel="noopener noreferrer">
+          <i class="bi bi-github text-light" alt="Github" style="font-size: 1.5rem;"></i>
+        </a>
+      </li>
+    </ul>
+  </nav>
+  <main class="container-fluid bg-light ps-4">
+    {% block main %}<div class="tab-content" id="nav-content">..</div>{% endblock %}
+  </main>
 
-    <!-- Bootstrap core JS -->
-    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/vanilla-get-json.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/show-password-toggle.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/Chart.min.js') }}"></script>
+  <!-- Bootstrap core JS -->
+  <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/vanilla-get-json.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/show-password-toggle.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/Chart.min.js') }}"></script>
 
-    <!-- Custom scripts for this template -->
-    {% block script %}
-      <script src="{{ url_for('static', filename='js/base.js') }}"></script>
-    {% endblock %}
+  <!-- Custom scripts for this template -->
+  {% block script %}
+    <script src="{{ url_for('static', filename='js/base.js') }}"></script>
+  {% endblock %}
 </body>
 </html>

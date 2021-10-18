@@ -3,25 +3,31 @@
  * base css
  */
 
-body {
-  display: flex;
-  flex-wrap: nowrap;
-  min-height: 100vh;
-  min-height: -webkit-fill-available;
-  overflow-x: auto;
-  overflow-y: hidden;
-}
-
 html {
   height: -webkit-fill-available;
 }
 
-main {
-  min-height: 100vh;
-  min-height: -webkit-fill-available;
-  max-height: 100vh;
-  overflow-x: auto;
-  overflow-y: auto;
+@media (min-width: 768px) {
+  body {
+    display: flex;
+    flex-wrap: nowrap;
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  main {
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+    max-height: 100vh;
+    overflow-x: auto;
+    overflow-y: auto;
+  }
+}
+@media (max-width: 767px) {
+  .min-vh-100 {
+    min-height: 90vh!important;
+  }
 }
 
 .bi {

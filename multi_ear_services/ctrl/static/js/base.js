@@ -173,10 +173,10 @@ function loadDashboard() {
 }
 
 
-function loadTabContent(tab) {
+function loadContent(nav) {
 
-    // nav-tab set?
-    if (tab === undefined) var tab = document.querySelector('#nav-tabs > .active')
+    // nav object set?
+    if (nav === undefined) var nav = document.querySelector('#navLeft > .active')
 
     // get nav-content div
     var content = document.querySelector('#nav-content');
@@ -187,22 +187,22 @@ function loadTabContent(tab) {
     // stop status progressbar interval
     clearInterval(statusUpdater);
 
-    // lazy load new content and trigger tab related functions
-    getJSON("/_tab/" + tab.getAttribute("aria-controls"))
+    // lazy load new content and trigger nav related functions
+    getJSON("/_tab/" + nav.getAttribute("aria-controls"))
     .then(function(data) {
         if (data === null) return
         content.innerHTML = data.html
     })
     .finally(function() {
-        switch (tab.id) {
-            case "dashboard-tab":
+        switch (nav.getAttribute("aria-controls")) {
+            case "dashboard":
                 loadDashboard()
                 break;
-            case "wifi-tab":
+            case "wifi":
                 showPasswordToggle()
                 validateWifiForm()
                 break;
-            case "status-tab":
+            case "status":
                 statusUpdate()
                 statusUpdateLoop()
                 break;
@@ -222,18 +222,32 @@ let statusUpdater = null;
         new bootstrap.Tooltip(tooltipTriggerEl)
     })
 
-    loadTabContent();
+    loadContent();
 
-    var tabList = [].slice.call(document.querySelectorAll('#nav-tabs > button[data-bs-toggle="tab"]'))
-    tabList.forEach(function (tab) {
-
-        //statements suspected to throw exception.
-        //var tooltip = new bootstrap.Tooltip(tab, {delay: { "show": 1000, "hide": 500 }});
-
-        tab.addEventListener('shown.bs.tab', function (event) {
-            loadTabContent(tab);
+    var navLeft = [].slice.call(document.querySelectorAll('#navLeft > button[data-bs-toggle="tab"]'))
+    navLeft.forEach(function (nav) {
+        nav.addEventListener('shown.bs.tab', function (event) {
+            loadContent(nav);
+            var navTOld = document.querySelector('#navTop > ul > li > a.nav-link.active[aria-controls]')
+            navTOld.classList.remove('active')
+            var navTNew = document.querySelector('#navTop > ul > li > a.nav-link[aria-controls="' + nav.getAttribute("aria-controls") + '"]')
+            navTNew.classList.add('active')
         })
+    })
 
+    var navTop = [].slice.call(document.querySelectorAll('#navTop > ul > li > a.nav-link[aria-controls]'))
+    navTop.forEach(function (nav) {
+        nav.addEventListener('click', function (event) {
+            loadContent(nav);
+            var navTOld = document.querySelector('#navTop > ul > li > a.nav-link.active[aria-controls]')
+            navTOld.classList.remove('active')
+            nav.classList.add('active')
+            var navLOld = document.querySelector('#navLeft > button.nav-link.active[aria-controls]')
+            navLOld.classList.remove('active')
+            var navLNew = document.querySelector('#navLeft > button.nav-link[aria-controls="' + nav.getAttribute("aria-controls") + '"]')
+            navLNew.classList.add('active')
+            return false;
+        })
     })
 
     // prevent page reload
