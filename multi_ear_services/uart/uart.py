@@ -1,11 +1,13 @@
 # Mandatory imports
+import os
 import time
 import numpy as np
 import serial
 import socket
-from influxdb_client import InfluxDBClient
 import argparse
-# from influxdb_client .client.write_api import SYNCHRONOUS
+from configparser import ConfigParser
+from influxdb_client import InfluxDBClient
+from influxdb_client.client.write_api import SYNCHRONOUS
 
 # Relative imports
 try:
@@ -47,11 +49,22 @@ def uart_readout(port='/dev/ttyAMA0', baudrate=115200, timeout=2.,
         Serial port read timeout, in seconds (default: 2.).
 
     config : `str`, optional
-        InfluxDB config file path (default: 'influxdb.ini').
+        InfluxDB v1.8 config file path (default: 'influxdb.ini').
+        Configuration should contain the header "[influx]".
     """
 
+    # Read influx ini file
+    ini = ConfigParser()
+    with open(filename) as f:
+        ini.read_file(f, source=config)
+    ini = ini.items('influx', vars=os.environ)
+
     # connect to influxDB data client
-    client = InfluxDBClient.from_config_file(config or "influxdb.ini")
+    client = InfluxDBClient.from_config_file(
+        url=ini['url'],
+        token=ini['token'],
+        org=ini['org']
+    )
     print(client)
 
     # connect to serial port
@@ -70,7 +83,7 @@ def uart_readout(port='/dev/ttyAMA0', baudrate=115200, timeout=2.,
         read_buffer, data_points = parse_read(
             read_lines(ser, read_buffer), read_time
         )
-        client.write_points(data_points)
+        client.write_points(data_points, bucket=ini['bucket'])
 
 
 def read_lines(ser, read_buffer=b"", **args):

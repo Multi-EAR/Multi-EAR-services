@@ -438,8 +438,10 @@ function do_configure_influxdb
     # create local admin
     local INFLUX_USERNAME="${USER}_influx"
     export_environment_variable "INFLUX_USERNAME" "$INFLUX_USERNAME"
-    local INFLUX_PASSWORD='$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c20)'
+    local INFLUX_PASSWORD="$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c20)"
     export_environment_variable "INFLUX_PASSWORD" "$INFLUX_PASSWORD"
+    # local INFLUXDB_HTTP_SHARED_SECRET="$(echo $INFLUX_PASSWORD | shasum | head -c40 | base64 | head -c54)"
+    # export_environment_variable "INFLUXDB_HTTP_SHARED_SECRET" "$INFLUXDB_HTTP_SHARED_SECRET"
     # create database and users
     echo ".. create influx database and users" >> $LOG_FILE
     local cmd
@@ -449,9 +451,9 @@ function do_configure_influxdb
         "USE multi_ear"
         "CREATE RETENTION POLICY oneyear ON multi_ear DURATION 366d REPLICATION 1 SHARD DURATION 7d"
         "CREATE USER $INFLUX_USERNAME WITH PASSWORD '$INFLUX_PASSWORD' WITH ALL PRIVILEGES"
-        "GRANT ALL PRIVILEGES ON multi_ear TO kingpin"
-        "GRANT ALL PRIVILEGES ON telegraf TO kingpin"
-        "SHOW GRANTS FOR kingpin"
+        "GRANT ALL PRIVILEGES ON multi_ear TO $INFLUX_USERNAME"
+        "GRANT ALL PRIVILEGES ON telegraf TO $INFLUX_USERNAME"
+        "SHOW GRANTS FOR $INFLUX_USERNAME"
         "CREATE USER ear WITH PASSWORD 'listener'"
         "GRANT READ ON multi_ear TO ear"
         "SHOW GRANTS FOR ear"
