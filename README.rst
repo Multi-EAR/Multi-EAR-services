@@ -31,7 +31,7 @@ Type ``bash install.sh --help`` for the usage.
     Install step:
       all            Perform all of the following steps (default).
       packages       Install all required packages via apt.
-      configure      Configure all packages (make sure /etc is synced).
+      configure      Syncs /etc and configures all packages.
       python         Create the Python3 virtual environment (py37).
       multi-ear      Install and enable the Multi-EAR software.
 
