@@ -79,8 +79,9 @@
   </nav>
   <nav class="d-none d-md-flex flex-column flex-shrink-0 bg-dark" style="width: 4.5rem;">
     <!-- sidebar top -->
-    <a href="/" class="d-block px-2 py-3 link-light text-decoration-none text-center" onclick="return false;">
-      <b class="fs-5" style="line-height: .8;">Multi<br>EAR</b>
+    <a href="/" class="d-block p-2 m-0 link-light text-decoration-none text-center text-wrap h5"
+     onclick="return false;">
+      {{hostname|replace('-','<br>')}}
     </a>
     <!-- sidebar nav -->
     <div class="nav nav-pills nav-flush flex-column mb-auto text-center" id="navLeft" role="tablist"
