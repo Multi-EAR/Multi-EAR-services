@@ -43,7 +43,7 @@ function isRaspberryPi
 function usage
 {
     local txt=(
-"Multi-EAR system services install on a deployed Raspberry Pi OS LITE (32-bit)."
+"Multi-EAR system services setup on a deployed Raspberry Pi OS LITE (32-bit)."
 "Usage: $SCRIPT [options] <install_step>"
 ""
 "Install step:"

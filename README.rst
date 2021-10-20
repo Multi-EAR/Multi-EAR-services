@@ -2,7 +2,7 @@
 Multi-EAR Services
 *************************************
 
-Multi-EAR system services for Raspberry Pi OS LITE (32-bit).
+Multi-EAR system services and configuration for a deployed Raspberry Pi OS LITE (32-bit).
 
 
 Installation
