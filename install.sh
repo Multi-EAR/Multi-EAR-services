@@ -126,7 +126,7 @@ function log_step
     then
         echo -e "$message" >> $LOG_FILE 2>&1
     else
-        if [ $LOG_FILE == "/dev/stdout"];
+        if [ "$LOG_FILE" == "/dev/stdout" ];
         then
             echo -e "$message"
         else
