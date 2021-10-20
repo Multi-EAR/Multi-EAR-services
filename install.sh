@@ -624,7 +624,7 @@ isRaspberryPi
 # Check if current user is tud
 #
 if [ $USER != "tud" ]; then
-    echo "Script must be run as user: tud" | tee -a $LOG_FILE
+    echo "Script must be run as user: tud"
     exit -1
 fi
 
@@ -633,7 +633,7 @@ fi
 # Check for default user pi
 #
 if id -u pi >/dev/null 2>&1; then
-    echo "Default user pi should not exit" | tee -a $LOG_FILE
+    echo "Default user pi should not exit"
     exit -1
 fi
 
@@ -641,14 +641,14 @@ fi
 #
 # Check for identifiers in bash environment
 #
-do_environ_variable_exists 'MULTI_EAR_ID' | tee -a $LOG_FILE
-do_environ_variable_exists 'MULTI_EAR_UID' | tee -a $LOG_FILE
+do_environ_variable_exists 'MULTI_EAR_ID'
+do_environ_variable_exists 'MULTI_EAR_UID'
 
 
 #
-# Backup bash environment
+# Backup bash environment once
 #
-cp $BASH_ENV $BASH_ENV.old
+if ! -f $BASH_ENV.old; then cp $BASH_ENV $BASH_ENV.old; fi
 
 
 # Perform one step or the entire workflow
@@ -675,5 +675,6 @@ case "$1" in
     *) badUsage "Unknown command ${1}." | tee $LOG_FILE
     ;;
 esac
+
 
 exit 0
