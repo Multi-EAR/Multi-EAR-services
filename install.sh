@@ -602,8 +602,8 @@ function do_configure
     do_configure_dnsmasq
     do_configure_hostapd
     do_configure_influxdb
-    do_configure_telegraf
-    do_configure_grafana
+    # do_configure_telegraf
+    # do_configure_grafana
 }
 
 
