@@ -510,11 +510,10 @@ function do_configure_influxdb
     fi
     if ! influx -execute "show databases" | grep -q "$INFLUX_DATABASE";
     then
-        verbose_msg "> create database $INFLUX_DATABASE" 1
         influx_e "CREATE DATABASE $INFLUX_DATABASE"
     fi
     # use database
-    influx_exec "USE DATABASE $INFLUX_DATABASE"
+    influx_e "USE DATABASE $INFLUX_DATABASE"
     # set retention policy
     if ! is_environ_variable "INFLUX_RETENTION_POLICY=";
     then
