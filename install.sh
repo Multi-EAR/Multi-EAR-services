@@ -253,7 +253,7 @@ function do_environ_variable_exists
 
 function do_export_environ_variable
 {
-    local VAR="$1" VALUE="$2" ENV="export $VAR=$VALUE"
+    local VAR="$1" VALUE="$2" ENV="export $1=$2"
 
     if is_environ_variable $VAR $VALUE;
     then
