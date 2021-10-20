@@ -237,7 +237,7 @@ function do_systemd_service_configtest
 #
 function is_environ_variable
 {
-    grep -q "export $1=$2" $BASH_ENV >/dev/null 2>&1
+    grep -q "export $1" $BASH_ENV >/dev/null 2>&1
 }
 
 
@@ -253,19 +253,19 @@ function do_environ_variable_exists
 
 function do_export_environ_variable
 {
-    local VAR="$1" VALUE="$2" ENV="export $1=$2"
+    local VAR="$1" VALUE="$2"
 
-    if is_environ_variable $VAR $VALUE;
+    if is_environ_variable "$VAR='$VALUE'";
     then
-        echo "$ENV already exists in $BASH_ENV" >> $LOG_FILE 2>&1
+        echo "$VAR already exists in $BASH_ENV" >> $LOG_FILE 2>&1
     else
-        if is_environ_variable $VAR;
+        if is_environ_variable "$VAR=";
         then
-            echo "$ENV updated in $BASH_ENV" >> $LOG_FILE 2>&1
-            sed -i -s "s/^export $VAR=.*/$ENV/" $BASH_ENV >> $LOG_FILE 2>&1
+            echo "$VAR updated in $BASH_ENV" >> $LOG_FILE 2>&1
+            sed -i -s "s/^export $VAR=.*/export $VAR='$VALUE'/" $BASH_ENV >> $LOG_FILE 2>&1
         else
-            echo "$ENV added to $BASH_ENV" >> $LOG_FILE 2>&1
-            echo "$ENV" >> $BASH_ENV
+            echo "$VAR added to $BASH_ENV" >> $LOG_FILE 2>&1
+            echo "export $VAR='$VALUE'" >> $BASH_ENV
         fi
     fi
 }
