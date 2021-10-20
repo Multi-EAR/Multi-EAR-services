@@ -25,19 +25,21 @@ Type ``bash install.sh --help`` for the usage.
 
 .. code-block:: console
 
-    Multi-EAR system services install on a deployed Raspberry Pi OS LITE (32-bit).
+    Multi-EAR system services setup on a deployed Raspberry Pi OS LITE (32-bit).
     Usage: install.sh [options] <install_step>
 
     Install step:
       all            Perform all of the following steps (default).
       packages       Install all required packages via apt.
-      configure      Syncs /etc and configures all packages.
-      python         Create the Python3 virtual environment (py37).
-      multi-ear      Install and enable the Multi-EAR software.
+      py37           Create the Python3 virtual environment.
+      configure      Sync /etc and configure all packages.
+      services       Install and enable the Multi-EAR services.
 
     Options:
       --help, -h     Print help.
       --version, -v  Print version.
+
+    Environment variables MULTI_EAR_ID and MULTI_EAR_UID should be defined in ~/.bashrc.
 
 Usage
 =====

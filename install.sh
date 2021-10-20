@@ -54,11 +54,13 @@ function usage
 "  packages       Install all required packages via apt."
 "  py37           Create the Python3 virtual environment."
 "  configure      Sync /etc and configure all packages."
-"  services       Install (pip) and enable the Multi-EAR services."
+"  services       Install and enable the Multi-EAR services."
 ""
 "Options:"
 "  --help, -h     Print help."
 "  --version, -v  Print version."
+""
+"Environment variables MULTI_EAR_ID and MULTI_EAR_UID should be defined in ~/.bashrc."
     )
 
     printf "%s\n" "${txt[@]}"
