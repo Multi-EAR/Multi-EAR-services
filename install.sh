@@ -16,7 +16,10 @@ SCRIPT=$( basename "$0" )
 VERSION=$( git describe --tag --abbrev=0 2>&1 )
 
 # Python virtual environment
-VIRTUAL_ENV="/home/tud/.py37"
+PYTHON_ENV="/home/$USER/.py37"
+
+# Bash environment for user
+BASH_ENV="/home/$USER/.bashrc"
 
 # Log file
 LOG_FILE="$(pwd)/install.log"
@@ -93,6 +96,7 @@ function version
     printf "%s\n" "${txt[@]}"
     exit 0
 }
+
 
 #
 # Check exit code
@@ -192,22 +196,37 @@ function do_systemd_service_configtest
 #
 # Bashrc helpers
 #
-function export_environment_variable
+function is_environ_variable
 {
-    local VAR="$1"
-    local VALUE="$2"
+    grep -q "export $1=$2" $BASH_ENV >/dev/null 2>&1
+}
 
-    if grep -q "export $VAR=$VALUE" /home/$USER/.bashrc >/dev/null 2>&1;
+
+function check_environ_variable_exists
+{
+    if ! is_environ_variable $1;
     then
-        echo "export $VAR=$VALUE already exists in .bashrc" >> $LOG_FILE 2>&1
+        echo "Error: environment variable $1 does not exist!" | tee -a $LOG_FILE
+        exit -1
+    fi
+}
+
+
+function export_environ_variable
+{
+    local VAR="$1" VALUE="$2" ENV="export $VAR=$VALUE"
+
+    if is_environ_variable $VAR $VALUE;
+    then
+        echo "$ENV already exists in $BASH_ENV" >> $LOG_FILE 2>&1
     else
-        if grep -q "export $VAR=" /home/$USER/.bashrc >/dev/null 2>&1;
+        if is_environ_variable $VAR;
         then
-            echo "export $VAR=$VALUE updated in .bashrc" >> $LOG_FILE 2>&1
-            sed -i -s "s/^export $VAR=.*/export $VAR=$VALUE/" /home/$USER/.bashrc >> $LOG_FILE 2>&1
+            echo "$ENV updated in $BASH_ENV" >> $LOG_FILE 2>&1
+            sed -i -s "s/^export $VAR=.*/$ENV/" $BASH_ENV >> $LOG_FILE 2>&1
         else
-            echo "export $VAR=$VALUE added to .bashrc" >> $LOG_FILE 2>&1
-            echo "export $VAR=$VALUE" >> /home/$USER/.bashrc
+            echo "$ENV added to $BASH_ENV" >> $LOG_FILE 2>&1
+            echo "$ENV" >> $BASH_ENV
         fi
     fi
 }
@@ -316,25 +335,25 @@ function do_install
 #
 function do_py37_venv
 {
-    echo ".. create python3 venv in $VIRTUAL_ENV" | tee -a $LOG_FILE
+    echo ".. create python3 venv in $PYTHON_ENV" | tee -a $LOG_FILE
 
     # check if already exists
-    if [[ -d "$VIRTUAL_ENV" ]]
+    if [[ -d "$PYTHON_ENV" ]]
     then
-        echo ".. found existing python3 venv in $VIRTUAL_ENV" >> $LOG_FILE 2>&1
+        echo ".. found existing python3 venv in $PYTHON_ENV" >> $LOG_FILE 2>&1
     else
-        mkdir -f $VIRTUAL_ENV >> $LOG_FILE 2>&1
+        mkdir -f $PYTHON_ENV >> $LOG_FILE 2>&1
     fi
 
     # force create environment
-    /usr/bin/python3 -m venv --clear --prompt py37 $VIRTUAL_ENV >> $LOG_FILE 2>&1
+    /usr/bin/python3 -m venv --clear --prompt py37 $PYTHON_ENV >> $LOG_FILE 2>&1
 
     # add virtual environment activation to .bashrc
-    if ! grep -q "source $VIRTUAL_ENV/bin/activate" /home/$USER/.bashrc; then
-        echo "add source activate to .bashrc" >> $LOG_FILE 2>&1
-        echo -e "\n# Multi-EAR python3 venv\nsource $VIRTUAL_ENV/bin/activate" | tee -a /home/$USER/.bashrc >> $LOG_FILE 2>&1
+    if ! grep -q "source $PYTHON_ENV/bin/activate" $BASH_ENV; then
+        echo "add source activate to $BASH_ENV" >> $LOG_FILE 2>&1
+        echo -e "\n# Multi-EAR python3 venv\nsource $PYTHON_ENV/bin/activate" | tee -a $BASH_ENV >> $LOG_FILE 2>&1
     else
-        echo "source activate already exists in .bashrc" >> $LOG_FILE 2>&1
+        echo "source activate already exists in $BASH_ENV" >> $LOG_FILE 2>&1
     fi
 
     # activate
@@ -343,7 +362,7 @@ function do_py37_venv
     # update pip
     echo ".. self-update pip" | tee -a $LOG_FILE
 
-    local PIP="$VIRTUAL_ENV/bin/python3 -m pip install"
+    local PIP="$PYTHON_ENV/bin/python3 -m pip install"
     $PIP --upgrade pip >> $LOG_FILE 2>&1
 
     # add build packages for offline installation
@@ -359,7 +378,7 @@ function do_py37_venv
 function do_activate_python3_venv
 {
     echo ".. activate python3 venv" | tee -a $LOG_FILE
-    source $VIRTUAL_ENV/bin/activate >> $LOG_FILE 2>&1
+    source $PYTHON_ENV/bin/activate >> $LOG_FILE 2>&1
     echo -e ".. done\n" >> $LOG_FILE 2>&1
 }
 
@@ -437,11 +456,11 @@ function do_configure_influxdb
     # influx docs: https://docs.influxdata.com/influxdb/v1.8/
     # create local admin
     local INFLUX_USERNAME="${USER}_influx"
-    export_environment_variable "INFLUX_USERNAME" "$INFLUX_USERNAME"
+    export_environ_variable "INFLUX_USERNAME" "$INFLUX_USERNAME"
     local INFLUX_PASSWORD="$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c20)"
-    export_environment_variable "INFLUX_PASSWORD" "$INFLUX_PASSWORD"
+    export_environ_variable "INFLUX_PASSWORD" "$INFLUX_PASSWORD"
     # local INFLUXDB_HTTP_SHARED_SECRET="$(echo $INFLUX_PASSWORD | shasum | head -c40 | base64 | head -c54)"
-    # export_environment_variable "INFLUXDB_HTTP_SHARED_SECRET" "$INFLUXDB_HTTP_SHARED_SECRET"
+    # export_environ_variable "INFLUXDB_HTTP_SHARED_SECRET" "$INFLUXDB_HTTP_SHARED_SECRET"
     # create database and users
     echo ".. create influx database and users" >> $LOG_FILE
     local cmd
@@ -491,9 +510,9 @@ function do_configure_grafana
     # grafana-cli docs: https://grafana.com/docs/grafana/latest/administration/cli/
     # create local admin
     local GRAFANA_USERNAME="${USER}_grafana"
-    export_environment_variable "GRAFANA_USERNAME" "$GRAFANA_USERNAME"
+    export_environ_variable "GRAFANA_USERNAME" "$GRAFANA_USERNAME"
     local GRAFANA_PASSWORD='$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c20)'
-    export_environment_variable "GRAFANA_PASSWORD" "$GRAFANA_PASSWORD"
+    export_environ_variable "GRAFANA_PASSWORD" "$GRAFANA_PASSWORD"
     # set password
     sudo grafana-cli admin reset-admin-password $GRAFANA_PASSWORD >> $LOG_FILE 2>&1
     # install plugins
@@ -540,7 +559,7 @@ function do_gpio_watch_install
     git clone https://github.com/larsks/gpio-watch.git >> $LOG_FILE 2>&1
     cd gpio-watch >> $LOG_FILE 2>&1
     make >> $LOG_FILE 2>&1
-    cp gpio-watch $VIRTUAL_ENV/bin >> $LOG_FILE 2>&1
+    cp gpio-watch $PYTHON_ENV/bin >> $LOG_FILE 2>&1
     cd .. >> $LOG_FILE 2>&1
     rm -rf gpio-watch >> $LOG_FILE 2>&1
     echo -e ".. done\n" >> $LOG_FILE 2>&1
@@ -551,8 +570,8 @@ function do_multi_ear_services
 {
     do_activate_python3_venv
 
-    local pip=$VIRTUAL_ENV/bin/pip3
-    local python=$VIRTUAL_ENV/bin/python3
+    local pip=$PYTHON_ENV/bin/pip3
+    local python=$PYTHON_ENV/bin/python3
 
     # remove and install services
     echo ".. pip install multi_ear_services" | tee -a $LOG_FILE
@@ -562,8 +581,8 @@ function do_multi_ear_services
     # multi-ear-ctrl
     do_systemd_service_enable "multi-ear-ctrl.service"
     do_systemd_service_restart "multi-ear-ctrl.service"
-    export_environment_variable "FLASK_APP" "multi_ear_services.ctrl"
-    export_environment_variable "FLASK_ENV" "production"
+    export_environ_variable "FLASK_APP" "multi_ear_services.ctrl"
+    export_environ_variable "FLASK_ENV" "production"
 
     # multi-ear-wifi
     do_systemd_service_enable "multi-ear-wifi.service"
@@ -616,10 +635,18 @@ if id -u pi >/dev/null 2>&1; then
     exit -1
 fi
 
+
 #
-# Backup .bashrc
+# Check for identifiers in bash environment
 #
-cp /home/tud/.bashrc /home/tud/.bashrc.old
+check_environ_variable_exists 'MULTI_EAR_ID'
+check_environ_variable_exists 'MULTI_EAR_UID'
+
+
+#
+# Backup bash environment
+#
+cp $BASH_ENV $BASH_ENV.old
 
 
 # Perform one step or the entire workflow
