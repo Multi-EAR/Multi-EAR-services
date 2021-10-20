@@ -154,6 +154,7 @@ function do_systemd_service_unmask
     then
         verbose_msg "systemctl unmask $1" 1
 	sudo systemctl unmask $1 >> $LOG_FILE 2>&1
+        systemctl is-enabled $1 >> $LOG_FILE 2>&1
     fi
 }
 
@@ -166,8 +167,8 @@ function do_systemd_service_enable
     then
         verbose_msg "systemctl enable $1" 1
 	sudo systemctl enable $1 >> $LOG_FILE 2>&1
+        systemctl is-enabled $1 >> $LOG_FILE 2>&1
     fi
-    systemctl is-enabled $1 >> $LOG_FILE 2>&1
 }
 
 
@@ -179,8 +180,8 @@ function do_systemd_service_disable
     then
         verbose_msg "systemctl disable $1" 1
 	sudo systemctl disable $1 >> $LOG_FILE 2>&1
+        systemctl is-enabled $1 >> $LOG_FILE 2>&1
     fi
-    systemctl is-enabled $1 >> $LOG_FILE 2>&1
 }
 
 
@@ -190,8 +191,8 @@ function do_systemd_service_start
     then
         verbose_msg "systemctl start $1" 1
 	sudo systemctl start $1 >> $LOG_FILE 2>&1
+        systemctl is-active $1 >> $LOG_FILE 2>&1
     fi
-    systemctl is-active $1 >> $LOG_FILE 2>&1
 }
 
 
@@ -201,8 +202,8 @@ function do_systemd_service_stop
     then
         verbose_msg "systemctl stop $1" 1
 	sudo systemctl stop $1 >> $LOG_FILE 2>&1
+        systemctl is-active $1 >> $LOG_FILE 2>&1
     fi
-    systemctl is-active $1 >> $LOG_FILE 2>&1
 }
 
 
@@ -212,11 +213,12 @@ function do_systemd_service_restart
     then
         verbose_msg "systemctl start $1" 1
 	sudo systemctl start $1 >> $LOG_FILE 2>&1
+        systemctl is-active $1 >> $LOG_FILE 2>&1
     else
         verbose_msg "systemctl restart $1" 1
         sudo systemctl restart $1 >> $LOG_FILE 2>&1
+        systemctl is-active $1 >> $LOG_FILE 2>&1
     fi
-    systemctl is-active $1 >> $LOG_FILE 2>&1
 }
 
 
@@ -482,8 +484,11 @@ function do_configure_hostapd
 function do_configure_influxdb
 {
     verbose_msg ".. configure influxdb"
-    # enable and force start service (with default configuration!)
+    # enable
     do_systemd_service_enable "influxdb.service"
+    # link default settings
+    sudo ln -sf /etc/influxdb/default.conf /etc/influxdb/influxdb.conf >> $LOG_FILE 2>&1
+    # restart with default settings
     do_systemd_service_restart "influxdb.service"
     # influx docs: https://docs.influxdata.com/influxdb/v1.8/
     # create local admin
@@ -516,7 +521,7 @@ function do_configure_influxdb
         influx -execute "$cmd" >> $LOG_FILE 2>&1
     done
     # enforce multi-ear settings (requires login from now on!)
-    sudo mv /etc/influxdb/multi-ear.conf /etc/influxdb/influxdb.conf >> $LOG_FILE 2>&1
+    sudo ln -sf /etc/influxdb/multi-ear.conf /etc/influxdb/influxdb.conf >> $LOG_FILE 2>&1
     # restart service
     do_systemd_service_restart "influxdb"
     # done
