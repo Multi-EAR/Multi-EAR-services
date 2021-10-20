@@ -540,6 +540,10 @@ function do_configure_influxdb
     influx_e "REVOKE ALL PRIVILEGES FROM $ro"
     influx_e "GRANT READ ON $db TO $ro"
 
+    # create self-signed certificate
+    sudo openssl req -x509 -nodes -newkey rsa:2048 -keyout /etc/ssl/influxdb-selfsigned.key -out /etc/ssl/influxdb-selfsigned.crt -days 3650 -subj "/C=NL/ST=Zuid-Holland/L=Delft/O=Delft University of Technology/OU=Geoscience and Engineering/CN=multi-ear.org" >> $LOG_FILE 2>&1
+    sudo chown influxdb:influxdb /etc/ssl/influxdb-selfsigned.* >> $LOG_FILE 2>&1
+
     # enforce multi-ear settings (requires login from now on!)
     verbose_msg "> enable multi-ear configuration" 1
     sudo ln -sf /etc/influxdb/multi-ear.conf /etc/influxdb/influxdb.conf >> $LOG_FILE 2>&1
