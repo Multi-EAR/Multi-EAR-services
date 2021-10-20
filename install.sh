@@ -118,7 +118,7 @@ function check_exit_code
 #
 # Verbose helpers
 #
-function log_step
+function verbose_msg
 {
     local message=$1 level=${2:-0}
 
@@ -136,7 +136,7 @@ function log_step
 }
 
 
-function log_done
+function verbose_done
 {
     if [ $LOG_FILE != "/dev/stdout"];
     then
@@ -268,17 +268,17 @@ function do_export_environ_variable
 #
 function do_install_libs
 {
-    log_step ".. install libs"
+    verbose_msg ".. install libs"
     sudo apt update >> $LOG_FILE 2>&1
     sudo apt install -y libatlas-base-dev >> $LOG_FILE 2>&1
     sudo apt install -y build-essential libssl-dev libffi-dev >> $LOG_FILE 2>&1
-    log_done
+    verbose_done
 }
 
 
 function do_install_python3
 {
-    log_step echo ".. install python3"
+    verbose_msg echo ".. install python3"
     sudo apt update >> $LOG_FILE 2>&1
     sudo apt install -y python3 python3-pip python3-dev python3-venv python3-setuptools >> $LOG_FILE 2>&1
     sudo apt install -y python3-numpy python3-gpiozero python3-serial >> $LOG_FILE 2>&1
@@ -291,41 +291,41 @@ trusted-host = pypi.org
                pypi.python.org
                files.pythonhosted.org
 EOF
-    log_done
+    verbose_done
 }
 
 
 function do_install_nginx
 {
-    log_step ".. install nginx"
+    verbose_msg ".. install nginx"
     sudo apt update >> $LOG_FILE 2>&1
     sudo apt install -y nginx >> $LOG_FILE 2>&1
-    log_done
+    verbose_done
 }
 
 
 function do_install_hostapd
 {
-    log_step ".. install hostapd"
+    verbose_msg ".. install hostapd"
     sudo apt update >> $LOG_FILE 2>&1
     sudo apt install -y hostapd >> $LOG_FILE 2>&1
-    log_done
+    verbose_done
 }
 
 
 function do_install_dnsmasq
 {
-    log_step ".. install dnsmasq"
+    verbose_msg ".. install dnsmasq"
     sudo apt update >> $LOG_FILE 2>&1
     sudo apt install -y dnsmasq >> $LOG_FILE 2>&1
     sudo apt purge -y dns-root-data >> $LOG_FILE 2>&1
-    log_done
+    verbose_done
 }
 
 
 function do_install_influxdb_telegraf
 {
-    log_step ".. install influxdb & telegraf"
+    verbose_msg ".. install influxdb & telegraf"
     # add to apt
     wget -qO- https://repos.influxdata.com/influxdb.key | sudo apt-key add - >> $LOG_FILE 2>&1
     echo "deb https://repos.influxdata.com/debian $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/influxdb.list >> $LOG_FILE 2>&1
@@ -333,20 +333,20 @@ function do_install_influxdb_telegraf
     sudo apt update >> $LOG_FILE 2>&1
     sudo apt install -y influxdb telegraf >> $LOG_FILE 2>&1
     # done
-    log_done
+    verbose_done
 }
 
 
 function do_install_grafana
 {
-    log_step ".. install grafana"
+    verbose_msg ".. install grafana"
     # add to apt
     curl -s https://packages.grafana.com/gpg.key | sudo apt-key add - >> $LOG_FILE 2>&1
     echo "deb https://packages.grafana.com/oss/deb stable main" | sudo tee /etc/apt/sources.list.d/grafana.list >> $LOG_FILE 2>&1
     # install
     sudo apt update >> $LOG_FILE 2>&1
     sudo apt install -y grafana >> $LOG_FILE 2>&1
-    log_done
+    verbose_done
 }
 
 
@@ -367,7 +367,7 @@ function do_install
 #
 function do_py37_venv
 {
-    log_step ".. create python3 venv in $PYTHON_ENV"
+    verbose_msg ".. create python3 venv in $PYTHON_ENV"
 
     # check if already exists
     if [[ -d "$PYTHON_ENV" ]]
@@ -392,25 +392,25 @@ function do_py37_venv
     do_activate_python3_venv
 
     # update pip
-    log_step ".. self-update pip"
+    verbose_msg ".. self-update pip"
     local PIP="$PYTHON_ENV/bin/python3 -m pip install"
     $PIP --upgrade pip >> $LOG_FILE 2>&1
 
     # add build packages for offline installation
-    log_step ".. pre-install build-system requirements" 
+    verbose_msg ".. pre-install build-system requirements" 
     $PIP install "setuptools>=45" --upgrade >> $LOG_FILE 2>&1
     $PIP install "setuptools_scm>=6.2" --upgrade >> $LOG_FILE 2>&1
     $PIP install "wheel" --upgrade >> $LOG_FILE 2>&1
 
-    log_done
+    verbose_done
 }
 
 
 function do_activate_python3_venv
 {
-    log_step ".. activate python3 venv"
+    verbose_msg ".. activate python3 venv"
     source $PYTHON_ENV/bin/activate >> $LOG_FILE 2>&1
-    log_done
+    verbose_done
 }
 
 
@@ -419,26 +419,26 @@ function do_activate_python3_venv
 #
 function do_rsync_etc
 {
-    log_step ".. rsync /etc"
+    verbose_msg ".. rsync /etc"
     sudo rsync -amtv --chown=root:root etc / >> $LOG_FILE 2>&1
     check_exit_code $? "rsync /etc"
-    log_done
+    verbose_done
 }
 
 
 function do_configure_rsyslog
 {
-    log_step ".. configure rsyslog"
+    verbose_msg ".. configure rsyslog"
     sudo mkdir -p /var/log/multi-ear >> $LOG_FILE 2>&1
     sudo chown -R $USER:$USER /var/log/multi-ear >> $LOG_FILE 2>&1
     do_systemd_service_restart "rsyslog"
-    log_done
+    verbose_done
 }
 
 
 function do_configure_nginx
 {
-    log_step ".. configure nginx"
+    verbose_msg ".. configure nginx"
     # remove default nginx site
     sudo rm -f /etc/nginx/sites-enabled/default
     sudo rm -f /etc/nginx/sites-available/default
@@ -449,33 +449,33 @@ function do_configure_nginx
     # restart service
     do_systemd_service_restart "nginx.service"
     # done
-    log_done
+    verbose_done
 }
 
 
 function do_configure_dnsmasq
 {
-    log_step ".. configure dnsmasq"
+    verbose_msg ".. configure dnsmasq"
     do_systemd_service_stop "dnsmasq.service"
-    log_done
+    verbose_done
 }
 
 
 function do_configure_hostapd
 {
-    log_step ".. configure hostapd"
+    verbose_msg ".. configure hostapd"
     # stop service
     do_systemd_service_stop "hostapd.service"
     # replace ssid by hostname 
     sudo sed -i -s "s/^ssid=.*/ssid=$HOSTNAME/" /etc/hostapd/hostapd.conf >> $LOG_FILE 2>&1
     # done
-    log_done
+    verbose_done
 }
 
 
 function do_configure_influxdb
 {
-    log_step ".. configure influxdb"
+    verbose_msg ".. configure influxdb"
     # enable and force start service (with default configuration!)
     do_systemd_service_enable "influxdb.service"
     do_systemd_service_restart "influxdb.service"
@@ -514,22 +514,22 @@ function do_configure_influxdb
     # restart service
     do_systemd_service_restart "influxdb"
     # done
-    log_done
+    verbose_done
 }
 
 
 function do_configure_telegraf
 {
-    log_step ".. configure telegraf"
+    verbose_msg ".. configure telegraf"
     do_systemd_service_enable "telegraf"
     do_systemd_service_restart "telegraf"
-    log_done
+    verbose_done
 }
 
 
 function do_configure_grafana
 {
-    log_step ".. configure grafana"
+    verbose_msg ".. configure grafana"
     # enable service 
     do_systemd_service_enable "grafana"
     # grafana-cli docs: https://grafana.com/docs/grafana/latest/administration/cli/
@@ -546,7 +546,7 @@ function do_configure_grafana
     # force start serice
     do_systemd_service_restart "grafana"
     # done
-    log_done
+    verbose_done
 }
 
 
@@ -580,7 +580,7 @@ function do_gpio_watch_install
 
     do_activate_python3_venv
 
-    log_step ".. clone and make gpio-watch"
+    verbose_msg ".. clone and make gpio-watch"
     git clone https://github.com/larsks/gpio-watch.git >> $LOG_FILE 2>&1
     cd gpio-watch >> $LOG_FILE 2>&1
     make >> $LOG_FILE 2>&1
@@ -588,7 +588,7 @@ function do_gpio_watch_install
     cd .. >> $LOG_FILE 2>&1
     rm -rf gpio-watch >> $LOG_FILE 2>&1
 
-    log_done
+    verbose_done
 }
 
 
@@ -600,7 +600,7 @@ function do_multi_ear_services
     local python=$PYTHON_ENV/bin/python3
 
     # remove and install services
-    log_step ".. pip install multi_ear_services"
+    verbose_msg ".. pip install multi_ear_services"
     $pip uninstall -y multi_ear_services . >> $LOG_FILE 2>&1
     $pip install . >> $LOG_FILE 2>&1
 
@@ -619,7 +619,7 @@ function do_multi_ear_services
     do_systemd_service_start "multi-ear-uart.service"
 
     # done
-    log_done
+    verbose_done
 }
 
 
@@ -680,12 +680,12 @@ if [ ! -f $BASH_ENV.old ]; then cp $BASH_ENV $BASH_ENV.old; fi
 case "$1" in
     all|'')
     rm -f $LOG_FILE
-    log_step "Multi-EAR Software Install Tool v${VERSION}"
+    verbose_msg "Multi-EAR Software Install Tool v${VERSION}"
     do_install
     do_py37_venv
     do_configure
     do_multi_ear_services
-    log_step "Multi-EAR software install completed"
+    verbose_msg "Multi-EAR software install completed"
     ;;
     packages) do_install
     ;;
