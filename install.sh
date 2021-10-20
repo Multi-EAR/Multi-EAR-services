@@ -115,6 +115,35 @@ function check_exit_code
     fi
 }
 
+#
+# Verbose helpers
+#
+function log_step
+{
+    local message=$1 level=${2:-0}
+
+    if [ $level -gt 0 ];
+    then
+        echo -e "$message" >> $LOG_FILE 2>&1
+    else
+        if [ $LOG_FILE == "/dev/stdout"];
+        then
+            echo -e "$message"
+        else
+            echo -e "$message" | tee -a $LOG_FILE
+        fi
+    fi
+}
+
+
+function log_done
+{
+    if [ $LOG_FILE != "/dev/stdout"];
+    then
+        echo -e ".. done\n" >> $LOG_FILE 2>&1
+    fi
+}
+
 
 #
 # Systemd service actions
@@ -239,17 +268,17 @@ function do_export_environ_variable
 #
 function do_install_libs
 {
-    echo ".. install libs" | tee -a $LOG_FILE
+    log_step ".. install libs"
     sudo apt update >> $LOG_FILE 2>&1
     sudo apt install -y libatlas-base-dev >> $LOG_FILE 2>&1
     sudo apt install -y build-essential libssl-dev libffi-dev >> $LOG_FILE 2>&1
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
+    log_done
 }
 
 
 function do_install_python3
 {
-    echo ".. install python3" | tee -a $LOG_FILE
+    log_step echo ".. install python3"
     sudo apt update >> $LOG_FILE 2>&1
     sudo apt install -y python3 python3-pip python3-dev python3-venv python3-setuptools >> $LOG_FILE 2>&1
     sudo apt install -y python3-numpy python3-gpiozero python3-serial >> $LOG_FILE 2>&1
@@ -262,61 +291,62 @@ trusted-host = pypi.org
                pypi.python.org
                files.pythonhosted.org
 EOF
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
+    log_done
 }
 
 
 function do_install_nginx
 {
-    echo ".. install nginx" | tee -a $LOG_FILE
+    log_step ".. install nginx"
     sudo apt update >> $LOG_FILE 2>&1
     sudo apt install -y nginx >> $LOG_FILE 2>&1
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
+    log_done
 }
 
 
 function do_install_hostapd
 {
-    echo ".. install hostapd" | tee -a $LOG_FILE
+    tee_step ".. install hostapd"
     sudo apt update >> $LOG_FILE 2>&1
     sudo apt install -y hostapd >> $LOG_FILE 2>&1
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
+    log_done
 }
 
 
 function do_install_dnsmasq
 {
-    echo ".. install dnsmasq" | tee -a $LOG_FILE
+    tee_step ".. install dnsmasq"
     sudo apt update >> $LOG_FILE 2>&1
     sudo apt install -y dnsmasq >> $LOG_FILE 2>&1
     sudo apt purge -y dns-root-data >> $LOG_FILE 2>&1
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
+    log_done
 }
 
 
 function do_install_influxdb_telegraf
 {
-    echo ".. install influxdb & telegraf" | tee -a $LOG_FILE
+    tee_step ".. install influxdb & telegraf"
     # add to apt
     wget -qO- https://repos.influxdata.com/influxdb.key | sudo apt-key add - >> $LOG_FILE 2>&1
     echo "deb https://repos.influxdata.com/debian $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/influxdb.list >> $LOG_FILE 2>&1
     # install
     sudo apt update >> $LOG_FILE 2>&1
     sudo apt install -y influxdb telegraf >> $LOG_FILE 2>&1
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
+    # done
+    log_done
 }
 
 
 function do_install_grafana
 {
-    echo ".. install grafana" | tee -a $LOG_FILE
+    tee_step ".. install grafana"
     # add to apt
     curl -s https://packages.grafana.com/gpg.key | sudo apt-key add - >> $LOG_FILE 2>&1
     echo "deb https://packages.grafana.com/oss/deb stable main" | sudo tee /etc/apt/sources.list.d/grafana.list >> $LOG_FILE 2>&1
     # install
     sudo apt update >> $LOG_FILE 2>&1
     sudo apt install -y grafana >> $LOG_FILE 2>&1
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
+    log_done
 }
 
 
@@ -337,7 +367,7 @@ function do_install
 #
 function do_py37_venv
 {
-    echo ".. create python3 venv in $PYTHON_ENV" | tee -a $LOG_FILE
+    log_step ".. create python3 venv in $PYTHON_ENV"
 
     # check if already exists
     if [[ -d "$PYTHON_ENV" ]]
@@ -362,26 +392,25 @@ function do_py37_venv
     do_activate_python3_venv
 
     # update pip
-    echo ".. self-update pip" | tee -a $LOG_FILE
-
+    log_step ".. self-update pip"
     local PIP="$PYTHON_ENV/bin/python3 -m pip install"
     $PIP --upgrade pip >> $LOG_FILE 2>&1
 
     # add build packages for offline installation
-    echo ".. pre-install build-system requirements" | tee -a $LOG_FILE
+    log_step ".. pre-install build-system requirements" 
     $PIP install "setuptools>=45" --upgrade >> $LOG_FILE 2>&1
     $PIP install "setuptools_scm>=6.2" --upgrade >> $LOG_FILE 2>&1
     $PIP install "wheel" --upgrade >> $LOG_FILE 2>&1
 
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
+    log_done
 }
 
 
 function do_activate_python3_venv
 {
-    echo ".. activate python3 venv" | tee -a $LOG_FILE
+    log_step ".. activate python3 venv"
     source $PYTHON_ENV/bin/activate >> $LOG_FILE 2>&1
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
+    log_done
 }
 
 
@@ -390,29 +419,26 @@ function do_activate_python3_venv
 #
 function do_rsync_etc
 {
-    # rsync specific folder in /etc
+    log_step ".. rsync /etc"
     sudo rsync -amtv --chown=root:root etc / >> $LOG_FILE 2>&1
-    # check exit code
     check_exit_code $? "rsync /etc"
+    log_done
 }
 
 
 function do_configure_rsyslog
 {
-    echo ".. configure rsyslog" | tee -a $LOG_FILE
-    # create log directory
+    log_step ".. configure rsyslog"
     sudo mkdir -p /var/log/multi-ear >> $LOG_FILE 2>&1
     sudo chown -R $USER:$USER /var/log/multi-ear >> $LOG_FILE 2>&1
-    # restart service
     do_systemd_service_restart "rsyslog"
-    # done
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
+    log_done
 }
 
 
 function do_configure_nginx
 {
-    echo ".. configure nginx" | tee -a $LOG_FILE
+    log_step ".. configure nginx"
     # remove default nginx site
     sudo rm -f /etc/nginx/sites-enabled/default
     sudo rm -f /etc/nginx/sites-available/default
@@ -423,35 +449,33 @@ function do_configure_nginx
     # restart service
     do_systemd_service_restart "nginx.service"
     # done
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
+    log_done
 }
 
 
 function do_configure_dnsmasq
 {
-    echo ".. configure dnsmasq" | tee -a $LOG_FILE
-    # stop service
+    log_step ".. configure dnsmasq"
     do_systemd_service_stop "dnsmasq.service"
-    # done
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
+    log_done
 }
 
 
 function do_configure_hostapd
 {
-    echo ".. configure hostapd" | tee -a $LOG_FILE
+    log_step ".. configure hostapd"
     # stop service
     do_systemd_service_stop "hostapd.service"
     # replace ssid by hostname 
     sudo sed -i -s "s/^ssid=.*/ssid=$HOSTNAME/" /etc/hostapd/hostapd.conf >> $LOG_FILE 2>&1
     # done
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
+    log_done
 }
 
 
 function do_configure_influxdb
 {
-    echo ".. configure influxdb" | tee -a $LOG_FILE
+    log_step ".. configure influxdb"
     # enable and force start service (with default configuration!)
     do_systemd_service_enable "influxdb.service"
     do_systemd_service_restart "influxdb.service"
@@ -490,23 +514,22 @@ function do_configure_influxdb
     # restart service
     do_systemd_service_restart "influxdb"
     # done
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
+    log_done
 }
 
 
 function do_configure_telegraf
 {
-    echo ".. configure telegraf" | tee -a $LOG_FILE
-    # enable and forece start service 
+    log_step ".. configure telegraf"
     do_systemd_service_enable "telegraf"
     do_systemd_service_restart "telegraf"
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
+    log_done
 }
 
 
 function do_configure_grafana
 {
-    echo ".. configure grafana" | tee -a $LOG_FILE
+    log_step ".. configure grafana"
     # enable service 
     do_systemd_service_enable "grafana"
     # grafana-cli docs: https://grafana.com/docs/grafana/latest/administration/cli/
@@ -523,7 +546,7 @@ function do_configure_grafana
     # force start serice
     do_systemd_service_restart "grafana"
     # done
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
+    log_done
 }
 
 
@@ -557,14 +580,15 @@ function do_gpio_watch_install
 
     do_activate_python3_venv
 
-    echo ".. clone and make gpio-watch" | tee -a $LOG_FILE
+    log_step ".. clone and make gpio-watch"
     git clone https://github.com/larsks/gpio-watch.git >> $LOG_FILE 2>&1
     cd gpio-watch >> $LOG_FILE 2>&1
     make >> $LOG_FILE 2>&1
     cp gpio-watch $PYTHON_ENV/bin >> $LOG_FILE 2>&1
     cd .. >> $LOG_FILE 2>&1
     rm -rf gpio-watch >> $LOG_FILE 2>&1
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
+
+    log_done
 }
 
 
@@ -576,7 +600,7 @@ function do_multi_ear_services
     local python=$PYTHON_ENV/bin/python3
 
     # remove and install services
-    echo ".. pip install multi_ear_services" | tee -a $LOG_FILE
+    log_step ".. pip install multi_ear_services"
     $pip uninstall -y multi_ear_services . >> $LOG_FILE 2>&1
     $pip install . >> $LOG_FILE 2>&1
 
@@ -594,7 +618,8 @@ function do_multi_ear_services
     do_systemd_service_enable "multi-ear-uart.service"
     do_systemd_service_start "multi-ear-uart.service"
 
-    echo -e ".. done\n" >> $LOG_FILE 2>&1
+    # done
+    log_done
 }
 
 
@@ -655,12 +680,12 @@ if [ ! -f $BASH_ENV.old ]; then cp $BASH_ENV $BASH_ENV.old; fi
 case "$1" in
     all|'')
     rm -f $LOG_FILE
-    echo "Multi-EAR Software Install Tool v${VERSION}" | tee $LOG_FILE
+    log_step "Multi-EAR Software Install Tool v${VERSION}"
     do_install
     do_py37_venv
     do_configure
     do_multi_ear_services
-    echo "Multi-EAR software install completed" | tee -a $LOG_FILE
+    log_step "Multi-EAR software install completed"
     ;;
     packages) do_install
     ;;
