@@ -138,7 +138,7 @@ function verbose_msg
 
 function verbose_done
 {
-    if [ $LOG_FILE != "/dev/stdout"];
+    if [ "$LOG_FILE" != "/dev/stdout" ];
     then
         echo -e ".. done\n" >> $LOG_FILE 2>&1
     fi
