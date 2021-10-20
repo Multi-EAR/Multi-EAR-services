@@ -483,6 +483,7 @@ function do_configure_hostapd
 
 function influx_e
 {
+    verbose_msg "> $1" 1
     influx -execute "$1" >> $LOG_FILE 2>&1
 }
 
@@ -509,6 +510,7 @@ function do_configure_influxdb
     fi
     if ! influx -execute "show databases" | grep -q "$INFLUX_DATABASE";
     then
+        verbose_msg "> create database $INFLUX_DATABASE" 1
         influx_e "CREATE DATABASE $INFLUX_DATABASE"
     fi
     # use database
@@ -539,12 +541,13 @@ function do_configure_influxdb
     influx_e "GRANT ALL PRIVILEGES ON $INFLUX_DATABASE TO $INFLUX_USERNAME"
     influx_e "GRANT ALL PRIVILEGES ON telegraf TO $INFLUX_USERNAME"
     # create reader
-    if ! influx -execute "show users" | grep -q "ear";
+    local READER='ear'
+    if ! influx -execute "show users" | grep -q "$READER";
     then
-        influx_e "CREATE USER ear WITH PASSWORD 'listener'"
+        influx_e "CREATE USER $READER WITH PASSWORD 'listener'"
     fi
     # revoke reader permissions
-    influx_e "REVOKE ALL PRIVILEGES FROM ear"
+    influx_e "REVOKE ALL PRIVILEGES FROM $READER"
     influx_e "GRANT READ ON $INFLUX_DATABASE TO ear"
 
     # enforce multi-ear settings (requires login from now on!)
