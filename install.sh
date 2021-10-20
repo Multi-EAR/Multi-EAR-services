@@ -306,7 +306,7 @@ function do_install_nginx
 
 function do_install_hostapd
 {
-    tee_step ".. install hostapd"
+    log_step ".. install hostapd"
     sudo apt update >> $LOG_FILE 2>&1
     sudo apt install -y hostapd >> $LOG_FILE 2>&1
     log_done
@@ -315,7 +315,7 @@ function do_install_hostapd
 
 function do_install_dnsmasq
 {
-    tee_step ".. install dnsmasq"
+    log_step ".. install dnsmasq"
     sudo apt update >> $LOG_FILE 2>&1
     sudo apt install -y dnsmasq >> $LOG_FILE 2>&1
     sudo apt purge -y dns-root-data >> $LOG_FILE 2>&1
@@ -325,7 +325,7 @@ function do_install_dnsmasq
 
 function do_install_influxdb_telegraf
 {
-    tee_step ".. install influxdb & telegraf"
+    log_step ".. install influxdb & telegraf"
     # add to apt
     wget -qO- https://repos.influxdata.com/influxdb.key | sudo apt-key add - >> $LOG_FILE 2>&1
     echo "deb https://repos.influxdata.com/debian $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/influxdb.list >> $LOG_FILE 2>&1
@@ -339,7 +339,7 @@ function do_install_influxdb_telegraf
 
 function do_install_grafana
 {
-    tee_step ".. install grafana"
+    log_step ".. install grafana"
     # add to apt
     curl -s https://packages.grafana.com/gpg.key | sudo apt-key add - >> $LOG_FILE 2>&1
     echo "deb https://packages.grafana.com/oss/deb stable main" | sudo tee /etc/apt/sources.list.d/grafana.list >> $LOG_FILE 2>&1
