@@ -152,9 +152,9 @@ function do_systemd_service_unmask
 {
     if systemctl is-enabled $1 | grep "masked" >/dev/null 2>&1;
     then
+        verbose_msg "systemctl unmask $1" 1
 	sudo systemctl unmask $1 >> $LOG_FILE 2>&1
     fi
-    systemctl status $1 >> $LOG_FILE 2>&1
 }
 
 
@@ -164,9 +164,10 @@ function do_systemd_service_enable
 
     if systemctl is-enabled $1 | grep "disabled" >/dev/null 2>&1;
     then
+        verbose_msg "systemctl enable $1" 1
 	sudo systemctl enable $1 >> $LOG_FILE 2>&1
     fi
-    systemctl status $1 >> $LOG_FILE 2>&1
+    systemctl is-enabled $1 >> $LOG_FILE 2>&1
 }
 
 
@@ -176,9 +177,10 @@ function do_systemd_service_disable
 
     if systemctl is-enabled $1 | grep "enabled" >/dev/null 2>&1;
     then
+        verbose_msg "systemctl disable $1" 1
 	sudo systemctl disable $1 >> $LOG_FILE 2>&1
     fi
-    systemctl status $1 >> $LOG_FILE 2>&1
+    systemctl is-enabled $1 >> $LOG_FILE 2>&1
 }
 
 
@@ -186,9 +188,10 @@ function do_systemd_service_start
 {
     if systemctl is-active $1 | grep "inactive" >/dev/null 2>&1;
     then
+        verbose_msg "systemctl start $1" 1
 	sudo systemctl start $1 >> $LOG_FILE 2>&1
     fi
-    systemctl status $1 >> $LOG_FILE 2>&1
+    systemctl is-active $1 >> $LOG_FILE 2>&1
 }
 
 
@@ -196,9 +199,10 @@ function do_systemd_service_stop
 {
     if systemctl is-active $1 | grep "active" >/dev/null 2>&1;
     then
+        verbose_msg "systemctl stop $1" 1
 	sudo systemctl stop $1 >> $LOG_FILE 2>&1
     fi
-    systemctl status $1 >> $LOG_FILE 2>&1
+    systemctl is-active $1 >> $LOG_FILE 2>&1
 }
 
 
@@ -206,11 +210,13 @@ function do_systemd_service_restart
 {
     if systemctl is-active $1 | grep "inactive" >/dev/null 2>&1;
     then
+        verbose_msg "systemctl start $1" 1
 	sudo systemctl start $1 >> $LOG_FILE 2>&1
     else
+        verbose_msg "systemctl restart $1" 1
         sudo systemctl restart $1 >> $LOG_FILE 2>&1
     fi
-    systemctl status $1 >> $LOG_FILE 2>&1
+    systemctl is-active $1 >> $LOG_FILE 2>&1
 }
 
 
