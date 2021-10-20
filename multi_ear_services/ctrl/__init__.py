@@ -40,7 +40,7 @@ def create_app(test_config=None):
         etc = os.path.dirname(os.path.abspath(__file__)) + '/../../etc' if app.debug else '/etc'
         hostapd = etc + '/hostapd/hostapd.conf'
         return dict(
-            hostname=socket.gethostname(),
+            hostname=socket.gethostname().replace('.local',''),
             version=version,
             services=utils.services,
             hostapd=dict(utils.parse_conf(hostapd)['default']),
