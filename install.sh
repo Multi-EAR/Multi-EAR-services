@@ -204,17 +204,17 @@ function is_environ_variable
 }
 
 
-function check_environ_variable_exists
+function do_environ_variable_exists
 {
     if ! is_environ_variable $1;
     then
-        echo "Error: environment variable $1 does not exist!" | tee -a $LOG_FILE
+        echo "Error: environment variable $1 does not exist!"
         exit -1
     fi
 }
 
 
-function export_environ_variable
+function do_export_environ_variable
 {
     local VAR="$1" VALUE="$2" ENV="export $VAR=$VALUE"
 
@@ -458,11 +458,11 @@ function do_configure_influxdb
     # influx docs: https://docs.influxdata.com/influxdb/v1.8/
     # create local admin
     local INFLUX_USERNAME="${USER}_influx"
-    export_environ_variable "INFLUX_USERNAME" "$INFLUX_USERNAME"
+    do_export_environ_variable "INFLUX_USERNAME" "$INFLUX_USERNAME"
     local INFLUX_PASSWORD="$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c20)"
-    export_environ_variable "INFLUX_PASSWORD" "$INFLUX_PASSWORD"
+    do_export_environ_variable "INFLUX_PASSWORD" "$INFLUX_PASSWORD"
     # local INFLUXDB_HTTP_SHARED_SECRET="$(echo $INFLUX_PASSWORD | shasum | head -c40 | base64 | head -c54)"
-    # export_environ_variable "INFLUXDB_HTTP_SHARED_SECRET" "$INFLUXDB_HTTP_SHARED_SECRET"
+    # do_export_environ_variable "INFLUXDB_HTTP_SHARED_SECRET" "$INFLUXDB_HTTP_SHARED_SECRET"
     # create database and users
     echo ".. create influx database and users" >> $LOG_FILE
     local cmd
@@ -512,9 +512,9 @@ function do_configure_grafana
     # grafana-cli docs: https://grafana.com/docs/grafana/latest/administration/cli/
     # create local admin
     local GRAFANA_USERNAME="${USER}_grafana"
-    export_environ_variable "GRAFANA_USERNAME" "$GRAFANA_USERNAME"
+    do_export_environ_variable "GRAFANA_USERNAME" "$GRAFANA_USERNAME"
     local GRAFANA_PASSWORD='$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c20)'
-    export_environ_variable "GRAFANA_PASSWORD" "$GRAFANA_PASSWORD"
+    do_export_environ_variable "GRAFANA_PASSWORD" "$GRAFANA_PASSWORD"
     # set password
     sudo grafana-cli admin reset-admin-password $GRAFANA_PASSWORD >> $LOG_FILE 2>&1
     # install plugins
@@ -583,8 +583,8 @@ function do_multi_ear_services
     # multi-ear-ctrl
     do_systemd_service_enable "multi-ear-ctrl.service"
     do_systemd_service_restart "multi-ear-ctrl.service"
-    export_environ_variable "FLASK_APP" "multi_ear_services.ctrl"
-    export_environ_variable "FLASK_ENV" "production"
+    do_export_environ_variable "FLASK_APP" "multi_ear_services.ctrl"
+    do_export_environ_variable "FLASK_ENV" "production"
 
     # multi-ear-wifi
     do_systemd_service_enable "multi-ear-wifi.service"
@@ -641,8 +641,8 @@ fi
 #
 # Check for identifiers in bash environment
 #
-check_environ_variable_exists 'MULTI_EAR_ID'
-check_environ_variable_exists 'MULTI_EAR_UID'
+do_environ_variable_exists 'MULTI_EAR_ID' | tee -a $LOG_FILE
+do_environ_variable_exists 'MULTI_EAR_UID' | tee -a $LOG_FILE
 
 
 #
@@ -670,7 +670,7 @@ case "$1" in
     ;;
     services) do_multi_ear_services
     ;;
-    do_*) $@;  # internal function calls for development
+    do_*) LOG_FILE=/dev/stdout; $@;  # internal function calls for development (stdout-only)
     ;;
     *) badUsage "Unknown command ${1}." | tee $LOG_FILE
     ;;
