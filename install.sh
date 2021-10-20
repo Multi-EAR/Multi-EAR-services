@@ -648,7 +648,7 @@ do_environ_variable_exists 'MULTI_EAR_UID'
 #
 # Backup bash environment once
 #
-if ! -f $BASH_ENV.old; then cp $BASH_ENV $BASH_ENV.old; fi
+if [ ! -f $BASH_ENV.old ]; then cp $BASH_ENV $BASH_ENV.old; fi
 
 
 # Perform one step or the entire workflow
