@@ -503,26 +503,17 @@ function do_configure_influxdb
     # influx docs: https://docs.influxdata.com/influxdb/v1.8/
     #
     # create database?
-    if ! is_environ_variable "INFLUX_DATABASE=";
+    local db="multi_ear"
+    if ! influx -execute "show databases" | grep -q "$db";
     then
-        INFLUX_DATABASE="multi_ear"
-        do_export_environ_variable "INFLUX_DATABASE" "$INFLUX_DATABASE"
-    fi
-    if ! influx -execute "show databases" | grep -q "$INFLUX_DATABASE";
-    then
-        influx_e "CREATE DATABASE $INFLUX_DATABASE"
+        influx_e "CREATE DATABASE $db"
     fi
     # use database
-    influx_e "USE DATABASE $INFLUX_DATABASE"
+    influx_e "USE DATABASE $db"
     # set retention policy
-    if ! is_environ_variable "INFLUX_RETENTION_POLICY=";
-    then
-        INFLUX_RETENTION_POLICY="oneyear"
-        do_export_environ_variable "INFLUX_RETENTION_POLICY" "$INFLUX_RETENTION_POLICY"
-    fi
-    local RETENTION_POLICY="DURATION 366d REPLICATION 1 SHARD DURATION 7d"
-    influx_e "CREATE RETENTION POLICY $INFLUX_RETENTION_POLICY ON $INFLUX_DATABASE $RETENTION_POLICY"
-    # create admin
+    local rp="oneyear" rp_specs="DURATION 366d REPLICATION 1 SHARD DURATION 7d"
+    influx_e "CREATE RETENTION POLICY $rp ON $db $rp_specs"
+    # create full-privilege user
     if ! is_environ_variable "INFLUX_USERNAME=";
     then
         INFLUX_USERNAME="${USER}_influx"
@@ -537,17 +528,17 @@ function do_configure_influxdb
     then
         influx_e "CREATE USER $INFLUX_USERNAME WITH PASSWORD '$INFLUX_PASSWORD' WITH ALL PRIVILEGES"
     fi
-    influx_e "GRANT ALL PRIVILEGES ON $INFLUX_DATABASE TO $INFLUX_USERNAME"
+    influx_e "GRANT ALL PRIVILEGES ON $db TO $INFLUX_USERNAME"
     influx_e "GRANT ALL PRIVILEGES ON telegraf TO $INFLUX_USERNAME"
-    # create reader
-    local READER='ear'
-    if ! influx -execute "show users" | grep -q "$READER";
+    # create read-only user
+    local ro='ear'
+    if ! influx -execute "show users" | grep -q "$ro";
     then
-        influx_e "CREATE USER $READER WITH PASSWORD 'listener'"
+        influx_e "CREATE USER $ro WITH PASSWORD 'listener'"
     fi
-    # revoke reader permissions
-    influx_e "REVOKE ALL PRIVILEGES FROM $READER"
-    influx_e "GRANT READ ON $INFLUX_DATABASE TO ear"
+    # revoke read-only user permissions
+    influx_e "REVOKE ALL PRIVILEGES FROM $ro"
+    influx_e "GRANT READ ON $db TO $ro"
 
     # enforce multi-ear settings (requires login from now on!)
     verbose_msg "> enable multi-ear configuration" 1
