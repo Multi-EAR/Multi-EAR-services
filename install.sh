@@ -481,6 +481,12 @@ function do_configure_hostapd
 }
 
 
+function influx_e
+{
+    influx -execute "$1" >> $LOG_FILE 2>&1
+}
+
+
 function do_configure_influxdb
 {
     verbose_msg ".. configure influxdb"
@@ -491,35 +497,56 @@ function do_configure_influxdb
     sudo ln -sf /etc/influxdb/default.conf /etc/influxdb/influxdb.conf >> $LOG_FILE 2>&1
     # restart with default settings
     do_systemd_service_restart "influxdb.service"
+
+    #
     # influx docs: https://docs.influxdata.com/influxdb/v1.8/
-    # create local admin
-    local INFLUX_USERNAME="${USER}_influx"
-    do_export_environ_variable "INFLUX_USERNAME" "$INFLUX_USERNAME"
-    local INFLUX_PASSWORD="$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c20)"
-    do_export_environ_variable "INFLUX_PASSWORD" "$INFLUX_PASSWORD"
-    # local INFLUXDB_HTTP_SHARED_SECRET="$(echo $INFLUX_PASSWORD | shasum | head -c40 | base64 | head -c54)"
-    # do_export_environ_variable "INFLUXDB_HTTP_SHARED_SECRET" "$INFLUXDB_HTTP_SHARED_SECRET"
-    # create database and users
-    verbose_msg "> create influx database and users"
-    local cmd
-    local influx_cmds=(
-        "CREATE DATABASE multi_ear"
-        "SHOW DATABASES"
-        "USE multi_ear"
-        "CREATE RETENTION POLICY oneyear ON multi_ear DURATION 366d REPLICATION 1 SHARD DURATION 7d"
-        "CREATE USER $INFLUX_USERNAME WITH PASSWORD '$INFLUX_PASSWORD' WITH ALL PRIVILEGES"
-        "GRANT ALL PRIVILEGES ON multi_ear TO $INFLUX_USERNAME"
-        "GRANT ALL PRIVILEGES ON telegraf TO $INFLUX_USERNAME"
-        "SHOW GRANTS FOR $INFLUX_USERNAME"
-        "CREATE USER ear WITH PASSWORD 'listener'"
-        "GRANT READ ON multi_ear TO ear"
-        "SHOW GRANTS FOR ear"
-    )
-    for cmd in "${influx_cmds[@]}"
-    do
-        verbose_msg ">> influx -execute \"$cmd\"" 2
-        influx -execute "$cmd" >> $LOG_FILE 2>&1
-    done
+    #
+    # create database?
+    if ! is_environ_variable "INFLUX_DATABASE=";
+    then
+        INFLUX_DATABASE="multi_ear"
+        do_export_environ_variable "INFLUX_DATABASE" "$INFLUX_DATABASE"
+    fi
+    if ! influx -execute "show databases" | grep -q "$INFLUX_DATABASE";
+    then
+        influx_e "CREATE DATABASE $INFLUX_DATABASE"
+    fi
+    # use database
+    influx_exec "USE DATABASE $INFLUX_DATABASE"
+    # set retention policy
+    if ! is_environ_variable "INFLUX_RETENTION_POLICY=";
+    then
+        INFLUX_RETENTION_POLICY="oneyear"
+        do_export_environ_variable "INFLUX_RETENTION_POLICY" "$INFLUX_RETENTION_POLICY"
+    fi
+    local RETENTION_POLICY="DURATION 366d REPLICATION 1 SHARD DURATION 7d"
+    influx_e "CREATE RETENTION POLICY $INFLUX_RETENTION_POLICY ON $INFLUX_DATABASE $RETENTION_POLICY"
+    # create admin
+    if ! is_environ_variable "INFLUX_USERNAME=";
+    then
+        INFLUX_USERNAME="${USER}_influx"
+        do_export_environ_variable "INFLUX_USERNAME" "$USERNAME"
+    fi
+    if ! is_environ_variable "INFLUX_PASSWORD=";
+    then
+        INFLUX_PASSWORD="$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c20)"
+        do_export_environ_variable "INFLUX_PASSWORD" "$PASSWORD"
+    fi
+    if ! influx -execute "show users" | grep -q "$INFLUX_USERNAME";
+    then
+        influx_e "CREATE USER $INFLUX_USERNAME WITH PASSWORD '$INFLUX_PASSWORD' WITH ALL PRIVILEGES"
+    fi
+    influx_e "GRANT ALL PRIVILEGES ON $INFLUX_DATABASE TO $INFLUX_USERNAME"
+    influx_e "GRANT ALL PRIVILEGES ON telegraf TO $INFLUX_USERNAME"
+    # create reader
+    if ! influx -execute "show users" | grep -q "ear";
+    then
+        influx_e "CREATE USER ear WITH PASSWORD 'listener'"
+    fi
+    # revoke reader permissions
+    influx_e "REVOKE ALL PRIVILEGES FROM ear"
+    influx_e "GRANT READ ON $INFLUX_DATABASE TO ear"
+
     # enforce multi-ear settings (requires login from now on!)
     verbose_msg "> enable multi-ear configuration" 1
     sudo ln -sf /etc/influxdb/multi-ear.conf /etc/influxdb/influxdb.conf >> $LOG_FILE 2>&1
