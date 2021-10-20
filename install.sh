@@ -652,7 +652,7 @@ cp $BASH_ENV $BASH_ENV.old
 
 
 # Perform one step or the entire workflow
-case "${1}" in
+case "$1" in
     all|'')
     rm -f $LOG_FILE
     echo "Multi-EAR Software Install Tool v${VERSION}" | tee $LOG_FILE
@@ -669,6 +669,8 @@ case "${1}" in
     configure|config) do_configure
     ;;
     services) do_multi_ear_services
+    ;;
+    do_*) $@;  # internal function calls for development
     ;;
     *) badUsage "Unknown command ${1}." | tee $LOG_FILE
     ;;
