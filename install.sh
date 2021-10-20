@@ -487,7 +487,7 @@ function do_configure_influxdb
     # enable
     do_systemd_service_enable "influxdb.service"
     # link default settings
-    verbose_msg ".... enable default configuration" 1
+    verbose_msg "> enable default configuration" 1
     sudo ln -sf /etc/influxdb/default.conf /etc/influxdb/influxdb.conf >> $LOG_FILE 2>&1
     # restart with default settings
     do_systemd_service_restart "influxdb.service"
@@ -500,7 +500,7 @@ function do_configure_influxdb
     # local INFLUXDB_HTTP_SHARED_SECRET="$(echo $INFLUX_PASSWORD | shasum | head -c40 | base64 | head -c54)"
     # do_export_environ_variable "INFLUXDB_HTTP_SHARED_SECRET" "$INFLUXDB_HTTP_SHARED_SECRET"
     # create database and users
-    verbose_msg ".... create influx database and users"
+    verbose_msg "> create influx database and users"
     local cmd
     local influx_cmds=(
         "CREATE DATABASE multi_ear"
@@ -514,15 +514,14 @@ function do_configure_influxdb
         "CREATE USER ear WITH PASSWORD 'listener'"
         "GRANT READ ON multi_ear TO ear"
         "SHOW GRANTS FOR ear"
-        "SHOW USERS"
     )
     for cmd in "${influx_cmds[@]}"
     do
-        verbose_msg "...... influx -execute \"$cmd\"" 2
+        verbose_msg ">> influx -execute \"$cmd\"" 2
         influx -execute "$cmd" >> $LOG_FILE 2>&1
     done
     # enforce multi-ear settings (requires login from now on!)
-    verbose_msg ".... enable multi-ear configuration" 1
+    verbose_msg "> enable multi-ear configuration" 1
     sudo ln -sf /etc/influxdb/multi-ear.conf /etc/influxdb/influxdb.conf >> $LOG_FILE 2>&1
     # restart service
     do_systemd_service_restart "influxdb"
