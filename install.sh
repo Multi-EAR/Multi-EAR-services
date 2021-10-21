@@ -464,6 +464,8 @@ function do_configure_nginx
 function do_configure_dnsmasq
 {
     verbose_msg ".. configure dnsmasq"
+    sudo systemctl reset-failed "dnsmasq.service" >> $LOG_FILE 2>&1
+    do_systemd_service_disable "dnsmasq.service"
     do_systemd_service_stop "dnsmasq.service"
     verbose_done
 }
@@ -473,6 +475,8 @@ function do_configure_hostapd
 {
     verbose_msg ".. configure hostapd"
     # stop service
+    sudo systemctl reset-failed "hostapd.service" >> $LOG_FILE 2>&1
+    do_systemd_service_disable "hostapd.service"
     do_systemd_service_stop "hostapd.service"
     # replace ssid by hostname 
     sudo sed -i -s "s/^ssid=.*/ssid=$HOSTNAME/" /etc/hostapd/hostapd.conf >> $LOG_FILE 2>&1
@@ -566,8 +570,6 @@ function do_configure_telegraf
 function do_configure_grafana
 {
     verbose_msg ".. configure grafana"
-    # enable service 
-    do_systemd_service_enable "grafana"
     # grafana-cli docs: https://grafana.com/docs/grafana/latest/administration/cli/
     # create local admin
     local GRAFANA_USERNAME="${USER}_grafana"
@@ -579,8 +581,9 @@ function do_configure_grafana
     # install plugins
     sudo grafana-cli plugins install grafana-clock-panel
     # add dashboards!
-    # force start serice
-    do_systemd_service_restart "grafana"
+    # enable and start service
+    do_systemd_service_enable "grafana"
+    do_systemd_service_start "grafana"
     # done
     verbose_done
 }
@@ -603,7 +606,7 @@ function do_configure
     do_configure_hostapd
     do_configure_influxdb
     # do_configure_telegraf
-    # do_configure_grafana
+    do_configure_grafana
 }
 
 
