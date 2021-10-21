@@ -505,7 +505,10 @@ function do_configure_influxdb
     sudo ln -sf /etc/influxdb/default.conf /etc/influxdb/influxdb.conf >> $LOG_FILE 2>&1
     # restart with default settings
     do_systemd_service_restart "influxdb.service"
-
+    # logging and output
+    sudo mkdir -p /var/log/influxdb /var/lib/influxdb
+    sudo chown -R influxdb:influxdb /var/log/influxdb /var/lib/influxdb
+    sudo chmod 755 /var/log/influxdb /var/lib/influxdb
     #
     # influx docs: https://docs.influxdata.com/influxdb/v1.8/
     #
@@ -568,6 +571,11 @@ function do_configure_influxdb
 function do_configure_telegraf
 {
     verbose_msg ".. configure telegraf"
+    # logging and output
+    sudo mkdir -p /var/log/telegraf /var/lib/telegraf
+    sudo chown -R telegraf:telegraf /var/log/telegraf /var/lib/telegraf
+    sudo chmod 755 /var/log/telegraf /var/lib/telegraf
+    # enable and start service
     do_systemd_service_enable "telegraf"
     do_systemd_service_restart "telegraf"
     verbose_done
@@ -583,6 +591,10 @@ function do_configure_grafana
     do_export_environ_variable "GRAFANA_USERNAME" "$GRAFANA_USERNAME"
     local GRAFANA_PASSWORD="$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c20)"
     do_export_environ_variable "GRAFANA_PASSWORD" "$GRAFANA_PASSWORD"
+    # logging and output
+    sudo mkdir -p /var/log/grafana /var/lib/grafana
+    sudo chown -R grafana:grafana /var/log/grafana /var/lib/grafana
+    sudo chmod 755 /var/log/grafana /var/lib/grafana
     # set password
     sudo grafana-cli admin reset-admin-password $GRAFANA_PASSWORD >> $LOG_FILE 2>&1
     # install plugins
@@ -590,7 +602,7 @@ function do_configure_grafana
     # add dashboards!
     # enable and start service
     do_systemd_service_enable "grafana-server"
-    do_systemd_service_start "grafana-server"
+    do_systemd_service_restart "grafana-server"
     # done
     verbose_done
 }
@@ -612,7 +624,7 @@ function do_configure
     do_configure_dnsmasq
     do_configure_hostapd
     do_configure_influxdb
-    # do_configure_telegraf
+    do_configure_telegraf
     do_configure_grafana
 }
 
