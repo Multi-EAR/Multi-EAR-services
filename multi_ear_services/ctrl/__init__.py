@@ -43,7 +43,7 @@ def create_app(test_config=None):
             hostname=socket.gethostname().replace('.local',''),
             version=version,
             services=utils.services,
-            hostapd=dict(hostapd.items('default', vars=os.environ if is_rpi else None)),
+            hostapd=dict(hostapd.items('default')),
         )
 
     # routes
