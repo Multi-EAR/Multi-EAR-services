@@ -14,8 +14,8 @@ services = ['multi-ear-ctrl.service',
             #  'multi-ear-wifi.timer',
             'nginx.service',
             'influxdb.service',
+            'telegraf.service',
             'grafana.service',
-            'telegraph.service',
             'dnsmasq.service',
             'hostapd.service']
 
