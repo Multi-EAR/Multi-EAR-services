@@ -38,12 +38,12 @@ def create_app(test_config=None):
     @app.context_processor
     def inject_stage_and_region():
         etc = os.path.dirname(os.path.abspath(__file__)) + '/../../etc' if app.debug else '/etc'
-        hostapd = etc + '/hostapd/hostapd.conf'
+        hostapd = utils.parse_conf(etc + '/hostapd/hostapd.conf')
         return dict(
             hostname=socket.gethostname().replace('.local',''),
             version=version,
             services=utils.services,
-            hostapd=dict(utils.parse_conf(hostapd)['default']),
+            hostapd=dict(hostapd.items('default', vars=os.environ if is_rpi else None)),
         )
 
     # routes
