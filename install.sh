@@ -428,8 +428,11 @@ function do_activate_python3_venv
 function do_rsync_etc
 {
     verbose_msg ".. rsync /etc"
+    # rsync
     sudo rsync -amtv --chown=root:root etc / >> $LOG_FILE 2>&1
     check_exit_code $? "rsync /etc"
+    # replace ssid by hostname 
+    sudo sed -i -s "s/^ssid=.*/ssid=$HOSTNAME/" /etc/hostapd/hostapd.conf >> $LOG_FILE 2>&1
     verbose_done
 }
 
