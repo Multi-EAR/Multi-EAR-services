@@ -432,7 +432,7 @@ function do_rsync_etc
     sudo rsync -amtv --chown=root:root etc / >> $LOG_FILE 2>&1
     check_exit_code $? "rsync /etc"
     # replace ssid by hostname 
-    sudo sed -i -s "s/^ssid=.*/ssid=$HOSTNAME/" /etc/hostapd/hostapd.conf >> $LOG_FILE 2>&1
+    # sudo sed -i -s "s/^ssid=.*/ssid=$HOSTNAME/" /etc/hostapd/hostapd.conf >> $LOG_FILE 2>&1
     verbose_done
 }
 
