@@ -509,11 +509,15 @@ function do_configure_influxdb
     #
     # influx docs: https://docs.influxdata.com/influxdb/v1.8/
     #
-    # create database?
+    # create databases?
     local db="multi_ear"
     if ! influx -execute "show databases" | grep -q "$db";
     then
         influx_e "CREATE DATABASE $db"
+    fi
+    if ! influx -execute "show databases" | grep -q "telegraf";
+    then
+        influx_e "CREATE DATABASE telegraf"
     fi
     # use database
     influx_e "USE DATABASE $db"
