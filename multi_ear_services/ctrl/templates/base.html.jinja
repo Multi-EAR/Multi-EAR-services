@@ -49,7 +49,7 @@
           </li>
           <li class="nav-item">
             <a class="nav-link" href="#sensors" id="sensors-nav" aria-controls="sensors">
-              <i class="bi bi-cpu" alt="Sensors"></i> Sensors
+              <i class="bi bi-cpu" alt="Sensors"></i> MEMS sensors
             </a>
           </li>
           <li class="nav-item">
@@ -59,18 +59,24 @@
           </li>
           <li class="nav-item">
             <a class="nav-link" href="#wifi" id="wifi-nav" aria-controls="wifi">
-              <i class="bi bi-wifi" alt="Wi-Fi"></i> Wi-Fi
+              <i class="bi bi-wifi" alt="Wi-Fi"></i> Wi-Fi control
             </a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="#status" id="status-nav" aria-controls="status">
-              <i class="bi bi-journal-code" alt="Status"></i> Status
+              <i class="bi bi-journal-code" alt="Status"></i> Status monitoring
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{hostname}}.local:3000" title="" target="_blank"
+             rel="noopener noreferrer">
+              <i class="bi bi-server" alt="Grafana"></i> Grafana server
             </a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="https://github.com/Multi-EAR" title="" target="_blank"
              rel="noopener noreferrer">
-              <i class="bi bi-github" alt="Github"></i> Code
+              <i class="bi bi-github" alt="Github"></i> Github project
             </a>
           </li>
         </ul>
@@ -110,6 +116,10 @@
     <!-- sidebar bottom -->
     <ul class="nav nav-pills nav-flush flex-column mt-auto text-center border-top">
       <li>
+        <a href="{{hostname}}.local:3000" class="nav-link border-bottom py-3" title="" target="_blank"
+         rel="noopener noreferrer">
+          <i class="bi bi-server text-light" alt="Grafana" style="font-size: 1.5rem;"></i>
+        </a>
         <a href="https://github.com/Multi-EAR" class="nav-link py-3" title="" target="_blank"
          rel="noopener noreferrer">
           <i class="bi bi-github text-light" alt="Github" style="font-size: 1.5rem;"></i>
@@ -117,7 +127,7 @@
       </li>
     </ul>
   </nav>
-  <main class="container-fluid bg-light ps-4">
+  <main class="container-fluid bg-light ps-md-4">
     {% block main %}<div class="tab-content" id="nav-content">..</div>{% endblock %}
   </main>
 
