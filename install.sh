@@ -520,7 +520,7 @@ function do_configure_influxdb
         influx_e "CREATE DATABASE telegraf"
     fi
     # use database
-    influx_e "USE DATABASE $db"
+    influx_e "USE DATABASE '$db'"
     # set retention policy
     local rp="oneyear" rp_specs="DURATION 366d REPLICATION 1 SHARD DURATION 7d"
     influx_e "CREATE RETENTION POLICY $rp ON $db $rp_specs"
@@ -581,7 +581,7 @@ function do_configure_grafana
     # create local admin
     local GRAFANA_USERNAME="${USER}_grafana"
     do_export_environ_variable "GRAFANA_USERNAME" "$GRAFANA_USERNAME"
-    local GRAFANA_PASSWORD='$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c20)'
+    local GRAFANA_PASSWORD="$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c20)"
     do_export_environ_variable "GRAFANA_PASSWORD" "$GRAFANA_PASSWORD"
     # set password
     sudo grafana-cli admin reset-admin-password $GRAFANA_PASSWORD >> $LOG_FILE 2>&1
