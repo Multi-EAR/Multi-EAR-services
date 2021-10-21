@@ -582,11 +582,11 @@ function do_configure_grafana
     # set password
     sudo grafana-cli admin reset-admin-password $GRAFANA_PASSWORD >> $LOG_FILE 2>&1
     # install plugins
-    sudo grafana-cli plugins install grafana-clock-panel
+    sudo grafana-cli plugins install grafana-clock-panel >> $LOG_FILE 2>&1
     # add dashboards!
     # enable and start service
-    do_systemd_service_enable "grafana"
-    do_systemd_service_start "grafana"
+    do_systemd_service_enable "grafana-server"
+    do_systemd_service_start "grafana-server"
     # done
     verbose_done
 }
