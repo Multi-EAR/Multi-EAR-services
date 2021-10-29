@@ -69,6 +69,7 @@ mac=()
 
 ssidsmac=("${ssids[@]}" "${mac[@]}") # combines ssid and MAC for checking
 
+
 createAdHocNetwork()
 {
     echo "Creating Hotspot"
@@ -80,6 +81,7 @@ createAdHocNetwork()
     systemctl start hostapd
 }
 
+
 KillHotspot()
 {
     echo "Shutting Down Hotspot"
@@ -90,6 +92,7 @@ KillHotspot()
     ip link set dev "$wifidev" up
     dhcpcd  -n "$wifidev" >/dev/null 2>&1
 }
+
 
 ChkWifiUp()
 {
@@ -133,64 +136,66 @@ chksys()
 
 FindSSID()
 {
-#Check to see what SSID's and MAC addresses are in range
-ssidChk=('NoSSID')
-i=0; j=0
-until [ $i -eq 1 ] #wait for Wi-Fi if busy, usb Wi-Fi is slower.
-do
-    ssidreply=$((iw dev "$wifidev" scan ap-force | egrep "^BSS|SSID:") 2>&1) >/dev/null 2>&1 
-    # echo "SSID's in range: " $ssidreply
-    printf '%s\n' "${ssidreply[@]}"
-    echo "Device Available Check try " $j
-    if (($j >= 10));
-    then #if busy 10 times goto hotspot
-        echo "Device busy or unavailable 10 times, going to Hotspot"
-        ssidreply=""
-        i=1
-    elif echo "$ssidreply" | grep "No such device (-19)" >/dev/null 2>&1;
-    then
-        echo "No Device Reported, try " $j
-        NoDevice
-    elif echo "$ssidreply" | grep "Network is down (-100)" >/dev/null 2>&1;
-    then
-        echo "Network Not available, trying again" $j
-        j=$((j + 1))
-        sleep 2
-    elif echo "$ssidreply" | grep "Read-only file system (-30)" >/dev/null 2>&1;
-    then
-        echo "Temporary Read only file system, trying again"
-        j=$((j + 1))
-        sleep 2
-    elif echo "$ssidreply" | grep "Invalid exchange (-52)" >/dev/null 2>&1;
-    then
-        echo "Temporary unavailable, trying again"
-        j=$((j + 1))
-        sleep 2
-    elif echo "$ssidreply" | grep -v "resource busy (-16)"  >/dev/null 2>&1;
-    then
-        echo "Device Available, checking SSID Results"
-        i=1
-    else # see if device not busy in 2 seconds
-        echo "Device unavailable checking again, try " $j
-        j=$((j + 1))
-        sleep 2
-    fi
-done
+    # Check to see what SSID's and MAC addresses are in range
+    ssidChk='NoSSID'
+    local i=0
+    local j=0
 
-for ssid in "${ssidsmac[@]}"
-do
-    if (echo "$ssidreply" | grep -F -- "$ssid") >/dev/null 2>&1;
-    then
-        #Valid SSID found, passing to script
-        echo "SSID '$ssid' detected, assesing Wi-Fi status"
-        ssidChk=$ssid
-        return 0
-    else
-        #No Network found, NoSSID issued
-        echo "SSID '$ssid' not found, assessing Wi-Fi status"
-        ssidChk='NoSSID'
-    fi
-done
+    # Wait for Wi-Fi if busy, usb Wi-Fi is slower.
+    until [ $i -eq 1 ]
+    do
+        ssidreply=$((iw dev "$wifidev" scan ap-force | egrep "^BSS|SSID:") 2>&1) >/dev/null 2>&1 
+        printf '%s\n' "${ssidreply[@]}"
+        echo "Device available check attempt #$j"
+        if (($j >= 10));
+        then #if busy 10 times goto hotspot
+            echo "Device busy or unavailable 10 times, going to Hotspot"
+            ssidreply=""
+            i=1
+        elif echo "$ssidreply" | grep "No such device (-19)" >/dev/null 2>&1;
+        then
+            echo "No device reported, attempt #$j"
+            NoDevice
+        elif echo "$ssidreply" | grep "Network is down (-100)" >/dev/null 2>&1;
+        then
+            echo "Network not available, trying again"
+            j=$((j + 1))
+            sleep 2
+        elif echo "$ssidreply" | grep "Read-only file system (-30)" >/dev/null 2>&1;
+        then
+            echo "Temporary read only file system, trying again"
+            j=$((j + 1))
+            sleep 2
+        elif echo "$ssidreply" | grep "Invalid exchange (-52)" >/dev/null 2>&1;
+        then
+            echo "Temporary unavailable, trying again"
+            j=$((j + 1))
+            sleep 2
+        elif echo "$ssidreply" | grep -v "resource busy (-16)"  >/dev/null 2>&1;
+        then
+            echo "Device Available, checking SSID results"
+            i=1
+        else # see if device not busy in 2 seconds
+            echo "Device unavailable checking again, attempt #$j"
+            j=$((j + 1))
+            sleep 2
+        fi
+    done
+
+    for ssid in "${ssidsmac[@]}"
+    do
+        if (echo "$ssidreply" | grep -F -- "$ssid") >/dev/null 2>&1;
+        then
+            # Valid SSID found, passing to script
+            echo "SSID '$ssid' detected, assessing Wi-Fi status"
+            ssidChk=$ssid
+            return 0
+        else
+            # No Network found, NoSSID issued
+            echo "SSID '$ssid' not found, assessing Wi-Fi status"
+            ssidChk='NoSSID'
+        fi
+    done
 }
 
 NoDevice()
@@ -228,7 +233,7 @@ else #ssid or MAC address not in range
         echo "Hostspot already active"
     elif { wpa_cli status | grep "$wifidev"; } >/dev/null 2>&1;
     then
-        echo "Cleaning Wi-Fi files and Activating Hotspot"
+        echo "Cleaning Wi-Fi files and activating Hotspot"
         wpa_cli terminate >/dev/null 2>&1
         ip addr flush "$wifidev"
         ip link set dev "$wifidev" down
