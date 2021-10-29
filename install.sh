@@ -60,7 +60,7 @@ function usage
 "  --help, -h     Print help."
 "  --version, -v  Print version."
 ""
-"Environment variables MULTI_EAR_ID and MULTI_EAR_UID should be defined in ~/.bashrc."
+"Environment variables MULTI_EAR_ID and MULTI_EAR_UUID should be defined in ~/.bashrc."
     )
 
     printf "%s\n" "${txt[@]}"
@@ -725,7 +725,7 @@ fi
 # Check for identifiers in bash environment
 #
 do_environ_variable_exists 'MULTI_EAR_ID'
-do_environ_variable_exists 'MULTI_EAR_UID'
+do_environ_variable_exists 'MULTI_EAR_UUID'
 
 
 #

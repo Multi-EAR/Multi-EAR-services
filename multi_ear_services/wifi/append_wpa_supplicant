@@ -13,7 +13,7 @@
 SCRIPT="append_wpa_supplicant"
 
 # Init
-CONF="/etc/wpa_supplicant/wpa_supplicant.conf"
+WPA_CONF="/etc/wpa_supplicant/wpa_supplicant.conf"
 
 # Message to display when bad usage.
 function badUsage
@@ -30,24 +30,48 @@ function badUsage
     exit -1
 }
 
+#
+# Check if device is a Raspberry Pi
+#
+function isRaspberryPi
+{
+    local pi=""
+    if [ -f /proc/device-tree/model ];
+    then
+        pi=$( cat /proc/device-tree/model | tr '\0' '\n' | grep "Raspberry Pi" )
+    fi
+    if [ "x${pi}" == "x" ];
+    then
+        echo "Error: device is not a Raspberry Pi!"
+        exit 1
+    fi
+}
+isRaspberryPi
+
 # Check input arguments
 if (($# != 2 )); then
     badUsage "Illegal number of arguments"
 fi
+if ((${#1} < 1 )) | ((${#1} > 63)); then
+    badUsage "ssid should be 1..63 characters."
+fi
+if ((${#2} < 8 )) | ((${#2} > 63)); then
+    badUsage "passphrase should be 8..63 characters."
+fi
 
 # Add empty line if wpa_supplicant.conf exists
-if [ -f $CONF ];
+if [ -f $WPA_CONF ];
 then
-    echo "" | /usr/bin/sudo /usr/bin/tee -a $CONF
+    echo "" | /usr/bin/sudo /usr/bin/tee -a $WPA_CONF
 else
-    badUsage "wpa_supplicant configuration file \"$CONF\" doesn't exist!"
+    badUsage "wpa_supplicant configuration file \"$WPA_CONF\" does not exist!"
 fi
 
 # Encrypt psk and add to wpa_supplicant.conf
-/usr/bin/wpa_passphrase $1 $2 |  /usr/bin/sed '3d;2i\\tscan_ssid=1' | /usr/bin/sudo /usr/bin/tee -a $CONF
+wpa_passphrase $1 $2 | sed '3d;2i\\tpriority=2\n\tscan_ssid=1\n\tkey_mgmt=WPA-PSK' | sudo tee -a $WPA_CONF
 
 # Trigger connection
-/usr/bin/sudo /usr/bin/systemctl start multi-ear-wifi.service
+sudo systemctl start multi-ear-wifi.service
 
 # Done
 exit 0
