@@ -2,9 +2,9 @@
 
 ##############################################################################
 # Script Name	: install.sh
-# Description	: Automatic software installation for the Multi-EAR platform
-#                 given a prepared install of RASPBERRY PI OS LITE (32-bit).
-# Args          : n.a.
+# Description	: Multi-EAR system services configuration for a deployed
+#                 Raspberry Pi OS LITE (32-bit).
+# Args          : [options] <install_step>
 # Author       	: Pieter Smets
 # Email         : mail@pietersmets.be
 ##############################################################################
