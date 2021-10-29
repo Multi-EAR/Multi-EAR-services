@@ -68,7 +68,7 @@ else
 fi
 
 # Encrypt psk and add to wpa_supplicant.conf
-wpa_passphrase $1 $2 | sed '3d;2i\\tpriority=2\n\tscan_ssid=1\n\tkey_mgmt=WPA-PSK' | sudo tee -a $WPA_CONF
+wpa_passphrase $1 $2 | sed '3d;2i\\tscan_ssid=1\n\tkey_mgmt=WPA-PSK\n\tpriority=0' | sudo tee -a $WPA_CONF
 
 # Trigger connection
 sudo systemctl start multi-ear-wifi.service
