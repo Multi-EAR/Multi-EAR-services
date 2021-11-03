@@ -86,4 +86,13 @@ def create_app(test_config=None):
             res = None
         return jsonify(res)
 
+    @app.route("/_autohotspot", methods=['POST'])
+    def autohotspot():
+        command = request.args.get('action')
+        if is_rpi and command == 'start':
+            res = utils.wlan_autohotspot()
+        else:
+            res = None
+        return jsonify(res)
+
     return app

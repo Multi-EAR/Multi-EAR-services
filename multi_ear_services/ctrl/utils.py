@@ -76,17 +76,18 @@ def systemd_status_all():
     return status
 
 
-def wlan_ssid_passphrase(ssid: str, passphrase: str, method=None):
-    """Add Wi-Fi ssid and passphrase and connect without rebooting.
+def wlan_ssid_passphrase(ssid: str, passphrase: str):
+    """Add Wi-Fi ssid and passphrase to wpa_supplicant and connect.
     """
-    if method == 'raspi-config':
-        # Forces direct connection
-        return _popen(['/usr/bin/sudo', '/usr/bin/raspi-config', 'nonint',
-                       'do_wifi_ssid_passphrase', ssid, passphrase])
-    else:
-        # Requires autohotspot trigger
-        return _popen(['/home/tud/.py37/bin/append_wpa_supplicant',
-                       ssid, passphrase])
+    return _popen(['/home/tud/.py37/bin/append_wpa_supplicant',
+                   ssid, passphrase])
+
+
+def wlan_autohotspot():
+    """Run autohotspot.
+    """
+    return _popen(['/usr/bin/sudo', '/usr/bin/systemctl',
+                   'start', 'multi-ear-wifi'])
 
 
 def _popen(*args, **kwargs):
