@@ -4,10 +4,10 @@
 # You may share this script on the condition a reference to RaspberryConnect.com 
 # must be included in copies or derivatives of this script. 
 
-#A script to switch between a Wi-Fi network and a non internet routed Hotspot
-#Works at startup or with a seperate timer or manually without a reboot
-#Other setup required find out more at
-#http://www.raspberryconnect.com
+# A script to switch between a Wi-Fi network and a non internet routed Hotspot
+# Works at startup or with a seperate timer or manually without a reboot
+# Other setup required find out more at
+# http://www.raspberryconnect.com
 
 # https://www.raspberryconnect.com/projects/65-raspberrypi-hotspot-accesspoints/158-raspberry-pi-auto-wifi-hotspot-switch-direct-connection
 
