@@ -120,7 +120,8 @@ function check_exit_code
 #
 function verbose_msg
 {
-    local message=$1 level=${2:-0}
+    local message=$1
+    local level=${2:-0}
 
     if [ $level -gt 0 ];
     then
