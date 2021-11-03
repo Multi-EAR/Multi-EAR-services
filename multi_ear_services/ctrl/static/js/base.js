@@ -21,7 +21,7 @@ function validateWifiForm() {
             event.stopPropagation();
 
             if (form.checkValidity()) {
-                processWifiForm(form)
+                append_wpa_supplicant(form)
                 form.querySelector('button[type=submit]').disabled = true
             }
 
@@ -37,17 +37,28 @@ function validateWifiForm() {
 }
 
 
-function processWifiForm(form) {
+function append_wpa_supplicant(form) {
 
     var ssid = form.elements["inputSSID"].value
     var psk = form.elements["inputPSK"].value
 
-    getJSON("/_wpa_supplicant", { ssid: ssid, passphrase: psk }, 'POST')
+    getJSON("/_append_wpa_supplicant", { ssid: ssid, passphrase: psk }, 'POST')
     .then(data => {
         if (data === null) return
         console.log(data);
         alert("\"" + ssid + "\" added to the list of known wireless networks.")
         resetWifiForm(form)
+    });
+}
+
+
+function autohotspot() {
+
+    alert("Wi-Fi autohotspot script triggered.\n\nConnection to the device could be lost.")
+    getJSON("/_autohotspot", { command: 'start' }, 'POST')
+    .then(data => {
+        if (data === null) return
+        console.log(data);
     });
 }
 

@@ -31,12 +31,22 @@
 
     <h3 class="mb-3 hstack gap-3">Client mode <div class="vr"></div> <small class="text-muted">join a known wireless network</small></h3>
 
-    <form class="needs-validation pb-4" novalidate>
 
-      <div class="row mb-3"> 
-        <p>Enter the <code>name</code> and <code>passphrase</code> to connect to a wireless network.<br> 
-        Only visible and WPA2 (WPA Personal) secured networks are supported.</p>
+    <div class="row mb-3">
+      <div class="col-md-3 d-md-flex align-items-center">
+        Manually trigger the autohotspot script
       </div>
+      <div class="col-md-9 d-md-flex align-items-center"> 
+        <button class="btn btn-sm btn-outline-dark" onclick="autohotspot();" type="">Start multi-ear-wifi.service</button>
+      </div>
+    </div>
+
+    <div class="row mb-3"> 
+      <p>Enter the <code>name</code> and <code>passphrase</code> to connect to a wireless network.<br> 
+      Only visible and WPA2 (WPA Personal) secured networks are supported.</p>
+    </div>
+
+    <form class="needs-validation pb-4" novalidate>
 
       <div class="row mb-3">
         <div class="col-md-3 text-md-end">

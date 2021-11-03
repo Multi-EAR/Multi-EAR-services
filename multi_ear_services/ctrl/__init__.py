@@ -76,8 +76,8 @@ def create_app(test_config=None):
              res = None
         return jsonify(res)
 
-    @app.route("/_wpa_supplicant", methods=['POST'])
-    def wpa_supplicant():
+    @app.route("/_append_wpa_supplicant", methods=['POST'])
+    def append_wpa_supplicant():
         ssid = request.args.get('ssid')
         passphrase = request.args.get('passphrase')
         if is_rpi and ssid and passphrase:
