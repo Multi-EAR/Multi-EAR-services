@@ -3,90 +3,115 @@ import os
 import time
 import numpy as np
 import serial
-import socket
 import argparse
 from configparser import ConfigParser
 from influxdb_client import InfluxDBClient
 from influxdb_client.client.write_api import SYNCHRONOUS
 
 # Relative imports
-try:
-    from ..version import version
-except ModuleNotFoundError:
-    version = '[VERSION-NOT-FOUND]'
+# try:
+#     from ..version import version
+# except ModuleNotFoundError:
+#     version = '[VERSION-NOT-FOUND]'
+version = '[VERSION-NOT-FOUND]'
 
 
 __all__ = ['uart_readout']
 
 
 # data packet definition
-_packet_header = b'\x11\x99\x22\x88\x33\x73'
+_packet_header = b'\x11\x99\x22\x88\x33\x73'  # 17 153 34 136 51 115
 _packet_header_bytes = len(_packet_header)
 _packet_bytes_min = 40  # minimum bytes to process a packet
 
 # sampling definition
 _sampling_rate = 16  # Hz
-_sampling_delta = np.timedelta64(np.int64(1e9/_sampling_rate))  # ns
-
-# device hostname
-_hostname = socket.gethostname()
+_sampling_delta = np.timedelta64(np.int64(1e9/_sampling_rate), 'ns')  # ns
 
 
-def uart_readout(port='/dev/ttyAMA0', baudrate=115200, timeout=2.,
-                 config='influxdb.ini'):
+def uart_readout(config_file='config.ini', debug=None):
+    """Sensorboard serial readout via UART with data storage in a local
+    Influx v1.8 database.
+
+    Configure all parameters via configuration file. The configuration file
+    has to contain the sections 'influx2' and 'serial'. 
+
+    config.ini example::
+        [influx2]
+        url=http://localhost:8086
+        org=my-org
+        token=my-token
+        timeout=6000
+        connection_pool_maxsize=25
+        auth_basic=false
+        profilers=query,operator
+        proxy=http:proxy.domain.org:8080
+        bucket=database/retention_policy
+        [tags]
+        id = 132-987-655
+        customer = California Miner
+        data_center = ${env.data_center}
+        [serial]
+        port = /dev/ttyAMA0
+        baudrate = 115200
+        timeout = 2000
     """
-    Continuoisly read uart serial stream.
 
-    Parameters
-    ----------
-    port : `str`, optional
-        Serial port (default: "/dev/ttyAMA0").
+    config = configparser.ConfigParser()
+    config.read(config_file)
 
-    baudrate : `int`, optional
-        Serial port baudrate (default: 115200).
+    def config_value(sec: str, key: str):
+        return config[sec][key].strip('"')
 
-    timeout : `float`, optional
-        Serial port read timeout, in seconds (default: 2.).
+    # influxdb connection
+    _client = InfluxDBClient.InfluxDBClient.from_config(config_file)
+    _write_api = _client.write_api(write_options=SYNCHRONOUS)
 
-    config : `str`, optional
-        InfluxDB v1.8 config file path (default: 'influxdb.ini').
-        Configuration should contain the header "[influx]".
-    """
+    bucket = config_value('influx2', 'bucket')
 
-    # Read influx ini file
-    ini = ConfigParser()
-    with open(filename) as f:
-        ini.read_file(f, source=config)
-    ini = ini.items('influx', vars=os.environ)
+    if debug:
+        print(_client.health)
 
-    # connect to influxDB data client
-    client = InfluxDBClient.from_config_file(
-        url=ini['url'],
-        token=ini['token'],
-        org=ini['org']
+    # serial connection
+    _serial = serial.Serial(
+        port=config_value('serial', 'port'),
+        baudrate=config_value('serial', 'baudrate'),
+        timeout=config_value('serial', 'timeout') / 1000  # ms to s,
     )
-    print(client)
 
-    # connect to serial port
-    ser = serial.Serial(port=port, baudrate=baudrate, timeout=timeout)
-    print(ser)
+    if debug:
+        print(_serial)
 
     # wait while everythings gets set
-    time.sleep(timeout)
+    # time.sleep(2)
 
     # init
     read_buffer = b""
-    read_time = np.datetime64("now")  # backup if GPS fails
+    read_time = np.datetime64("now") - _sampling_delta  # backup if GPS fails
 
     # continuous serial readout while open
-    while ser.isOpen():
-        read_buffer, data_points = parse_read(
-            read_lines(ser, read_buffer), read_time
-        )
-        client.write_points(data_points, bucket=ini['bucket'])
+    while _serial.isOpen():
+
+        try:
+            # append to read buffer
+            read_buffer += read_lines(_serial)
+            read_buffer, data_points = parse_read(read_buffer, read_time, debug=True)
+
+            print(data_points)
+            raise SystemExit()
+
+            # write to influxdb
+            _write_api.write(bucket=bucket, record=data_points)
+
+        except (KeyboardInterrupt, SystemExit):
+            _serial.close()
+            _client.close()
+
+    else:
+        _client.close() 
 
 
-def read_lines(ser, read_buffer=b"", **args):
+def read_lines(ser, **args):
     """Read all available lines from the serial port
     and append to the read buffer.
 
@@ -94,8 +119,6 @@ def read_lines(ser, read_buffer=b"", **args):
     ----------
     ser : serial.Serial() instance
         The device we are reading from.
-    read_buffer : bytes, default b''
-        Previous read buffer that is appended to.
 
     Returns
     -------
@@ -113,10 +136,10 @@ def read_lines(ser, read_buffer=b"", **args):
     in_waiting = ser.in_waiting
     read += ser.readline(in_waiting)
 
-    return read_buffer + read
+    return read
 
 
-def read_all(ser, read_buffer=b"", **args):
+def read_all(ser, **args):
     """Read all available bytes from the serial port
     and append to the read buffer.
 
@@ -124,8 +147,6 @@ def read_all(ser, read_buffer=b"", **args):
     ----------
     ser : serial.Serial() instance
         The device we are reading from.
-    read_buffer : bytes, default b''
-        Previous read buffer that is appended to.
 
     Returns
     -------
@@ -148,10 +169,10 @@ def read_all(ser, read_buffer=b"", **args):
     # Reset to previous timeout
     ser.timeout = previous_timeout
 
-    return read_buffer + read
+    return read
 
 
-def read_all_newlines(ser, read_buffer=b"", n_reads=4):
+def read_all_newlines(ser, n_reads=4):
     """Read data in until encountering newlines.
 
     Parameters
@@ -160,8 +181,6 @@ def read_all_newlines(ser, read_buffer=b"", n_reads=4):
         The device we are reading from.
     n_reads : int
         The number of reads up to newlines
-    read_buffer : bytes, default b''
-        Previous read buffer that is appended to.
 
     Returns
     -------
@@ -172,7 +191,7 @@ def read_all_newlines(ser, read_buffer=b"", n_reads=4):
     -----
     .. This is a drop-in replacement for read_all().
     """
-    read = read_buffer
+    read = b"" 
     for _ in range(n_reads):
         read += ser.read_until()
 
@@ -183,6 +202,7 @@ def read_all_newlines(ser, read_buffer=b"", n_reads=4):
 _u1 = np.dtype(np.uint8)
 _u8 = np.dtype(np.uint64)
 _i1 = np.dtype(np.int8)
+_i1_S = _i1.newbyteorder('S')
 _i2 = np.dtype(np.int16)
 _i2_S = _i2.newbyteorder('S')
 _i4 = np.dtype(np.int32)
@@ -190,7 +210,20 @@ _i4_S = _i4.newbyteorder('S')
 _f4 = np.dtype(np.float32)
 
 
-def parse_read(read_buffer, read_time, data_points=[]):
+def frombuffer(buffer, dtype=None, count=None, offset=None, **kwargs):
+    """Wrapper to np.frombuffer returning the item if count == 1
+
+    See np.frombuffer for the usage.
+    """
+    dtype = dtype or _f4
+    count = count or -1
+    offset = offset or 0
+    data = np.frombuffer(buffer, dtype=dtype, count=count, offset=offset,
+                         **kwargs)
+    return data.item() if count == 1 else data
+
+
+def parse_read(read_buffer, read_time, data_points=[], debug=False):
     """Parse read buffer for data packets with payload.
 
     Parameters
@@ -221,27 +254,34 @@ def parse_read(read_buffer, read_time, data_points=[]):
 
             # payload size
             i += 10
-            payload_bytes = np.frombuffer(read_buffer, dtype=_i1, offset=i)
+            payload_bytes = frombuffer(read_buffer, _i1, 1, i)
 
             # payload
             i += 1
             payload = read_buffer[i:i+payload_bytes]
 
+            if debug:
+                print("payload size =", payload_bytes)
+                print("payload bytes =", payload)
+
             # convert payload to counts and add to data buffer
-            data_point = parse_payload(payload, read_time)
-            data_points.append(data_point)
+            data_points.append(parse_payload(payload, read_time, debug))
 
             # skip packet header scanning
             i += payload_bytes
 
+            raise SystemExit()
+
         else:
             i += 1
+
+    raise SystemExit()
 
     # return tail
     return read_buffer[i:], data_points
 
 
-def parse_payload(payload, imprecise_time):
+def parse_payload(payload, imprecise_time, debug=False):
     """
     Convert payload to Level-1 data in counts.
 
@@ -259,39 +299,45 @@ def parse_payload(payload, imprecise_time):
         Dictionary with all fields for the given time step.
 
     """
-    print(imprecise_time, payload.hex())
-
-    def frompayload(*args, **kwargs):
-        return np.frombuffer(payload, *args, **kwargs)
+    if debug:
+        print("imprecise time =", imprecise_time)
+        print("payload hex =", payload.hex())
 
     # date time
-    # h, m, s = int(payload[0]), int(payload[1]), int(payload[2])
-    step = frompayload(dtype=_u1, offset=3)
+    y, m, d, H, M, S = frombuffer(payload, _u1, 6, 0)
+    step = frombuffer(payload, _u1, 1, 6)
+    # print(y, m, d, H, M, S, step)
 
     # DLVR-F50D differential pressure (14-bit ADC)
     # DLVR = int(payload[4] | payload[5])
-    DLVR = frompayload(dtype=_i2, offset=4)
+    DLVR = frombuffer(payload, _i1, 1, 4) | frombuffer(payload, _i1, 1, 5)
 
     # SP210
-    # SP210 = int(payload[6] << 8 | payload[7])
-    SP210 = frompayload(dtype=_i2_S, offset=6)
+    # SP210 = payload[6] << 8 | payload[7]  # wrong -> generates an unsigned int
+    # SP210 = frombuffer(payload, _i1, 1, 6) | frombuffer(payload, _i1, 1, 7)
+    SP210 = frombuffer(payload, _i2, 1, 6)
 
     # LPS33HW barometric pressure (returns 32-bit)
-    # LPS = int.from_bytes(payload[8:11], "little")
-    LPS33HW = frompayload(dtype=_i4, offset=8, count=1)
+    LPS33HW = int.from_bytes(payload[8:11], "little")
+    print(LPS33HW)
+    LPS33HW = int.from_bytes(payload[8:11], "big")
+    print(LPS33HW)
+    LPS33HW = frombuffer(payload, _i4, 1, 8)
+    print(LPS33HW)
+    raise SystemExit()
 
     # LIS3DH 3-axis accelerometer and gyroscope (16-bit ADC)
-    LIS3DH_X, LIS3DH_Y, LIS3DH_Z = frompayload(dtype=_i2_S, offset=11, count=3)
+    LIS3DH_X, LIS3DH_Y, LIS3DH_Z = frombuffer(payload, _i2_S, 3, 14)
     # LIS3_X = int(payload[11] << 8 | payload[12])
     # LIS3_Y = int(payload[13] << 8 | payload[14])
     # LIS3_Z = int(payload[15] << 8 | payload[16])
 
     # LSM303 3-axis accelerometer and magnetometer (returns 8-bit)
-    LSM303_X, LSM303_Y, LSM303_Z = frompayload(dtype=_i1, offset=17, count=3)
+    LSM303_X, LSM303_Y, LSM303_Z = frombuffer(payload, _i1, 3, 20)
     # int(payload[17]), int(payload[18]), int(payload[19])
 
     # SHT8x temperature and humidity (16-bit ADC)
-    SHT8x_T, SHT8x_H = frompayload(dtype=_i2_S, offset=20, count=2)
+    SHT8x_T, SHT8x_H = frombuffer(payload, _i2_S, 2, 23)
     # SHT_T = int(payload[20] << 8 | payload[21])
     # SHT_H = int(payload[22] << 8 | payload[23])
 
@@ -299,7 +345,6 @@ def parse_payload(payload, imprecise_time):
     data_point = {
         "measurement": 'Multi-EAR',
         "time": imprecise_time,
-        "tag": _hostname,
         "fields": {
             "step": step,
             "DLVR": DLVR,
@@ -318,10 +363,13 @@ def parse_payload(payload, imprecise_time):
 
     # Readout gnss at full cycle
     # add GNSS quality
-    if step == 0:
-        GNS_LAT, GNS_LON = frompayload(dtype=_f4, offset=24, count=2)
-        data_point['fields']['GNS_LAT'] = GNS_LAT
-        data_point['fields']['GNS_LON'] = GNS_LON
+    # if step == 0:
+    #     GNS_LAT, GNS_LON = frombuffer(payload, _f4, 2, 24)
+    #     data_point['fields']['GNS_LAT'] = GNS_LAT
+    #     data_point['fields']['GNS_LON'] = GNS_LON
+
+    if debug:
+        print(data_point)
 
     return data_point
 
@@ -337,20 +385,11 @@ def main():
     )
 
     parser.add_argument(
-        '-b', '--baudrate', metavar='..', type=int, default=115200,
-        help='Serial port baudrate.'
+        '-c', '--config_file', metavar='..', type=str, default='config.ini',
+        help='Path to config file.'
     )
     parser.add_argument(
-        '-c', '--config', metavar='..', type=str, default='influxdb.ini',
-        help='Path to InfluxDB config file.'
-    )
-    parser.add_argument(
-        '-p', '--port', metavar='..', type=str, default='/dev/ttyAMA0',
-        help='Serial port.'
-    )
-    parser.add_argument(
-        '-t', '--timeout', metavar='..', type=float, default=2.,
-        help='Serial port read timeout, in seconds.'
+        '--debug', action='store_true', help='Make the operation more talkative'
     )
 
     parser.add_argument(
@@ -360,12 +399,7 @@ def main():
 
     args = parser.parse_args()
 
-    uart_readout(
-        port=args.port,
-        baudrate=args.baudrate,
-        timeout=args.timeout,
-        config=args.config,
-    )
+    uart_readout(args.config_file, args.debug)
 
 
 if __name__ == "__main__":

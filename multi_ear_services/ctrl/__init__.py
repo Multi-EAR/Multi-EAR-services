@@ -9,6 +9,7 @@ try:
 except ModuleNotFoundError:
     version = '[VERSION-NOT-FOUND]'
 from . import utils
+from ..util import is_raspberry_pi, parse_config
 
 
 def create_app(test_config=None):
@@ -32,18 +33,18 @@ def create_app(test_config=None):
         pass
 
     # check if host is a Raspberry Pi
-    is_rpi = utils.is_raspberry_pi()
+    is_rpi = is_raspberry_pi()
 
     # template globals
     @app.context_processor
     def inject_stage_and_region():
         etc = os.path.dirname(os.path.abspath(__file__)) + '/../../etc' if app.debug else '/etc'
-        hostapd = utils.parse_conf(etc + '/hostapd/hostapd.conf')
+        hostapd = parse_config(etc + '/hostapd/hostapd.conf')
         return dict(
             hostname=socket.gethostname().replace('.local',''),
             version=version,
             services=utils.services,
-            hostapd=dict(hostapd.items('default')),
+            hostapd=dict(hostapd.items('DEFAULT')),
         )
 
     # routes
