@@ -62,24 +62,24 @@ def uart_readout(config_file='config.ini', debug=None):
     def config_value(sec: str, key: str):
         return config[sec][key].strip('"')
 
-    # influxdb connection
-    _client = InfluxDBClient.InfluxDBClient.from_config(config_file)
-    _write_api = _client.write_api(write_options=SYNCHRONOUS)
+    # influx database connection
+    db = InfluxDBClient.InfluxDBClient.from_config(config_file)
+    write_db = db.write_api(write_options=SYNCHRONOUS)
 
     bucket = config_value('influx2', 'bucket')
 
     if debug:
-        print(_client.health)
+        print(idb.health)
 
-    # serial connection
-    _serial = serial.Serial(
+    # serial port connection
+    ser = serial.Serial(
         port=config_value('serial', 'port'),
         baudrate=config_value('serial', 'baudrate'),
         timeout=config_value('serial', 'timeout') / 1000  # ms to s,
     )
 
     if debug:
-        print(_serial)
+        print(ser)
 
     # wait while everythings gets set
     # time.sleep(2)
@@ -89,11 +89,11 @@ def uart_readout(config_file='config.ini', debug=None):
     read_time = np.datetime64("now") - _sampling_delta  # backup if GPS fails
 
     # continuous serial readout while open
-    while _serial.isOpen():
+    while ser.isOpen():
 
         try:
             # append to read buffer
-            read_buffer += read_lines(_serial)
+            read_buffer += read_lines(ser)
             read_buffer, data_points = parse_read(read_buffer, read_time,
                                                   debug=debug)
 
@@ -101,14 +101,14 @@ def uart_readout(config_file='config.ini', debug=None):
             raise SystemExit()
 
             # write to influxdb
-            _write_api.write(bucket=bucket, record=data_points)
+            write_db.write(bucket=bucket, record=data_points)
 
         except (KeyboardInterrupt, SystemExit):
-            _serial.close()
-            _client.close()
+            ser.close()
+            db.close()
 
     else:
-        _client.close()
+        db.close()
 
 
 def read_lines(ser, **args):
