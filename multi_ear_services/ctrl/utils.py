@@ -21,25 +21,14 @@ services = ['multi-ear-ctrl.service',
 def systemd_status(service: str):
     """Get the systemd status of a single service.
     """
-    if service not in services:
-        return dict(
-            success=False,
-            service=service,
-            stderr='Service not part of listed Multi-EAR services.',
-        )
+    r = _popen(['/usr/bin/systemctl', 'status', service])
+    if r['stdout'] and 'Active: ' in r['stdout']:
+        status = r['stdout'].split('<br>')[2].split('Active: ')[1]
+        if 'since' in status:
+            status = status.split(' since ')[0]
     else:
-        r = _popen(['/usr/bin/systemctl', 'status', service])
-        if r['stdout'] and 'Active: ' in r['stdout']:
-            status = r['stdout'].split('<br>')[2].split('Active: ')[1]
-            if 'since' in status:
-                status = status.split(' since ')[0]
-        else:
-            status = None
-        return dict(
-            service=service,
-            status=status,
-            **r,
-        )
+        status = None
+    return dict(service=service, status=status, **r)
 
 
 def systemd_status_all():
