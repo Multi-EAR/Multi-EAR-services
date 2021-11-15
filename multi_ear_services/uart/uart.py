@@ -63,7 +63,7 @@ def uart_readout(config_file='config.ini', debug=None):
         return config[sec][key].strip('"')
 
     # influx database connection
-    db = InfluxDBClient.InfluxDBClient.from_config(config_file)
+    db = InfluxDBClient.from_config(config_file)
     write_db = db.write_api(write_options=SYNCHRONOUS)
 
     bucket = config_value('influx2', 'bucket')
