@@ -1,6 +1,7 @@
 # Mandatory imports
 import time
 import numpy as np
+import pandas as pd
 import serial
 import argparse
 from configparser import ConfigParser
@@ -25,7 +26,7 @@ _packet_bytes_min = 40  # minimum bytes to process a packet
 
 # sampling definition
 _sampling_rate = 16  # Hz
-_sampling_delta = np.timedelta64(np.int64(1e9/_sampling_rate), 'ns')  # ns
+_sampling_delta = pd.Timedelta(1/_sampling_rate, 'ns')
 
 
 def uart_readout(config_file='config.ini', debug=None):
@@ -63,7 +64,7 @@ def uart_readout(config_file='config.ini', debug=None):
         return config[sec][key].strip('"')
 
     # influx database connection
-    db = InfluxDBClient.from_config(config_file)
+    db = InfluxDBClient.from_config_file(config_file)
     write_db = db.write_api(write_options=SYNCHRONOUS)
 
     bucket = config_value('influx2', 'bucket')
@@ -86,7 +87,7 @@ def uart_readout(config_file='config.ini', debug=None):
 
     # init
     read_buffer = b""
-    read_time = np.datetime64("now") - _sampling_delta  # backup if GPS fails
+    read_time = pd.to_datetime("now")  # backup if GPS fails
 
     # continuous serial readout while open
     while ser.isOpen():
