@@ -1,5 +1,4 @@
 # absolute imports
-import os
 from subprocess import Popen, PIPE
 
 

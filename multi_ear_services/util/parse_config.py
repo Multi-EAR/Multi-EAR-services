@@ -1,22 +1,23 @@
 # absolute imports
-from configparser import ConfigParser, SafeConfigParser, MissingSectionHeaderError
+import os
+from configparser import ConfigParser, MissingSectionHeaderError
 
 
-def parse_config(filenames, config=None, safe=True, defaults=None, **kwargs):
+def parse_config(filenames, config=None, defaults=None, **kwargs):
     """Parse a single config file using ConfigParser.read() while catching the
     MissingSectionHeaderError to the section '[default]'.
     """
 
     # subsitute clean environment
+    if defaults is True:
+        defaults = os.environ
     if defaults:
         for key, val in defaults.items():
             if '%' in val:
                 defaults.pop(key)
 
     # init
-    config = config or (
-        SafeConfigParser(defaults=defaults, **kwargs) if safe else
-        ConfigParser(defaults=defaults, **kwargs))
+    config = config or ConfigParser(defaults=defaults, **kwargs)
 
     # Config paths should be list or tuple
     if isinstance(filenames, str):

@@ -1,5 +1,4 @@
 # Mandatory imports
-import os
 import time
 import numpy as np
 import serial
@@ -34,7 +33,7 @@ def uart_readout(config_file='config.ini', debug=None):
     Influx v1.8 database.
 
     Configure all parameters via configuration file. The configuration file
-    has to contain the sections 'influx2' and 'serial'. 
+    has to contain the sections 'influx2' and 'serial'.
 
     config.ini example::
         [influx2]
@@ -57,7 +56,7 @@ def uart_readout(config_file='config.ini', debug=None):
         timeout = 2000
     """
 
-    config = configparser.ConfigParser()
+    config = ConfigParser()
     config.read(config_file)
 
     def config_value(sec: str, key: str):
@@ -95,7 +94,8 @@ def uart_readout(config_file='config.ini', debug=None):
         try:
             # append to read buffer
             read_buffer += read_lines(_serial)
-            read_buffer, data_points = parse_read(read_buffer, read_time, debug=True)
+            read_buffer, data_points = parse_read(read_buffer, read_time,
+                                                  debug=debug)
 
             print(data_points)
             raise SystemExit()
@@ -108,7 +108,7 @@ def uart_readout(config_file='config.ini', debug=None):
             _client.close()
 
     else:
-        _client.close() 
+        _client.close()
 
 
 def read_lines(ser, **args):
@@ -191,7 +191,7 @@ def read_all_newlines(ser, n_reads=4):
     -----
     .. This is a drop-in replacement for read_all().
     """
-    read = b"" 
+    read = b""
     for _ in range(n_reads):
         read += ser.read_until()
 
@@ -313,7 +313,7 @@ def parse_payload(payload, imprecise_time, debug=False):
     DLVR = frombuffer(payload, _i1, 1, 4) | frombuffer(payload, _i1, 1, 5)
 
     # SP210
-    # SP210 = payload[6] << 8 | payload[7]  # wrong -> generates an unsigned int
+    # SP210 = payload[6] << 8 | payload[7]  # wrong -> unsigned int?
     # SP210 = frombuffer(payload, _i1, 1, 6) | frombuffer(payload, _i1, 1, 7)
     SP210 = frombuffer(payload, _i2, 1, 6)
 
@@ -386,10 +386,11 @@ def main():
 
     parser.add_argument(
         '-c', '--config_file', metavar='..', type=str, default='config.ini',
-        help='Path to config file.'
+        help='Path to configuration file'
     )
     parser.add_argument(
-        '--debug', action='store_true', help='Make the operation more talkative'
+        '--debug', action='store_true',
+        help='Make the operation more talkative'
     )
 
     parser.add_argument(
