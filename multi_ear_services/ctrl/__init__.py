@@ -118,6 +118,6 @@ def create_app(test_config=None):
             nodata=request.args.get('nodata'),
         )
 
-        return jsonify(ds.response())
+        return jsonify(ds.response()), ds.status
 
     return app

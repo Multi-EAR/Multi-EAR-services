@@ -44,6 +44,7 @@ class DataSelect(object):
             raise TypeError('InfluxDBClient should be set')
 
         self.__client__ = client
+        self.__status__ = 200
 
         self.set_time(starttime, endtime, duration)
         self.channel = channel
@@ -55,14 +56,20 @@ class DataSelect(object):
             self.select()
 
     def keys(self):
+        """DataSelect object dictionary keys.
+        """
         return ['starttime', 'endtime', 'channel', 'format', 'nodata']
 
     def __getitem__(self, key):
+        """DataSelect object dictionary key selector.
+        """
         if key not in self.keys():
             raise KeyError(key)
         return eval(f"self.{key}")
 
     def asdict(self):
+        """Returns the DataSelect object as a dictionary.
+        """
         return {key: self[key] for key in self.keys}
 
     def __str__(self):
@@ -81,22 +88,32 @@ class DataSelect(object):
 
     @property
     def duration(self):
+        """DataSelect time duration.
+        """
         return self.__endtime__ - self.__starttime__
 
     @property
     def start(self):
+        """DataSelect start time.
+        """
         return self.starttime
 
     @property
     def starttime(self):
+        """DataSelect start time.
+        """
         return self.__starttime__
 
     @property
     def end(self):
+        """DataSelect end time.
+        """
         return self.endtime
 
     @property
     def endtime(self):
+        """DataSelect end time.
+        """
         return self.__endtime__
 
     def set_time(self, start=None, end=None, delta=None):
@@ -120,11 +137,13 @@ class DataSelect(object):
 
     @property
     def chan(self):
+        """DataSelect channel code (default: '*')
+        """
         return self.channel
 
     @property
     def channel(self):
-        """
+        """DataSelect channel code (default: '*')
         """
         return self.__channel__
 
@@ -137,6 +156,8 @@ class DataSelect(object):
 
     @property
     def format(self):
+        """DataSelect format code {json|csv|miniseed} (default: 'json').
+        """
         return self.__format__
 
     @format.setter
@@ -145,13 +166,13 @@ class DataSelect(object):
         if not isinstance(fmt, str):
             raise TypeError('format code should be a string')
         if fmt not in ('json', 'csv', 'miniseed'):
-            raise ValueError(
-                'format code should be "json", "csv" or "miniseed"'
-            )
+            raise ValueError('format code should be {json|csv|miniseed}')
         self.__format__ = fmt
 
     @property
     def nodata(self):
+        """DataSelect nodata HTTP status code
+        """
         return self.__nodata__
 
     @nodata.setter
@@ -167,19 +188,29 @@ class DataSelect(object):
 
     @property
     def client(self):
+        """Returns the InfluxDB client
+        """
         return self.__client__
 
     @property
+    def status(self):
+        """Returns the HTTP status code (int).
+        """
+        return self.__status__
+
+    @property
     def data(self):
+        """Returns the data if selected.
+        """
         return self.__data__
 
     def select(self):
-        """
+        """Process the DataSelect request.
         """
         print(self.client.health)
         self.__data__ = None
 
     def response(self):
-        """
+        """Return the DataSelect response.
         """
         return str(self)
