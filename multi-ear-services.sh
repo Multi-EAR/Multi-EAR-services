@@ -54,7 +54,7 @@ function usage
 "  install        Full installation of the Multi-Ear services:"
 "                  * install Python3, dnsmasq, hostapd, nginx, influxdb, telegraf, grafana"
 "                  * configure system services"
-"                  * create Python3 virtual environment \"py37\" in \"\$HOME/.py37\""
+"                  * create Python3 virtual environment py37 in ~/.py37"
 "                  * install and activate the Multi-EAR services"
 "  check          Verify the installed Multi-EAR services and dependencies."
 "  update         Update the existing Multi-EAR services and dependencies."
