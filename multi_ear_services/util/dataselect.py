@@ -42,7 +42,9 @@ class DataSelect(object):
 
         if not isinstance(client, InfluxDBClient):
             raise TypeError('InfluxDBClient should be set')
+
         self.__client__ = client
+
         self.set_time(starttime, endtime, duration)
         self.channel = channel
         self.format = format
@@ -114,7 +116,7 @@ class DataSelect(object):
             delta = pd.to_timedelta(delta or '15min')
             self.__starttime__ = self.__endtime__ - delta
         else:
-            self.__starttime = pd.to_datetime(start, unit='ns', utc=True)
+            self.__starttime__ = pd.to_datetime(start, unit='ns', utc=True)
 
     @property
     def chan(self):
@@ -180,3 +182,4 @@ class DataSelect(object):
     def response(self):
         """
         """
+        return str(self)

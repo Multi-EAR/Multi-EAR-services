@@ -47,8 +47,8 @@ def create_app(test_config=None):
             hostapd=dict(hostapd.items('DEFAULT')),
         )
 
-    #
-    def is_internal_request():
+    # quick check for an internal request
+    def is_internal_referer():
         return ('Referer' in request.headers and
                 'http://127.0.0.1' in request.headers['Referer'])
 
@@ -59,7 +59,7 @@ def create_app(test_config=None):
 
     @app.route("/_tab/<tab>", methods=['GET'])
     def load_tab(tab="home"):
-        if not is_internal_request():
+        if not is_internal_referer():
             return "Invalid request", 400
         try:
             html = render_template(f"tabs/{tab}.html.jinja")
@@ -86,8 +86,8 @@ def create_app(test_config=None):
 
     @app.route("/_append_wpa_supplicant", methods=['POST'])
     def append_wpa_supplicant():
-        if not is_internal_request():
-            return "Invalid request", 400
+        if not is_internal_referer():
+            return "Invalid request", 403
         ssid = request.args.get('ssid')
         passphrase = request.args.get('passphrase')
         if is_rpi and ssid and passphrase:
@@ -98,8 +98,8 @@ def create_app(test_config=None):
 
     @app.route("/_autohotspot", methods=['POST'])
     def autohotspot():
-        if not is_internal_request():
-            return "Invalid request", 400
+        if not is_internal_referer():
+            return "Invalid request", 403
         command = request.args.get('action')
         if is_rpi and command == 'start':
             res = utils.wlan_autohotspot()
@@ -109,15 +109,15 @@ def create_app(test_config=None):
 
     @app.route("/api/dataselect", methods=['GET'])
     def api_dataselect():
-        data = DataSelect(
+        ds = DataSelect(
             client,
-            starttime=request.args.get('start') or request.args.get('starttime'),
-            endtime=request.args.get('end') or request.args.get('endtime'),
-            channel=request.args.get('chan') or request.args.get('channel'),
+            starttime=request.args.get('starttime') or request.args.get('start'),
+            endtime=request.args.get('endtime') or request.args.get('end'),
+            channel=request.args.get('channel') or request.args.get('chan'),
             format=request.args.get('format'),
             nodata=request.args.get('nodata'),
         )
 
-        return jsonify(str(data))
+        return jsonify(ds.response())
 
     return app
