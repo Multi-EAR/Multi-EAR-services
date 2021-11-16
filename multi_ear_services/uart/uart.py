@@ -70,7 +70,7 @@ def uart_readout(config_file='config.ini', debug=None):
     bucket = config_value('influx2', 'bucket')
 
     if debug:
-        print(idb.health)
+        print(db.health)
 
     # serial port connection
     ser = serial.Serial(

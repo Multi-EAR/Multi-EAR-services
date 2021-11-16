@@ -9,15 +9,12 @@ try:
 except ModuleNotFoundError:
     version = '[VERSION-NOT-FOUND]'
 from . import utils
-from ..util import is_raspberry_pi, parse_config
+from ..util import is_raspberry_pi, parse_config, DataSelect
 
 
 def create_app(test_config=None):
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
-    app.config.from_mapping(
-        SECRET_KEY='dev',
-    )
 
     if test_config is None:
         # load the instance config, if it exists, when not testing
@@ -47,13 +44,20 @@ def create_app(test_config=None):
             hostapd=dict(hostapd.items('DEFAULT')),
         )
 
+    #
+    def is_internal_request():
+        return ('Referer' in request.headers and
+                'http://127.0.0.1' in request.headers['Referer'])
+
     # routes
-    @app.route("/")
+    @app.route("/", methods=['GET'])
     def index():
         return render_template('base.html.jinja')
 
-    @app.route("/_tab/<tab>")
+    @app.route("/_tab/<tab>", methods=['GET'])
     def load_tab(tab="home"):
+        if not is_internal_request():
+            return "Invalid request", 400
         try:
             html = render_template(f"tabs/{tab}.html.jinja")
         except FileNotFoundError:
@@ -79,6 +83,8 @@ def create_app(test_config=None):
 
     @app.route("/_append_wpa_supplicant", methods=['POST'])
     def append_wpa_supplicant():
+        if not is_internal_request():
+            return "Invalid request", 400
         ssid = request.args.get('ssid')
         passphrase = request.args.get('passphrase')
         if is_rpi and ssid and passphrase:
@@ -89,11 +95,25 @@ def create_app(test_config=None):
 
     @app.route("/_autohotspot", methods=['POST'])
     def autohotspot():
+        if not is_internal_request():
+            return "Invalid request", 400
         command = request.args.get('action')
         if is_rpi and command == 'start':
             res = utils.wlan_autohotspot()
         else:
             res = None
         return jsonify(res)
+
+    @app.route("/api/dataselect", methods=['GET'])
+    def api_dataselect():
+        data = DataSelect(
+            starttime=request.args.get('start') or request.args.get('starttime'),
+            endtime=request.args.get('end') or request.args.get('endtime'),
+            channel=request.args.get('chan') or request.args.get('channel'),
+            format=request.args.get('format'),
+            nodata=request.args.get('nodata'),
+        )
+
+        return jsonify(str(data))
 
     return app
