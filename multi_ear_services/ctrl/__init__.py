@@ -9,7 +9,7 @@ try:
 except ModuleNotFoundError:
     version = '[VERSION-NOT-FOUND]'
 from . import utils
-from ..util import is_raspberry_pi, parse_config, DataSelect
+from ..util import DataSelect, get_client, is_raspberry_pi, parse_config
 
 
 def create_app(test_config=None):
@@ -31,6 +31,9 @@ def create_app(test_config=None):
 
     # check if host is a Raspberry Pi
     is_rpi = is_raspberry_pi()
+
+    # open influx connection
+    client = get_client()
 
     # template globals
     @app.context_processor
@@ -107,6 +110,7 @@ def create_app(test_config=None):
     @app.route("/api/dataselect", methods=['GET'])
     def api_dataselect():
         data = DataSelect(
+            client,
             starttime=request.args.get('start') or request.args.get('starttime'),
             endtime=request.args.get('end') or request.args.get('endtime'),
             channel=request.args.get('chan') or request.args.get('channel'),

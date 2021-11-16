@@ -1,5 +1,5 @@
-import numpy as np
 import pandas as pd
+from influxdb_client import InfluxDBClient
 
 
 class DataSelect(object):
@@ -9,13 +9,15 @@ class DataSelect(object):
     For details see the :meth:`__init__()` method.
     """
 
-    def __init__(self, starttime=None, endtime=None, duration=None,
+    def __init__(self, client, starttime=None, endtime=None, duration=None,
                  channel=None, format=None, nodata=None, autoselect=True):
         """
         Initializes a Multi-EAR DataSelect object.
 
         Parameters
         ----------
+        client : InfluxDBClient
+            Set the InfluxDB client.
         starttime : str or Timestamp
             Set the start time.
         endtime : str or Timestamp
@@ -37,13 +39,17 @@ class DataSelect(object):
         >>> from multi_ear_services import DataSelect
         >>> q = DataSelect(..., request=False)
         """
+
+        if not isinstance(client, InfluxDBClient):
+            raise TypeError('InfluxDBClient should be set')
+        self.__client__ = client
         self.set_time(starttime, endtime, duration)
         self.channel = channel
         self.format = format
         self.nodata = nodata
-        self.__data = None
-        self.__select = autoselect
-        if self.__select:
+        self.__data__ = None
+        self.__select__ = autoselect
+        if self.__select__:
             self.select()
 
     def keys(self):
@@ -52,7 +58,7 @@ class DataSelect(object):
     def __getitem__(self, key):
         if key not in self.keys():
             raise KeyError(key)
-        return eval(f"self.{key}") 
+        return eval(f"self.{key}")
 
     def asdict(self):
         return {key: self[key] for key in self.keys}
@@ -73,7 +79,7 @@ class DataSelect(object):
 
     @property
     def duration(self):
-        return self.__endtime - self.__starttime
+        return self.__endtime__ - self.__starttime__
 
     @property
     def start(self):
@@ -81,7 +87,7 @@ class DataSelect(object):
 
     @property
     def starttime(self):
-        return self.__starttime
+        return self.__starttime__
 
     @property
     def end(self):
@@ -89,7 +95,7 @@ class DataSelect(object):
 
     @property
     def endtime(self):
-        return self.__endtime
+        return self.__endtime__
 
     def set_time(self, start=None, end=None, delta=None):
         """Set the start and end time
@@ -103,10 +109,12 @@ class DataSelect(object):
         delta : str or Timedelta, default ‘15min’
             Sets the start time if not explicitely set.
         """
-        self.__endtime = pd.to_datetime(end or 'now', unit='ns', utc=True)
-        self.__starttime = (pd.to_datetime(start, unit='ns', utc=True)
-                            if start is not None else
-                            self.__endtime - pd.to_timedelta(delta or '15min'))
+        self.__endtime__ = pd.to_datetime(end or 'now', unit='ns', utc=True)
+        if start is None:
+            delta = pd.to_timedelta(delta or '15min')
+            self.__starttime__ = self.__endtime__ - delta
+        else:
+            self.__starttime = pd.to_datetime(start, unit='ns', utc=True)
 
     @property
     def chan(self):
@@ -116,18 +124,18 @@ class DataSelect(object):
     def channel(self):
         """
         """
-        return self.__channel
+        return self.__channel__
 
     @channel.setter
     def channel(self, channel):
         channel = channel or '*'
         if not isinstance(channel, str):
             raise TypeError('channel code should be a string')
-        self.__channel = channel 
+        self.__channel__ = channel
 
     @property
     def format(self):
-        return self.__format
+        return self.__format__
 
     @format.setter
     def format(self, fmt):
@@ -138,11 +146,11 @@ class DataSelect(object):
             raise ValueError(
                 'format code should be "json", "csv" or "miniseed"'
             )
-        self.__format = fmt
+        self.__format__ = fmt
 
     @property
     def nodata(self):
-        return self.__nodata
+        return self.__nodata__
 
     @nodata.setter
     def nodata(self, nodata):
@@ -153,11 +161,21 @@ class DataSelect(object):
             raise ValueError(
                 'nodata HTTP status code should be "204" or "404"'
             )
-        self.__nodata = nodata
+        self.__nodata__ = nodata
+
+    @property
+    def client(self):
+        return self.__client__
+
+    @property
+    def data(self):
+        return self.__data__
 
     def select(self):
         """
         """
+        print(self.client.health)
+        self.__data__ = None
 
     def response(self):
         """
