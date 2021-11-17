@@ -1,19 +1,19 @@
 # Mandatory imports
+import atexit
 import time
 import numpy as np
 import pandas as pd
-import serial
-import argparse
+from serial import Serial
+from argparse import ArgumentParser
 from configparser import ConfigParser
-from influxdb_client import InfluxDBClient
+from influxdb_client import InfluxDBClient, WriteApi
 from influxdb_client.client.write_api import SYNCHRONOUS
 
 # Relative imports
-# try:
-#     from ..version import version
-# except ModuleNotFoundError:
-#     version = '[VERSION-NOT-FOUND]'
-version = '[VERSION-NOT-FOUND]'
+try:
+    from ..version import version
+except ModuleNotFoundError:
+    version = '[VERSION-NOT-FOUND]'
 
 
 __all__ = ['uart_readout']
@@ -27,6 +27,19 @@ _packet_bytes_min = 40  # minimum bytes to process a packet
 # sampling definition
 _sampling_rate = 16  # Hz
 _sampling_delta = pd.Timedelta(1/_sampling_rate, 'ns')
+
+
+def on_exit(db_client: InfluxDBClient, write_api: WriteApi, uart_conn: Serial):
+    """Close clients after terminate a script.
+
+    :param db_client: InfluxDB client
+    :param write_api: WriteApi
+    :param uart_conn: Serial
+    :return: nothing
+    """
+    write_api.close()
+    db_client.close()
+    uart_conn.close()
 
 
 def uart_readout(config_file='config.ini', debug=None):
@@ -64,23 +77,26 @@ def uart_readout(config_file='config.ini', debug=None):
         return config[sec][key].strip('"')
 
     # influx database connection
-    db = InfluxDBClient.from_config_file(config_file)
-    write_db = db.write_api(write_options=SYNCHRONOUS)
+    _db_client = InfluxDBClient.from_config_file(config_file)
+    _write_api = _db_client.write_api(write_options=SYNCHRONOUS)
 
     bucket = config_value('influx2', 'bucket')
 
     if debug:
-        print(db.health)
+        print(_db_client.health)
 
     # serial port connection
-    ser = serial.Serial(
+    _uart_conn = Serial(
         port=config_value('serial', 'port'),
         baudrate=config_value('serial', 'baudrate'),
         timeout=config_value('serial', 'timeout') / 1000  # ms to s,
     )
 
     if debug:
-        print(ser)
+        print(_uart_conn)
+
+    # automatically close clients on exit
+    atexit.register(on_exit, _db_client, _write_api, _uart_conn)
 
     # wait while everythings gets set
     # time.sleep(2)
@@ -90,29 +106,18 @@ def uart_readout(config_file='config.ini', debug=None):
     read_time = pd.to_datetime("now")  # backup if GPS fails
 
     # continuous serial readout while open
-    while ser.isOpen():
+    while _uart_conn.isOpen():
+        read_buffer, data_points = parse_read(
+            read_lines(_uart_conn, read_buffer), read_time, debug=debug
+        )
 
-        try:
-            # append to read buffer
-            read_buffer += read_lines(ser)
-            read_buffer, data_points = parse_read(read_buffer, read_time,
-                                                  debug=debug)
+        print(data_points)
+        raise SystemExit()
 
-            print(data_points)
-            raise SystemExit()
-
-            # write to influxdb
-            write_db.write(bucket=bucket, record=data_points)
-
-        except (KeyboardInterrupt, SystemExit):
-            ser.close()
-            db.close()
-
-    else:
-        db.close()
+        _write_api.write(bucket=bucket, record=data_points)
 
 
-def read_lines(ser, **args):
+def read_lines(ser, read_buffer=b"", **args):
     """Read all available lines from the serial port
     and append to the read buffer.
 
@@ -120,7 +125,9 @@ def read_lines(ser, **args):
     ----------
     ser : serial.Serial() instance
         The device we are reading from.
-
+    read_buffer : bytes, default b''
+        Previous read buffer that is appended to
+.
     Returns
     -------
     output : bytes
@@ -137,10 +144,10 @@ def read_lines(ser, **args):
     in_waiting = ser.in_waiting
     read += ser.readline(in_waiting)
 
-    return read
+    return read_buffer + read
 
 
-def read_all(ser, **args):
+def read_all(ser, read_buffer=b"", **args):
     """Read all available bytes from the serial port
     and append to the read buffer.
 
@@ -148,6 +155,8 @@ def read_all(ser, **args):
     ----------
     ser : serial.Serial() instance
         The device we are reading from.
+    read_buffer : bytes, default b''
+        Previous read buffer that is appended to.
 
     Returns
     -------
@@ -170,10 +179,10 @@ def read_all(ser, **args):
     # Reset to previous timeout
     ser.timeout = previous_timeout
 
-    return read
+    return read_buffer + read
 
 
-def read_all_newlines(ser, n_reads=4):
+def read_all_newlines(ser, read_buffer=b"", n_reads=4):
     """Read data in until encountering newlines.
 
     Parameters
@@ -182,6 +191,8 @@ def read_all_newlines(ser, n_reads=4):
         The device we are reading from.
     n_reads : int
         The number of reads up to newlines
+    read_buffer : bytes, default b''
+        Previous read buffer that is appended to.
 
     Returns
     -------
@@ -192,7 +203,7 @@ def read_all_newlines(ser, n_reads=4):
     -----
     .. This is a drop-in replacement for read_all().
     """
-    read = b""
+    read = read_buffer
     for _ in range(n_reads):
         read += ser.read_until()
 
@@ -379,7 +390,7 @@ def main():
     """Main script function.
     """
     # arguments
-    parser = argparse.ArgumentParser(
+    parser = ArgumentParser(
         prog='multi-ear-uart',
         description=('Sensorboard serial readout via UART with '
                      'data storage in a local InfluxDB database.'),
