@@ -35,13 +35,17 @@ def create_app(test_config=None):
     # open influx connection
     client = get_client()
 
+    # set hostname and referers
+    hostname = socket.gethostname()
+    referers = ("http://127.0.0.1/", f"http://${hostname}/")
+
     # template globals
     @app.context_processor
     def inject_stage_and_region():
         etc = os.path.dirname(os.path.abspath(__file__)) + '/../../etc' if app.debug else '/etc'
         hostapd = parse_config(etc + '/hostapd/hostapd.conf')
         return dict(
-            hostname=socket.gethostname().replace('.local',''),
+            hostname=hostname.replace('.local',''),
             version=version,
             services=utils.services,
             hostapd=dict(hostapd.items('DEFAULT')),
@@ -50,9 +54,10 @@ def create_app(test_config=None):
     # quick check for an internal request
     def is_internal_referer():
         print(request.headers)
-        return True
-        return ('Referer' in request.headers and
-                'http://127.0.0.1' in request.headers['Referer'])
+        if 'Referer' not in request.headers:
+            return False
+        ref = request.headers['Referer']
+        return any(r in ref for r in referers)
 
     # routes
     @app.route("/", methods=['GET'])
