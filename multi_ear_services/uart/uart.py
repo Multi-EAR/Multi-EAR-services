@@ -1,6 +1,5 @@
 # Mandatory imports
 import atexit
-import time
 import numpy as np
 import pandas as pd
 from serial import Serial
@@ -10,10 +9,8 @@ from influxdb_client import InfluxDBClient, WriteApi
 from influxdb_client.client.write_api import SYNCHRONOUS
 
 # Relative imports
-try:
-    from ..version import version
-except ModuleNotFoundError:
-    version = '[VERSION-NOT-FOUND]'
+from ..version import version
+from ..util.serial import read_lines
 
 
 __all__ = ['uart_readout']
@@ -98,9 +95,6 @@ def uart_readout(config_file='config.ini', debug=None):
     # automatically close clients on exit
     atexit.register(on_exit, _db_client, _write_api, _uart_conn)
 
-    # wait while everythings gets set
-    # time.sleep(2)
-
     # init
     read_buffer = b""
     read_time = pd.to_datetime("now")  # backup if GPS fails
@@ -115,99 +109,6 @@ def uart_readout(config_file='config.ini', debug=None):
         raise SystemExit()
 
         _write_api.write(bucket=bucket, record=data_points)
-
-
-def read_lines(ser, read_buffer=b"", **args):
-    """Read all available lines from the serial port
-    and append to the read buffer.
-
-    Parameters
-    ----------
-    ser : serial.Serial() instance
-        The device we are reading from.
-    read_buffer : bytes, default b''
-        Previous read buffer that is appended to
-.
-    Returns
-    -------
-    output : bytes
-        Bytes object that contains read_buffer + read.
-
-    Notes
-    -----
-    .. `**args` appears, but is never used. This is for
-       compatibility with `read_all_newlines()` as a
-       drop-in replacement for this function.
-    """
-    read = ser.readline()
-    time.sleep(.2)
-    in_waiting = ser.in_waiting
-    read += ser.readline(in_waiting)
-
-    return read_buffer + read
-
-
-def read_all(ser, read_buffer=b"", **args):
-    """Read all available bytes from the serial port
-    and append to the read buffer.
-
-    Parameters
-    ----------
-    ser : serial.Serial() instance
-        The device we are reading from.
-    read_buffer : bytes, default b''
-        Previous read buffer that is appended to.
-
-    Returns
-    -------
-    output : bytes
-        Bytes object that contains read_buffer + read.
-
-    Notes
-    -----
-    .. `**args` appears, but is never used. This is for
-       compatibility with `read_all_newlines()` as a
-       drop-in replacement for this function.
-    """
-    # Set timeout to None to make sure we read all bytes
-    previous_timeout = ser.timeout
-    ser.timeout = None
-
-    in_waiting = ser.in_waiting
-    read = ser.read(size=in_waiting)
-
-    # Reset to previous timeout
-    ser.timeout = previous_timeout
-
-    return read_buffer + read
-
-
-def read_all_newlines(ser, read_buffer=b"", n_reads=4):
-    """Read data in until encountering newlines.
-
-    Parameters
-    ----------
-    ser : serial.Serial() instance
-        The device we are reading from.
-    n_reads : int
-        The number of reads up to newlines
-    read_buffer : bytes, default b''
-        Previous read buffer that is appended to.
-
-    Returns
-    -------
-    output : bytes
-        Bytes object that contains read_buffer + read.
-
-    Notes
-    -----
-    .. This is a drop-in replacement for read_all().
-    """
-    read = read_buffer
-    for _ in range(n_reads):
-        read += ser.read_until()
-
-    return read
 
 
 # dtype shorts with byteswap ('_S' suffix)
