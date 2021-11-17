@@ -39,22 +39,26 @@ def create_app(test_config=None):
     hostname = socket.gethostname()
     referers = ("http://127.0.0.1", f"http://{hostname.lower()}")
 
-    # template globals
+    # hostapd config
+    etc = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                       '..', '..', 'etc') if app.debug else '/etc'
+    hostapd = parse_config(os.path.join(etc, 'hostapd', 'hostapd.conf'))
+
+    # prepare template globals
+    context_globals = dict(
+        hostname=hostname.replace('.local',''),
+        version=version,
+        services=utils.services,
+        hostapd=dict(hostapd.items('DEFAULT')),
+    )
+
+    # inject template globals
     @app.context_processor
     def inject_stage_and_region():
-        etc = os.path.dirname(os.path.abspath(__file__)) + '/../../etc' if app.debug else '/etc'
-        hostapd = parse_config(etc + '/hostapd/hostapd.conf')
-        return dict(
-            hostname=hostname.replace('.local',''),
-            version=version,
-            services=utils.services,
-            hostapd=dict(hostapd.items('DEFAULT')),
-        )
+        return context_globals
 
     # quick check for an internal request
     def is_internal_referer():
-        print(request.headers)
-        print(referers)
         if 'Referer' not in request.headers:
             return False
         return any(r in request.headers['Referer'] for r in referers)
