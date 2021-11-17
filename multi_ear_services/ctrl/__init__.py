@@ -37,7 +37,7 @@ def create_app(test_config=None):
 
     # set hostname and referers
     hostname = socket.gethostname()
-    referers = ("http://127.0.0.1", f"http://${hostname}")
+    referers = ("http://127.0.0.1", f"http://{hostname.lower()}")
 
     # template globals
     @app.context_processor
