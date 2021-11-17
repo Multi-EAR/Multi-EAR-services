@@ -54,10 +54,10 @@ def create_app(test_config=None):
     # quick check for an internal request
     def is_internal_referer():
         print(request.headers)
+        print(referers)
         if 'Referer' not in request.headers:
             return False
-        ref = request.headers['Referer']
-        return any(r in ref for r in referers)
+        return any(r in request.headers['Referer'] for r in referers)
 
     # routes
     @app.route("/", methods=['GET'])
