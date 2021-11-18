@@ -1,7 +1,7 @@
 # absolute imports
 import os
 import socket
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, Response, jsonify, request, render_template
 from influxdb_client import InfluxDBClient
 
 # relative imports
@@ -119,6 +119,14 @@ def create_app(test_config=None):
         else:
             res = None
         return jsonify(res)
+
+    @app.route("/api/dataselect/health", methods=['GET'])
+    def api_dataselect_health():
+        return Response(
+            response=repr(db_client.health()),
+            status=200,
+            mimetype='text/plain',
+        )
 
     @app.route("/api/dataselect/query", methods=['GET', 'POST'])
     def api_dataselect_query():
