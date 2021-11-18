@@ -3,6 +3,9 @@ import time
 from serial import Serial
 
 
+__all__ = ['read_lines', 'read_all', 'read_all_newlines']
+
+
 def read_lines(ser: Serial, read_buffer: bytes = b'', **args) -> bytes:
     """Read all available lines from the serial port
     and append to the read buffer.

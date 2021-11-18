@@ -2,6 +2,7 @@
 import os
 import socket
 from flask import Flask, jsonify, request, render_template
+from influxdb_client import InfluxDBClient
 
 # relative imports
 try:
@@ -9,7 +10,7 @@ try:
 except ModuleNotFoundError:
     version = '[VERSION-NOT-FOUND]'
 from . import utils
-from ..util import DataSelect, get_client, is_raspberry_pi, parse_config
+from ..util import DataSelect, is_raspberry_pi, parse_config
 
 
 def create_app(test_config=None):
@@ -33,7 +34,8 @@ def create_app(test_config=None):
     is_rpi = is_raspberry_pi()
 
     # open influx connection
-    client = get_client()
+    db_client = InfluxDBClient(url="http://127.0.0.1:8086",
+                               token="ear:listener", org="-")
 
     # set hostname and referers
     hostname = socket.gethostname()
@@ -41,7 +43,7 @@ def create_app(test_config=None):
 
     # hostapd config
     etc = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                       '..', '..', 'etc') if app.debug else '/etc'
+                       '../../etc') if app.debug else '/etc'
     hostapd = parse_config(os.path.join(etc, 'hostapd', 'hostapd.conf'))
 
     # prepare template globals
@@ -118,17 +120,18 @@ def create_app(test_config=None):
             res = None
         return jsonify(res)
 
-    @app.route("/api/dataselect", methods=['GET'])
-    def api_dataselect():
+    @app.route("/api/dataselect/query", methods=['GET', 'POST'])
+    def api_dataselect_query():
         ds = DataSelect(
-            client,
+            db_client,
             starttime=request.args.get('starttime') or request.args.get('start'),
             endtime=request.args.get('endtime') or request.args.get('end'),
-            channel=request.args.get('channel') or request.args.get('chan'),
-            format=request.args.get('format'),
-            nodata=request.args.get('nodata'),
+            bucket=request.args.get('bucket') or request.args.get('b'),
+            measurement=request.args.get('measurement') or request.args.get('m'),
+            field=request.args.get('field') or request.args.get('f'),
+            format=request.args.get('format') or request.args.get('_f'),
+            nodata=request.args.get('nodata') or request.args.get('_n'),
         )
-
-        return jsonify(ds.response()), ds.status
+        return ds.response()
 
     return app

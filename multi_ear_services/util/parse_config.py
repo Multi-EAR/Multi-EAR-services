@@ -3,6 +3,9 @@ import os
 from configparser import ConfigParser, MissingSectionHeaderError
 
 
+__all__ = ['parse_config']
+
+
 def parse_config(filenames, config=None, defaults=None, **kwargs):
     """Parse a single config file using ConfigParser.read() while catching the
     MissingSectionHeaderError to the section '[default]'.

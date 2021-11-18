@@ -10,7 +10,7 @@ from influxdb_client.client.write_api import SYNCHRONOUS
 
 # Relative imports
 from ..version import version
-from ..util.serial import read_lines
+from ..util.serial_read import read_lines
 
 
 __all__ = ['uart_readout']
@@ -256,8 +256,9 @@ def parse_payload(payload, imprecise_time, debug=False):
 
     # Construct dictionary with data point
     data_point = {
-        "measurement": 'Multi-EAR',
-        "time": imprecise_time,
+        "measurement": 'multi_ear',
+        "time": f"{imprecise_time.asm8}Z",
+        "tag": '',
         "fields": {
             "step": step,
             "DLVR": DLVR,

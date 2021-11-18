@@ -50,7 +50,6 @@ function usage
 "Usage:"
 "  $SCRIPT [options] <action>"
 "Actions:"
-##############################################################################
 "  install        Full installation of the Multi-Ear services:"
 "                  * install Python3, dnsmasq, hostapd, nginx, influxdb, telegraf, grafana"
 "                  * configure system services"

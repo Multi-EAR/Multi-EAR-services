@@ -2,6 +2,9 @@
 import os
 
 
+__all__ = ['is_raspberry_pi']
+
+
 def is_raspberry_pi():
     """Checks if the device is a Rasperry Pi
     """
