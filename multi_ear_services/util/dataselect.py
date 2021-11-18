@@ -1,3 +1,4 @@
+import traceback as tb
 import pandas as pd
 from flask import Response
 from influxdb_client import InfluxDBClient
@@ -282,12 +283,12 @@ class DataSelect(object):
         # Query InfluxDB using Flux
         # https://docs.influxdata.com/flux/v0.x/query-data/influxdb/
 
-        q = 'from(bucket: "{}")'
+        q = 'from(bucket: "{}")'.format(self.bucket)
 
-        q += '|> range(start: {}Z, stop: {}Z)'
+        q += '|> range(start: {}Z, stop: {}Z)'.format(self.start.asm8, self.end.asm8)
 
         if self.measurement != '*':
-            _filter = 'r["_measurement"] == "{self.measurement}"'
+            _filter = f'r["_measurement"] == "{self.measurement}"'
             if self.field != '*':
                 _filter += f' and r["_field"] == "{self.field}"'
             q += '|> filter(fn: (r) => {})'.format(_filter)
@@ -299,21 +300,24 @@ class DataSelect(object):
 
         q += '|> drop(columns: ["_start", "_stop", "host"])'
 
-        return q.format(self.bucket, self.start.asm8, self.end.asm8)
+        return q
 
     def query(self):
         """Process the DataSelect request.
         """
         try:
-            self.__df__ = (
-                self._query_api
-                .query_data_frame(self._q)
-                .drop(['result', 'table'], axis=1)
-                .set_index('_time')
-            )
-            self.__status__ = self.nodata if self._df.size == 0 else 200
+            self.__df__ = self._query_api.query_data_frame(self._q)
+            if self._df.size == 0:
+                self.__status__ = self.nodata
+            else:
+                self.__status__ = 200
+                self.__df__ = (self.__df__
+                               .drop(['result', 'table'], axis=1)
+                               .set_index('_time'))
         except Exception as e:
-            self.__error__ = f"Server Error: {e}"
+            self.__error__ = "Server Error: {}\n{}".format(
+                repr(e),''.join(tb.format_exception(None, e, e.__traceback__))
+            )
             self.__status__ = 500
 
     @property
@@ -325,33 +329,36 @@ class DataSelect(object):
     def _to_format(self):
         """Returns the DataSelect request as self.format.
         """
-        if self._df is None:
+        if not isinstance(self._df, pd.DataFrame):
             self.query()
         try:
+            print(f"self._to_{self.__format__}()")
             formatted = eval(f"self._to_{self.__format__}()")
         except Exception as e:
-            self.__error__ = f"Server Error: {e}"
+            self.__error__ = "Server Error: {}\n{}".format(
+                repr(e),''.join(tb.format_exception(None, e, e.__traceback__))
+            )
             self.__status__ = 500
         return formatted if self._status == 200 else self._error
 
     def _to_json(self):
         """Returns the DataSelect request as json.
         """
-        if self._df is None:
+        if not isinstance(self._df, pd.DataFrame):
             self.query()
         return self._df.to_json(orient='split', date_format='iso', indent=4)
 
     def _to_csv(self):
         """Returns the DataSelect request as csv.
         """
-        if self._df is None:
+        if not isinstance(self._df, pd.DataFrame):
             self.query()
         return self._df.to_csv(date_format='iso')
 
     def _to_miniseed(self):
         """Returns the DataSelect request as miniseed.
         """
-        if self._df is None:
+        if not isinstance(self._df, pd.DataFrame):
             self.query()
         return self._df.to_string()
 
