@@ -2,6 +2,7 @@ import asyncio
 import numpy as np
 import websockets
 import json
+from influxdb_client import InfluxDBClient
 
 class MultiEARWebsocket():
 
@@ -21,9 +22,36 @@ class MultiEARWebsocket():
     Initializes the websocket server and keeps track of periodically updated clients & data
     """
 
+    # Open client
+    self.db_client = InfluxDBClient(url="http://127.0.0.1:8086", token="ear:listener", org="-")
+
     # Keep track of the connected clients
     self.clients = set()
     self.data = None
+
+    self.broadcast()
+
+
+  @property
+  def _q(self):
+    return None
+
+
+  def broadcast(self):
+
+    """
+    Def MultiEARWebsocket.broadcast
+    Begins broadcasting incoming data over the websocket
+    """
+
+    stream = self.db_client.request(self._q, stream=True):
+
+    for line in stream.iter_lines():
+
+      serialized = json.dumps(line)
+
+      for websocket in self.clients:
+        websocket.send(serialized)
 
 
   def run(self):
@@ -43,30 +71,7 @@ class MultiEARWebsocket():
     Update function called once in a while to draw new data from the database
     """
 
-    self.data = list(np.random.random(10))
-
-
-  async def broadcast(self):
- 
-    """
-    Def MultiEARWebsocket.broadcast
-    Update function called once in a while to draw new data from the database
-    """
-
-    while True:
-
-      # Update (call to InfluxDB)
-      self.update()
-      serialized = json.dumps(self.data)
-
-      # Write to all clients
-      await asyncio.gather(
-         *[ws.send(serialized) for ws in self.clients],
-         return_exceptions=False,
-      )
-      # Schedule next tick
-      await asyncio.sleep(self.TICK_RATE_SECONDS)
-  
+    self.data = None
   
   async def handler(self, websocket, path):
   
@@ -92,9 +97,6 @@ class MultiEARWebsocket():
     Def MultiEARWebsocket.main
     Main function to schedule events and create websocket listener
     """
-
-    # Broadcasting task
-    asyncio.create_task(self.broadcast())
 
     async with websockets.serve(self.handler, *self.HOST):
       await asyncio.Future()  # run forever
