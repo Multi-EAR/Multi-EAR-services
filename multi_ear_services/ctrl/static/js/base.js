@@ -177,9 +177,6 @@ function loadDashboard() {
         data = getData(n);
 
     getJSON("http://multi-ear-3001.local/api/dataselect/query", { measurement: 'mem' })
-    .then(response => {
-        return response.json();
-    })
     .then(function(data) {
         console.log(data)
         if (data === null) return
