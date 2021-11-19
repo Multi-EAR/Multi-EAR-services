@@ -144,7 +144,8 @@ function loadDashboard() {
     .then(function(data) {
 
         if (data === null) return
-        if (data.includes("Server Error")) return
+
+        if (typeof data === 'string' || data instanceof String) return
 
         var figures = document.querySelector('#highcharts-figures');
 
