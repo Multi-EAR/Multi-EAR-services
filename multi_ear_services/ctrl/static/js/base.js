@@ -139,9 +139,7 @@ function loadDashboard() {
 
     getJSON("http://multi-ear-3001.local/api/dataselect/query", { measurement: 'mem' })
     .then(data => {
-
         return data;
-
     })
     .then(function(data) {
 
@@ -182,7 +180,9 @@ function loadDashboard() {
                 },
 
                 series: [{
-                    data: data['data'],
+                    data: data['index'].map(function(t, i) {
+                        return [t, data['data'][i][key]]
+                    }),
                     lineWidth: 0.5,
                     name: 'Hourly data points'
                 }],
