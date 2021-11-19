@@ -104,10 +104,6 @@ def uart_readout(config_file='config.ini', debug=None):
         read_buffer, data_points = parse_read(
             read_lines(_uart_conn, read_buffer), read_time, debug=debug
         )
-
-        print(data_points)
-        raise SystemExit()
-
         _write_api.write(bucket=bucket, record=data_points)
 
 
@@ -183,12 +179,8 @@ def parse_read(read_buffer, read_time, data_points=[], debug=False):
             # skip packet header scanning
             i += payload_bytes
 
-            raise SystemExit()
-
         else:
             i += 1
-
-    raise SystemExit()
 
     # return tail
     return read_buffer[i:], data_points
@@ -232,12 +224,8 @@ def parse_payload(payload, imprecise_time, debug=False):
 
     # LPS33HW barometric pressure (returns 32-bit)
     LPS33HW = int.from_bytes(payload[8:11], "little")
-    print(LPS33HW)
     LPS33HW = int.from_bytes(payload[8:11], "big")
-    print(LPS33HW)
     LPS33HW = frombuffer(payload, _i4, 1, 8)
-    print(LPS33HW)
-    raise SystemExit()
 
     # LIS3DH 3-axis accelerometer and gyroscope (16-bit ADC)
     LIS3DH_X, LIS3DH_Y, LIS3DH_Z = frombuffer(payload, _i2_S, 3, 14)

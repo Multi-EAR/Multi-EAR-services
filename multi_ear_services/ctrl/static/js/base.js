@@ -137,13 +137,14 @@ function statusUpdate() {
 
 function loadDashboard() {
 
-    getJSON("http://multi-ear-3001.local/api/dataselect/query", { measurement: 'mem' })
+    getJSON("/api/dataselect/query", { measurement: 'mem' })
     .then(data => {
         return data;
     })
     .then(function(data) {
 
         if (data === null) return
+        if (data.includes("Server Error")) return
 
         var figures = document.querySelector('#highcharts-figures');
 
