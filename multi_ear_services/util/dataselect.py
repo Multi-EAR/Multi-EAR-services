@@ -285,7 +285,8 @@ class DataSelect(object):
 
         q = 'from(bucket: "{}")'.format(self.bucket)
 
-        q += '|> range(start: {}Z, stop: {}Z)'.format(self.start.asm8, self.end.asm8)
+        q += '|> range(start: {}Z, stop: {}Z)'.format(self.start.asm8,
+                                                      self.end.asm8)
 
         if self.measurement != '*':
             _filter = f'r["_measurement"] == "{self.measurement}"'
@@ -316,7 +317,7 @@ class DataSelect(object):
                                .set_index('_time'))
         except Exception as e:
             self.__error__ = "Server Error: {}\n{}".format(
-                repr(e),''.join(tb.format_exception(None, e, e.__traceback__))
+                repr(e), ''.join(tb.format_exception(None, e, e.__traceback__))
             )
             self.__status__ = 500
 
@@ -336,7 +337,7 @@ class DataSelect(object):
             formatted = eval(f"self._to_{self.__format__}()")
         except Exception as e:
             self.__error__ = "Server Error: {}\n{}".format(
-                repr(e),''.join(tb.format_exception(None, e, e.__traceback__))
+                repr(e), ''.join(tb.format_exception(None, e, e.__traceback__))
             )
             self.__status__ = 500
         return formatted if self._status == 200 else self._error
