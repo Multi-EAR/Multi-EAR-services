@@ -18,7 +18,7 @@ Multi-EAR system services for the host Raspberry Pi OS LITE (32-bit) with sensor
 
 from . import ctrl, uart
 
-__all__ = ['ctrl', 'uart']
+__all__ = ['ctrl', 'uart', 'ws']
 
 # Version
 try:
