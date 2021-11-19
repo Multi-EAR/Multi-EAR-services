@@ -135,89 +135,69 @@ function statusUpdate() {
 }
 
 
-function getData(n) {
-    var arr = [],
-        i,
-        x,
-        a,
-        b,
-        c,
-        spike;
-    for (
-        i = 0, x = Date.UTC(new Date().getUTCFullYear(), 0, 1) - n * 36e5;
-        i < n;
-        i = i + 1, x = x + 36e5
-    ) {
-        if (i % 100 === 0) {
-            a = 2 * Math.random();
-        }
-        if (i % 1000 === 0) {
-            b = 2 * Math.random();
-        }
-        if (i % 10000 === 0) {
-            c = 2 * Math.random();
-        }
-        if (i % 50000 === 0) {
-            spike = 10;
-        } else {
-            spike = 0;
-        }
-        arr.push([
-            x,
-            2 * Math.sin(i / 100) + a + b + c + spike + Math.random()
-        ]);
-    }
-    return arr;
-}
-
-
 function loadDashboard() {
 
-    var n = 50000,
-        data = getData(n);
-
     getJSON("http://multi-ear-3001.local/api/dataselect/query", { measurement: 'mem' })
-    .then(function(data) {
-        console.log(data)
-        if (data === null) return
-        var figures = document.querySelector('#highcharts-figures');
+    .then(data => {
+
+        return data;
+
     })
+    .then(function(data) {
 
-    Highcharts.chart('myChart', {
+        if (data === null) return
 
-        chart: {
-            zoomType: 'x'
-        },
+        var figures = document.querySelector('#highcharts-figures');
 
-        title: {
-            text: 'Highcharts drawing ' + n + ' points'
-        },
+        for (var key in data['columns']) {
 
-        subtitle: {
-            text: 'Using the Boost module'
-        },
+            var field = data['columns'][key]
+            var fig = document.createElement('div');
 
-        tooltip: {
-            valueDecimals: 2
-        },
+            fig.setAttribute("id", field);
+            fig.innerHTML = field;
 
-        xAxis: {
-            type: 'datetime'
-        },
+            figures.appendChild(fig)
 
-        series: [{
-            data: data,
-            lineWidth: 0.5,
-            name: 'Hourly data points'
-        }],
+            Highcharts.chart(field, {
 
-        plotOptions: {
-            series: {
-                color: '#00a6d6'
-            }
-        },
+                chart: {
+                    zoomType: 'x'
+                },
 
-    });
+                title: {
+                    text: field
+                },
+/*
+                subtitle: {
+                    text: 'Using the Boost module'
+                },
+*/
+                tooltip: {
+                    valueDecimals: 2
+                },
+
+                xAxis: {
+                    type: 'datetime'
+                },
+
+                series: [{
+                    data: data['data'],
+                    lineWidth: 0.5,
+                    name: 'Hourly data points'
+                }],
+
+                plotOptions: {
+                    series: {
+                        color: '#00a6d6'
+                    }
+                },
+
+            });
+
+        }
+
+    })
 
 }
 
