@@ -330,36 +330,38 @@ class DataSelect(object):
     def _to_format(self):
         """Returns the DataSelect request as self.format.
         """
-        if not isinstance(self._df, pd.DataFrame):
+        if self._status == 100:
             self.query()
+        if self._status == 500:
+            return self._error
         try:
             print(f"self._to_{self.__format__}()")
-            formatted = eval(f"self._to_{self.__format__}()")
+            resp = eval(f"self._to_{self.__format__}()")
         except Exception as e:
             self.__error__ = "Server Error: {}\n{}".format(
                 repr(e), ''.join(tb.format_exception(None, e, e.__traceback__))
             )
             self.__status__ = 500
-        return formatted if self._status == 200 else self._error
+        return resp if self._status == 200 else self._error
 
     def _to_json(self):
         """Returns the DataSelect request as json.
         """
-        if not isinstance(self._df, pd.DataFrame):
+        if self._status == 100:
             self.query()
         return self._df.to_json(orient='split', date_format='iso', indent=4)
 
     def _to_csv(self):
         """Returns the DataSelect request as csv.
         """
-        if not isinstance(self._df, pd.DataFrame):
+        if self._status == 100:
             self.query()
         return self._df.to_csv(date_format='iso')
 
     def _to_miniseed(self):
         """Returns the DataSelect request as miniseed.
         """
-        if not isinstance(self._df, pd.DataFrame):
+        if self._status == 100:
             self.query()
         return self._df.to_string()
 
@@ -384,10 +386,10 @@ class DataSelect(object):
     def response(self):
         """Return the DataSelect query response.
         """
-        response = self._to_format() if self._status == 200 else self._error
-
         return Response(
-            response=response,
+            response=self._to_format(),
             status=self._status,
             mimetype=self._mimetype,
+            headers={"Access-Control-Allow-Methods", "GET",
+                     "Access-Control-Allow-Origin": "*"},
         )

@@ -146,8 +146,5 @@ def create_app(test_config=None):
             nodata=request.args.get('nodata') or request.args.get('_n'),
         )
         return ds.response()
-        # response = ds.response()
-        # response.headers['Access-Control-Allow-Origin'] = '*'
-        # return response
 
     return app
