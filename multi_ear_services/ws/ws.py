@@ -1,83 +1,85 @@
 import asyncio
-import numpy as np
 import websockets
-import json
-from influxdb_client import InfluxDBClient
 
 class MultiEARWebsocket():
 
   """
   Class MultiEARWebsocket
-  Wrapper for Python websocket that broadcasts data to connect clients
+  Wrapper for broadcasting data over the HTML5 Websocket protocol
+  
+  Author: Mathijs Koymans, 2021
   """
-
-  HOST = ("localhost", 8765)
-  TICK_RATE_SECONDS = 2
-
 
   def __init__(self):
 
     """
     Def MultiEARWebsocket.__init__
-    Initializes the websocket server and keeps track of periodically updated clients & data
+    Instantiates the MultiEARWebsocket by creating an empty set of clients
     """
 
-    # Keep track of the connected clients
     self.clients = set()
-    self.data = None
 
 
-  def run(self):
-
-    """
-    Def MultiEARWebsocket.run
-    Starts the main loop of the websocket server (this will run indefinitely)
-    """
-
-    asyncio.run(self.main())
-
-
-  def update(self):
+  def listen(self, host, port):
 
     """
-    Def MultiEARWebsocket.update
-    Update function called once in a while to draw new data from the database
+    Def MultiEARWebsocket.listen
+    Wrapper around asyncio run_until_complete
     """
 
-    self.data = list(np.random.random(10))
+    self.host = host
+    self.port = port
+
+    # Start the websocket server
+    self.__complete(websockets.serve(self.handler, self.host, self.port))
 
 
-  async def broadcast(self):
- 
+  def broadcast(self, serialized):
+
     """
     Def MultiEARWebsocket.broadcast
     Update function called once in a while to draw new data from the database
     """
 
-    while True:
+    self.__complete(self.__broadcast(serialized))
 
-      # Update (call to InfluxDB)
-      self.update()
-      serialized = json.dumps(self.data)
 
-      # Write to all clients
+  def __complete(self, callback):
+
+    """
+    Def MultiEARWebsocket.__complete
+    Wrapper around asyncio run_until_complete
+    """
+
+    asyncio.get_event_loop().run_until_complete(callback)
+
+
+  async def __broadcast(self, serialized):
+  
+    """
+    Def MultiEARWebsocket.__broadcast
+    Private function to broadcast the serialized buffer to all clients
+    """
+  
+    # Await writing to all clients (this is asynchronous)
+    try:
       await asyncio.gather(
-         *[ws.send(serialized) for ws in self.clients],
-         return_exceptions=False,
-      )
-      # Schedule next tick
-      await asyncio.sleep(self.TICK_RATE_SECONDS)
+         *[ws.send(serialized) for ws in self.clients]
+      ) 
+    except websockets.ConnectionClosedOK:
+      pass
   
   
   async def handler(self, websocket, path):
-  
+
     """
     Def MultiEARWebsocket.handler
     Callback fired when a client is connected: ignore incoming messages and only keep track of connected clients
     """
-
+    
+    # Save a list of the clients
     self.clients.add(websocket)
-  
+    
     try:
       async for msg in websocket:
         pass
@@ -85,28 +87,19 @@ class MultiEARWebsocket():
       pass
     finally:
       self.clients.remove(websocket)
-  
-  
-  async def main(self):
-  
-    """
-    Def MultiEARWebsocket.main
-    Main function to schedule events and create websocket listener
-    """
-
-    # Broadcasting task
-    asyncio.create_task(self.broadcast())
-
-    async with websockets.serve(self.handler, *self.HOST):
-      await asyncio.Future()  # run forever
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
 
   """
-  Def __main__
-  Only executed when script is called directly
+  Def __name__
+  Only fired when direct execution of script
   """
 
-  WebsocketServer = MultiEARWebsocket()
-  WebsocketServer.run()
+  # Create and listen
+  M = MultiEARWebsocket()
+  M.listen("localhost", 8765)
+
+  while True:
+    M.broadcast("1");
+ 
