@@ -2,6 +2,7 @@
 import os
 import socket
 from flask import Flask, Response, jsonify, request, render_template
+from flask_cors import CORS
 from influxdb_client import InfluxDBClient
 
 # relative imports
@@ -29,6 +30,9 @@ def create_app(test_config=None):
         os.makedirs(app.instance_path)
     except OSError:
         pass
+
+    # set cross-origin resource sharing
+    CORS(app, resources=r'/api/*')
 
     # check if host is a Raspberry Pi
     is_rpi = is_raspberry_pi()
