@@ -2,6 +2,7 @@
 import os
 import socket
 from flask import Flask, Response, jsonify, request, render_template
+from flask_cors import CORS
 from influxdb_client import InfluxDBClient
 
 # relative imports
@@ -29,6 +30,10 @@ def create_app(test_config=None):
         os.makedirs(app.instance_path)
     except OSError:
         pass
+
+    # set cross-origin resource sharing
+    cors = CORS(app, resources={r"/api/*": {"origins": "*"})
+    # app.config['CORS_HEADERS'] = 'Content-Type'
 
     # check if host is a Raspberry Pi
     is_rpi = is_raspberry_pi()
@@ -78,24 +83,24 @@ def create_app(test_config=None):
             html = render_template(f"tabs/{tab}.html.jinja")
         except FileNotFoundError:
             html = None
-        res = {
+        resp = {
             "succes": True if html else False,
             "tab": tab,
             "html": html,
         }
-        return jsonify(res)
+        return jsonify(resp)
 
     @app.route("/_systemd_status", methods=['GET'])
     def systemd_status():
         service = request.args.get('service') or '*'
         if is_rpi:
             if is_rpi and service == '*': 
-                res = utils.systemd_status_all()
+                resp = utils.systemd_status_all()
             else:
-                res = utils.systemd_status(service)
+                resp = utils.systemd_status(service)
         else:
-             res = None
-        return jsonify(res)
+             resp = None
+        return jsonify(resp)
 
     @app.route("/_append_wpa_supplicant", methods=['POST'])
     def append_wpa_supplicant():
@@ -104,10 +109,10 @@ def create_app(test_config=None):
         ssid = request.args.get('ssid')
         passphrase = request.args.get('passphrase')
         if is_rpi and ssid and passphrase:
-            res = utils.wlan_ssid_passphrase(ssid, passphrase)
+            resp = utils.wlan_ssid_passphrase(ssid, passphrase)
         else:
-            res = None
-        return jsonify(res)
+            resp = None
+        return jsonify(resp)
 
     @app.route("/_autohotspot", methods=['POST'])
     def autohotspot():
@@ -115,10 +120,10 @@ def create_app(test_config=None):
             return "Invalid request", 403
         command = request.args.get('action')
         if is_rpi and command == 'start':
-            res = utils.wlan_autohotspot()
+            resp = utils.wlan_autohotspot()
         else:
-            res = None
-        return jsonify(res)
+            resp = None
+        return jsonify(resp)
 
     @app.route("/api/dataselect/health", methods=['GET'])
     def api_dataselect_health():
@@ -141,5 +146,8 @@ def create_app(test_config=None):
             nodata=request.args.get('nodata') or request.args.get('_n'),
         )
         return ds.response()
+        # response = ds.response()
+        # response.headers['Access-Control-Allow-Origin'] = '*'
+        # return response
 
     return app

@@ -135,52 +135,93 @@ function statusUpdate() {
 }
 
 
-function loadDashboard() {
-  // Graphs
-  var ctx = document.getElementById('myChart')
-  // eslint-disable-next-line no-unused-vars
-  var myChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: [
-        'Sunday',
-        'Monday',
-        'Tuesday',
-        'Wednesday',
-        'Thursday',
-        'Friday',
-        'Saturday'
-      ],
-      datasets: [{
-        data: [
-          15339,
-          21345,
-          18483,
-          24003,
-          23489,
-          24092,
-          12034
-        ],
-        lineTension: 0,
-        backgroundColor: 'transparent',
-        borderColor: '#00a6d6',
-        borderWidth: 4,
-        pointBackgroundColor: '#00a6d6'
-      }]
-    },
-    options: {
-      scales: {
-        yAxes: [{
-          ticks: {
-            beginAtZero: false
-          }
-        }]
-      },
-      legend: {
-        display: false
-      }
+function getData(n) {
+    var arr = [],
+        i,
+        x,
+        a,
+        b,
+        c,
+        spike;
+    for (
+        i = 0, x = Date.UTC(new Date().getUTCFullYear(), 0, 1) - n * 36e5;
+        i < n;
+        i = i + 1, x = x + 36e5
+    ) {
+        if (i % 100 === 0) {
+            a = 2 * Math.random();
+        }
+        if (i % 1000 === 0) {
+            b = 2 * Math.random();
+        }
+        if (i % 10000 === 0) {
+            c = 2 * Math.random();
+        }
+        if (i % 50000 === 0) {
+            spike = 10;
+        } else {
+            spike = 0;
+        }
+        arr.push([
+            x,
+            2 * Math.sin(i / 100) + a + b + c + spike + Math.random()
+        ]);
     }
-  })
+    return arr;
+}
+
+
+function loadDashboard() {
+
+    var n = 50000,
+        data = getData(n);
+
+    getJSON("http://multi-ear-3001.local/api/dataselect/query", { measurement: 'mem' })
+    .then(response => {
+        return response.json();
+    })
+    .then(function(data) {
+        console.log(data)
+        if (data === null) return
+        var figures = document.querySelector('#highcharts-figures');
+    })
+
+    Highcharts.chart('myChart', {
+
+        chart: {
+            zoomType: 'x'
+        },
+
+        title: {
+            text: 'Highcharts drawing ' + n + ' points'
+        },
+
+        subtitle: {
+            text: 'Using the Boost module'
+        },
+
+        tooltip: {
+            valueDecimals: 2
+        },
+
+        xAxis: {
+            type: 'datetime'
+        },
+
+        series: [{
+            data: data,
+            lineWidth: 0.5,
+            name: 'Hourly data points'
+        }],
+
+        plotOptions: {
+            series: {
+                color: '#00a6d6'
+            }
+        },
+
+    });
+
 }
 
 
