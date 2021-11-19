@@ -147,6 +147,8 @@ function loadDashboard() {
 
         var figures = document.querySelector('#highcharts-figures');
 
+        figures.innerHTML = null
+
         for (var key in data['columns']) {
 
             var field = data['columns'][key]
@@ -158,6 +160,10 @@ function loadDashboard() {
             figures.appendChild(fig)
 
             Highcharts.chart(field, {
+
+                boost: {
+                    allowForce: true,
+                },
 
                 chart: {
                     zoomType: 'x'
@@ -184,7 +190,7 @@ function loadDashboard() {
                         return [t, data['data'][i][key]]
                     }),
                     lineWidth: 0.5,
-                    name: 'Hourly data points'
+                    //name: 'Hourly data points'
                 }],
 
                 plotOptions: {

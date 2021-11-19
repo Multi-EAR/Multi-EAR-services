@@ -282,6 +282,7 @@ class DataSelect(object):
 
         # Query InfluxDB using Flux
         # https://docs.influxdata.com/flux/v0.x/query-data/influxdb/
+        # https://docs.influxdata.com/influxdb/v1.8/query_language/
 
         q = 'from(bucket: "{}")'.format(self.bucket)
 
@@ -349,7 +350,7 @@ class DataSelect(object):
         """
         if self._status == 100:
             self.query()
-        return self._df.to_json(orient='split', date_format='iso', indent=4)
+        return self._df.to_json(orient='split', date_format='epoch', indent=4)
 
     def _to_csv(self):
         """Returns the DataSelect request as csv.
