@@ -33,7 +33,6 @@ def create_app(test_config=None):
 
     # set cross-origin resource sharing
     # cors = CORS(app, resources={r"/api/*": {"origins": "*"})
-    # app.config['CORS_HEADERS'] = 'Content-Type'
 
     # check if host is a Raspberry Pi
     is_rpi = is_raspberry_pi()

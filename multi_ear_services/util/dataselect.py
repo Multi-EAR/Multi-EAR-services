@@ -387,9 +387,9 @@ class DataSelect(object):
         """Return the DataSelect query response.
         """
         return Response(
-            response=self._to_format(),
+            self._to_format(),
             status=self._status,
             mimetype=self._mimetype,
-            headers={"Access-Control-Allow-Methods", "GET",
+            headers={"Access-Control-Allow-Methods": "GET",
                      "Access-Control-Allow-Origin": "*"},
         )
