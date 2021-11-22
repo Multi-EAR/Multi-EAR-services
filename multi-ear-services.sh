@@ -675,20 +675,18 @@ function do_multi_ear_services
     $pip uninstall -y multi_ear_services . >> $LOG_FILE 2>&1
     $pip install . >> $LOG_FILE 2>&1
 
-    # multi-ear-ctrl
+    # Start and enable services
+    ## multi-ear-ctrl
     do_systemd_service_enable "multi-ear-ctrl.service"
     do_systemd_service_restart "multi-ear-ctrl.service"
     do_export_environ_variable "FLASK_APP" "multi_ear_services.ctrl"
     do_export_environ_variable "FLASK_ENV" "production"
-
-    # multi-ear-wifi
+    ## multi-ear-wifi
     do_systemd_service_enable "multi-ear-wifi.service"
     do_systemd_service_start "multi-ear-wifi.service"
-
-    # multi-ear-uart
+    ## multi-ear-uart
     do_systemd_service_enable "multi-ear-uart.service"
     do_systemd_service_start "multi-ear-uart.service"
-
     # done
     verbose_done
 }
@@ -699,6 +697,26 @@ function do_multi_ear_services
 #
 function do_update
 {
+    # update repository --> should become optional
+    # git pull
+
+    # Rsync configure
+    do_rsync_etc
+
+    # Restart 3rd party services
+    do_systemd_service_restart "rsyslog"
+    do_systemd_service_restart "nginx"
+    do_systemd_service_restart "influxdb"
+    do_systemd_service_restart "telegraf"
+    do_systemd_service_restart "grafana-server"
+
+    # Pip multi-ear services
+    $pip uninstall -y multi_ear_services . >> $LOG_FILE 2>&1
+    $pip install . >> $LOG_FILE 2>&1
+
+    # Restart multi-ear services
+    do_systemd_service_restart "multi-ear-ctrl.service"
+    do_systemd_service_restart "multi-ear-uart.service"
 }
 
 
@@ -707,6 +725,8 @@ function do_update
 #
 function do_check
 {
+    echo "Not implementen yet."
+    exit -1
 }
 
 
@@ -715,6 +735,41 @@ function do_check
 #
 function do_uninstall
 {
+    # Stop and disable services
+    ## multi-ear-ctrl
+    do_systemd_service_stop "multi-ear-ctrl.service"
+    do_systemd_service_disable "multi-ear-ctrl.service"
+    ## multi-ear-wifi
+    do_systemd_service_stop "multi-ear-wifi.service"
+    do_systemd_service_disable "multi-ear-wifi.service"
+    ## multi-ear-uart
+    do_systemd_service_stop "multi-ear-uart.service"
+    do_systemd_service_disable "multi-ear-uart.service"
+
+    # Enable wpa_supplicant
+    sudo sed -i -s "s/^nohook wpa_supplicant/#nohook wpa_supplicant/" /etc/dhcpcd.conf >> $LOG_FILE 2>&1
+
+    # Nginx proxy
+    sudo rm /etc/nginx/sites-available/multi-ear-ctrl.proxy
+    sudo rm /etc/nginx/sites-enabled/multi-ear-ctrl.proxy
+    do_systemd_service_restart "nginx"
+
+    # Rsyslog
+    sudo rm /etc/rsyslog.d/multi-ear.conf
+    do_systemd_service_restart "rsyslog"
+
+    # InfluxDB
+    ## link default settings
+    verbose_msg "> enable default configuration" 1
+    sudo ln -sf /etc/influxdb/default.conf /etc/influxdb/influxdb.conf >> $LOG_FILE 2>&1
+    ## restart with default settings
+    do_systemd_service_restart "influxdb.service"
+    ## Remove Influx Database
+    influx_e "DROP DATABASE 'multi_ear'"
+
+    # Disable venv activation and remove folder
+    sudo sed -i -s "s/^source \/home\/tud\/.py37\/bin\/activate/#source \/home\/tud\/.py37\/bin\/activate/" $HOME/.bashrc >> $LOG_FILE 2>&1
+    rm -rf $HOME/.py37
 }
 
 
@@ -781,6 +836,10 @@ case "$1" in
     do_configure
     do_multi_ear_services
     verbose_msg "Multi-EAR services install completed"
+    ;;
+    configure)
+    do_configure
+    do_multi_ear_services
     ;;
     check) do_check
     ;;
