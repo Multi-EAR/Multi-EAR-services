@@ -158,7 +158,7 @@ function loadDashboard() {
         data: {
             csvURL: '/api/dataselect/query?m=system&f=load&_f=csv',
             enablePolling: true,
-            dataRefreshRate: 10,
+            dataRefreshRate: 5,
         },
         xAxis: {
             type: 'datetime'
@@ -190,7 +190,7 @@ function loadDashboard() {
         data: {
             csvURL: '/api/dataselect/query?m=mem&f=_percent&_f=csv',
             enablePolling: true,
-            dataRefreshRate: 10,
+            dataRefreshRate: 5,
         },
         xAxis: {
             type: 'datetime'
