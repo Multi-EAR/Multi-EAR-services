@@ -17,11 +17,11 @@ Run the bash script to install and configure the Multi-EAR software and services
 
 .. code-block:: console
 
-    bash install.sh
+    bash multi-ear-services.sh install
 
 The device is now ready for Multi-EAR'ing.
 
-Type ``bash install.sh --help`` for the usage.
+Type ``bash multi-ear-services.sh --help`` for the usage.
 
 .. code-block:: console
 
