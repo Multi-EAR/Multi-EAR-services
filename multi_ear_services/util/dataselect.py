@@ -282,17 +282,30 @@ class DataSelect(object):
 
         # Query InfluxDB using Flux
         # https://docs.influxdata.com/flux/v0.x/query-data/influxdb/
-        # https://docs.influxdata.com/influxdb/v1.8/query_language/
+        # https://docs.influxdata.com/influxdb/cloud/query-data/flux/
+        # https://docs.influxdata.com/influxdb/cloud/query-data/optimize-queries/
 
         q = 'from(bucket: "{}")'.format(self.bucket)
 
         q += '|> range(start: {}Z, stop: {}Z)'.format(self.start.asm8,
                                                       self.end.asm8)
 
-        if self.measurement != '*':
-            _filter = f'r["_measurement"] == "{self.measurement}"'
-            if self.field != '*':
+        def is_regex(s):
+            return any(o in s for o in ('.+', '*', '?', '^'))
+
+        if self.measurement != '*' or self.field != '*':
+            _filter = ''
+
+            if is_regex(self.measurement):
+                _filter = f'r["_measurement"] =~ /{self.measurement}/'
+            else:
+                _filter = f'r["_measurement"] == "{self.measurement}"'
+
+            if is_regex(self.field):
+                _filter += f' and r["_field"] =~ /{self.field}/'
+            else:
                 _filter += f' and r["_field"] == "{self.field}"'
+
             q += '|> filter(fn: (r) => {})'.format(_filter)
 
         q += ('|> pivot('
@@ -308,12 +321,14 @@ class DataSelect(object):
         """Process the DataSelect request.
         """
         try:
-            self.__df__ = self._query_api.query_data_frame(self._q)
-            if self._df.size == 0:
+            df = self._query_api.query_data_frame(self._q)
+            df = pd.concat(df) if isinstance(df, list) else df
+            if df.size == 0:
                 self.__status__ = self.nodata
+                self.__error__ = f"No data found\n{self}"
             else:
                 self.__status__ = 200
-                self.__df__ = (self.__df__
+                self.__df__ = (df
                                .drop(['result', 'table'], axis=1)
                                .set_index('_time'))
         except Exception as e:
@@ -333,10 +348,9 @@ class DataSelect(object):
         """
         if self._status == 100:
             self.query()
-        if self._status == 500:
+        if self._status != 200:
             return self._error
         try:
-            print(f"self._to_{self.__format__}()")
             resp = eval(f"self._to_{self.__format__}()")
         except Exception as e:
             self.__error__ = "Server Error: {}\n{}".format(
@@ -345,19 +359,21 @@ class DataSelect(object):
             self.__status__ = 500
         return resp if self._status == 200 else self._error
 
-    def _to_json(self):
+    def _to_json(self, orient='split', date_format='epoch', indent=4,
+                 **kwargs):
         """Returns the DataSelect request as json.
         """
         if self._status == 100:
             self.query()
-        return self._df.to_json(orient='split', date_format='epoch', indent=4)
+        return self._df.to_json(orient=orient, date_format=date_format,
+                                indent=indent, **kwargs)
 
-    def _to_csv(self):
+    def _to_csv(self, date_format='%Y-%m-%dT%H-%M-%S.%fZ', **kwargs):
         """Returns the DataSelect request as csv.
         """
         if self._status == 100:
             self.query()
-        return self._df.to_csv(date_format='iso')
+        return self._df.to_csv(date_format=date_format, **kwargs)
 
     def _to_miniseed(self):
         """Returns the DataSelect request as miniseed.
