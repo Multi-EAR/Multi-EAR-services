@@ -517,23 +517,23 @@ function do_configure_influxdb
     #
     # influx docs: https://docs.influxdata.com/influxdb/v1.8/
     #
-    # create databases?
-    local db="multi_ear"
-    if ! influx -execute "show databases" | grep -q "$db";
-    then
-        influx_e "CREATE DATABASE $db"
-    fi
+    # retention policies
+    local rp_m="onemonth" rp_m_specs="DURATION 30d REPLICATION 1 SHARD DURATION 5d"
+    local rp_y="oneyear"  rp_y_specs="DURATION 366d REPLICATION 1 SHARD DURATION 7d"
+    # create database telegraf?
     if ! influx -execute "show databases" | grep -q "telegraf";
     then
         influx_e "CREATE DATABASE telegraf"
     fi
-    # use database
-    influx_e "USE DATABASE '$db'"
-    # set retention policies
-    local rp_y="oneyear" rp_y_specs="DURATION 366d REPLICATION 1 SHARD DURATION 7d"
-    influx_e "CREATE RETENTION POLICY $rp_y ON $db $rp_y_specs"
-    local rp_m="onemonth" rp_m_specs="DURATION 30d REPLICATION 1 SHARD DURATION 5d"
+    influx_e "USE DATABASE 'telegraf'"
     influx_e "CREATE RETENTION POLICY $rp_m ON telegraf $rp_m_specs"
+    # create databases multi_ear?
+    if ! influx -execute "show databases" | grep -q "multi_ear";
+    then
+        influx_e "CREATE DATABASE multi_ear"
+    fi
+    influx_e "USE DATABASE 'multi_ear'"
+    influx_e "CREATE RETENTION POLICY $rp_y ON multi_ear $rp_y_specs"
     # create full-privilege user
     if [ "$INFLUX_USERNAME" == "" ];
     then
@@ -549,22 +549,17 @@ function do_configure_influxdb
     then
         influx_e "CREATE USER $INFLUX_USERNAME WITH PASSWORD '$INFLUX_PASSWORD' WITH ALL PRIVILEGES"
     fi
-    influx_e "GRANT ALL PRIVILEGES ON $db TO $INFLUX_USERNAME"
+    influx_e "GRANT ALL PRIVILEGES ON multi_ear TO $INFLUX_USERNAME"
     influx_e "GRANT ALL PRIVILEGES ON telegraf TO $INFLUX_USERNAME"
     # create read-only user
-    local ro='ear'
-    if ! influx -execute "show users" | grep -q "$ro";
+    if ! influx -execute "show users" | grep -q "ear";
     then
-        influx_e "CREATE USER $ro WITH PASSWORD 'listener'"
+        influx_e "CREATE USER ear WITH PASSWORD 'listener'"
     fi
     # revoke read-only user permissions
-    influx_e "REVOKE ALL PRIVILEGES FROM $ro"
-    influx_e "GRANT READ ON $db TO $ro"
-    influx_e "GRANT READ ON telegraf TO $ro"
-
-    # create self-signed certificate
-    # sudo openssl req -x509 -nodes -newkey rsa:2048 -keyout /etc/ssl/influxdb-selfsigned.key -out /etc/ssl/influxdb-selfsigned.crt -days 3650 -subj "/C=NL/ST=Zuid-Holland/L=Delft/O=Delft University of Technology/OU=Geoscience and Engineering/CN=multi-ear.org" >> $LOG_FILE 2>&1
-    # sudo chown influxdb:influxdb /etc/ssl/influxdb-selfsigned.* >> $LOG_FILE 2>&1
+    influx_e "REVOKE ALL PRIVILEGES FROM ear"
+    influx_e "GRANT READ ON multi_ear TO ear"
+    influx_e "GRANT READ ON telegraf TO ear"
 
     # enforce multi-ear settings (requires login from now on!)
     verbose_msg "> enable multi-ear configuration" 1
@@ -696,6 +691,30 @@ function do_multi_ear_services
 
     # done
     verbose_done
+}
+
+
+#
+# Uninstall
+#
+function do_update
+{
+}
+
+
+#
+# Check
+#
+function do_check
+{
+}
+
+
+#
+# Uninstall
+#
+function do_uninstall
+{
 }
 
 
