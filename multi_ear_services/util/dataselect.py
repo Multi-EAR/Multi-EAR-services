@@ -150,7 +150,7 @@ class DataSelect(object):
         """
         self.__endtime__ = pd.to_datetime(end or 'now', unit='ns', utc=True)
         if start is None:
-            delta = pd.to_timedelta(delta or '15min')
+            delta = pd.to_timedelta(delta or '30min')
             self.__starttime__ = self.__endtime__ - delta
         else:
             self.__starttime__ = pd.to_datetime(start, unit='ns', utc=True)
