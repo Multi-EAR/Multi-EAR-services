@@ -16,14 +16,17 @@
         <div class"row row-cols-2">
           <div class="col d-flex"><div class="py-1" id="{{id}}-name">{{service}}</div></div>
           <div class="col d-flex">
-              <div class="py-1"><span class="badge badge-status bg-secondary" id="{{id}}-status">[STATUS]</span></div>
-              <div class="py-1 ms-2 d-none"><span class="badge badge-version bg-primary" id="{{id}}-version">[VERSION]</span></div>
+            <div class="badge badge-status bg-secondary py-1" id="{{id}}-status">
+              <div class="spinner-border spinner-border-sm" role="status" aria-hidden="true">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+            </div>
           </div>
         </div>
       </button>
     </h2>
     <div id="{{id}}-response" class="accordion-collapse collapse" aria-labelledby="{{id}}-response" data-bs-parent="#status">
-      <div class="accordion-body">[RESPONSE]</div>
+      <div class="accordion-body"></div>
     </div>
   </div>
   {% endfor %}
