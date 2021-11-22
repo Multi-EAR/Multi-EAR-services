@@ -165,7 +165,6 @@ function loadDashboard() {
         },
         yAxis: {
             min: 0,
-            max: 1,
             title: {
                 text: 'System load [-]',
             },
