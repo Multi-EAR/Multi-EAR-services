@@ -136,51 +136,147 @@ function statusUpdate() {
 
 
 function loadDashboard() {
-  // Graphs
-  var ctx = document.getElementById('myChart')
-  // eslint-disable-next-line no-unused-vars
-  var myChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: [
-        'Sunday',
-        'Monday',
-        'Tuesday',
-        'Wednesday',
-        'Thursday',
-        'Friday',
-        'Saturday'
-      ],
-      datasets: [{
-        data: [
-          15339,
-          21345,
-          18483,
-          24003,
-          23489,
-          24092,
-          12034
-        ],
-        lineTension: 0,
-        backgroundColor: 'transparent',
-        borderColor: '#00a6d6',
-        borderWidth: 4,
-        pointBackgroundColor: '#00a6d6'
-      }]
-    },
-    options: {
-      scales: {
-        yAxes: [{
-          ticks: {
-            beginAtZero: false
-          }
-        }]
-      },
-      legend: {
-        display: false
-      }
-    }
-  })
+
+    var charts = document.querySelector('#highcharts-figures')
+    charts.innerHTML = null
+
+    var chart, field
+
+    // System Load
+    chart = document.createElement('div');
+    field = 'system-load'
+
+    chart.setAttribute("id", field);
+
+    charts.appendChild(chart)
+
+    Highcharts.chart(field, {
+        chart: {
+            type: 'spline',
+            zoomType: 'x'
+        },
+        data: {
+            csvURL: '/api/dataselect/query?m=system&f=load&_f=csv',
+            enablePolling: true,
+            dataRefreshRate: 5,
+        },
+        xAxis: {
+            type: 'datetime'
+        },
+        yAxis: {
+            min: 0,
+            title: {
+                text: 'System load [-]',
+            },
+        },
+        title: {
+            text: 'System load'
+        },
+    });
+
+    // Memory
+    chart = document.createElement('div');
+    field = 'memory'
+
+    chart.setAttribute("id", field);
+
+    charts.appendChild(chart)
+
+    Highcharts.chart(field, {
+        chart: {
+            type: 'spline',
+            zoomType: 'x'
+        },
+        data: {
+            csvURL: '/api/dataselect/query?m=mem&f=_percent&_f=csv',
+            enablePolling: true,
+            dataRefreshRate: 5,
+        },
+        xAxis: {
+            type: 'datetime'
+        },
+        yAxis: {
+            min: 0,
+            max: 100,
+            title: {
+                text: 'Memory [%]',
+            },
+        },
+        title: {
+            text: 'Memory'
+        },
+    });
+
+/*
+    getJSON("/api/dataselect/query", { measurement: 'mem' })
+    .then(data => {
+        return data;
+    })
+    .then(function(data) {
+
+        if (data === null) return
+
+        if (typeof data === 'string' || data instanceof String) return
+
+        figures.innerHTML = null
+
+        for (var key in data['columns']) {
+
+            var field = data['columns'][key]
+            var fig = document.createElement('div');
+
+            fig.setAttribute("id", field);
+            fig.innerHTML = field;
+
+            figures.appendChild(fig)
+
+            Highcharts.chart(field, {
+
+                boost: {
+                    allowForce: true,
+                },
+
+                chart: {
+                    zoomType: 'x'
+                },
+
+                title: {
+                    text: field
+                },
+
+                subtitle: {
+                    //text: 'Using the Boost module'
+                },
+
+                tooltip: {
+                    valueDecimals: 2
+                },
+
+                xAxis: {
+                    type: 'datetime'
+                },
+
+                series: [{
+                    data: data['index'].map(function(t, i) {
+                        return [t, data['data'][i][key]]
+                    }),
+                    lineWidth: 0.5,
+                    //name: 'Hourly data points'
+                }],
+
+                plotOptions: {
+                    series: {
+                        color: '#00a6d6'
+                    }
+                },
+
+            });
+
+        }
+
+    })
+*/
+
 }
 
 

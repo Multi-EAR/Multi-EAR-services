@@ -1,7 +1,5 @@
 # absolute imports
-import os
 from subprocess import Popen, PIPE
-from configparser import ConfigParser, MissingSectionHeaderError
 
 
 services = ['multi-ear-ctrl.service',
@@ -20,51 +18,17 @@ services = ['multi-ear-ctrl.service',
             'hostapd.service']
 
 
-def is_raspberry_pi():
-    """Checks if the device is a Rasperry Pi
-    """
-    if not os.path.exists('/proc/device-tree/model'):
-        return False
-    with open('/proc/device-tree/model') as f:
-        model = f.read()
-    return model.startswith('Raspberry Pi')
-
-
-def parse_conf(conf_path: str, **kwargs):
-    """
-    """
-    conf = ConfigParser(**kwargs)
-    try:
-        conf.read(conf_path)
-    except MissingSectionHeaderError:
-        with open(conf_path, 'r') as f:
-            conf_string = '[default]\n' + f.read()
-            conf.read_string(conf_string)
-    return conf
-
-
 def systemd_status(service: str):
     """Get the systemd status of a single service.
     """
-    if service not in services:
-        return dict(
-            success=False,
-            service=service,
-            stderr='Service not part of listed Multi-EAR services.',
-        )
+    r = _popen(['/usr/bin/systemctl', 'status', service])
+    if r['stdout'] and 'Active: ' in r['stdout']:
+        status = r['stdout'].split('<br>')[2].split('Active: ')[1]
+        if 'since' in status:
+            status = status.split(' since ')[0]
     else:
-        r = _popen(['/usr/bin/systemctl', 'status', service])
-        if r['stdout'] and 'Active: ' in r['stdout']:
-            status = r['stdout'].split('<br>')[2].split('Active: ')[1]
-            if 'since' in status:
-                status = status.split(' since ')[0]
-        else:
-            status = None
-        return dict(
-            service=service,
-            status=status,
-            **r,
-        )
+        status = None
+    return dict(service=service, status=status, **r)
 
 
 def systemd_status_all():

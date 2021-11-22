@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ##############################################################################
-# Script Name	: install.sh
+# Script Name	: multi-ear-services.sh
 # Description	: Multi-EAR system services configuration for a deployed
 #                 Raspberry Pi OS LITE (32-bit).
 # Args          : [options] <install_step>
@@ -46,21 +46,25 @@ function isRaspberryPi
 function usage
 {
     local txt=(
-"Multi-EAR system services setup on a deployed Raspberry Pi OS LITE (32-bit)."
-"Usage: $SCRIPT [options] <install_step>"
-""
-"Install step:"
-"  all            Perform all of the following steps (default)."
-"  packages       Install all required packages via apt."
-"  py37           Create the Python3 virtual environment."
-"  configure      Sync /etc and configure all packages."
-"  services       Install and enable the Multi-EAR services."
-""
+"Multi-EAR Services setup on a deployed Raspberry Pi OS LITE (32-bit)."
+"Usage:"
+"  $SCRIPT [options] <action>"
+"Actions:"
+"  install        Full installation of the Multi-Ear services:"
+"                  * install Python3, dnsmasq, hostapd, nginx, influxdb, telegraf, grafana"
+"                  * configure system services"
+"                  * create Python3 virtual environment py37 in ~/.py37"
+"                  * install and activate the Multi-EAR services"
+"  check          Verify the installed Multi-EAR services and dependencies."
+"  update         Update the existing Multi-EAR services and dependencies."
+"  uninstall      Remove the installed Multi-EAR services, data, configurations and "
+"                 the Python3 virtual environment."
 "Options:"
 "  --help, -h     Print help."
 "  --version, -v  Print version."
 ""
-"Environment variables MULTI_EAR_ID and MULTI_EAR_UUID should be defined in ~/.bashrc."
+"$SCRIPT only works on a Raspberry Pi platform."
+"Environment variables \$MULTI_EAR_ID and \$MULTI_EAR_UUID should be defined in ~/.bashrc."
     )
 
     printf "%s\n" "${txt[@]}"
@@ -513,51 +517,49 @@ function do_configure_influxdb
     #
     # influx docs: https://docs.influxdata.com/influxdb/v1.8/
     #
-    # create databases?
-    local db="multi_ear"
-    if ! influx -execute "show databases" | grep -q "$db";
-    then
-        influx_e "CREATE DATABASE $db"
-    fi
+    # retention policies
+    local rp_m="onemonth" rp_m_specs="DURATION 30d REPLICATION 1 SHARD DURATION 5d"
+    local rp_y="oneyear"  rp_y_specs="DURATION 366d REPLICATION 1 SHARD DURATION 7d"
+    # create database telegraf?
     if ! influx -execute "show databases" | grep -q "telegraf";
     then
         influx_e "CREATE DATABASE telegraf"
     fi
-    # use database
-    influx_e "USE DATABASE '$db'"
-    # set retention policy
-    local rp="oneyear" rp_specs="DURATION 366d REPLICATION 1 SHARD DURATION 7d"
-    influx_e "CREATE RETENTION POLICY $rp ON $db $rp_specs"
+    influx_e "USE DATABASE 'telegraf'"
+    influx_e "CREATE RETENTION POLICY $rp_m ON telegraf $rp_m_specs"
+    # create databases multi_ear?
+    if ! influx -execute "show databases" | grep -q "multi_ear";
+    then
+        influx_e "CREATE DATABASE multi_ear"
+    fi
+    influx_e "USE DATABASE 'multi_ear'"
+    influx_e "CREATE RETENTION POLICY $rp_y ON multi_ear $rp_y_specs"
     # create full-privilege user
-    if ! is_environ_variable "INFLUX_USERNAME=";
+    if [ "$INFLUX_USERNAME" == "" ];
     then
         INFLUX_USERNAME="${USER}_influx"
-        do_export_environ_variable "INFLUX_USERNAME" "$USERNAME"
+        do_export_environ_variable "INFLUX_USERNAME" "$INFLUX_USERNAME"
     fi
-    if ! is_environ_variable "INFLUX_PASSWORD=";
+    if [ "$INFLUX_PASSWORD" == "" ] ;
     then
         INFLUX_PASSWORD="$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c20)"
-        do_export_environ_variable "INFLUX_PASSWORD" "$PASSWORD"
+        do_export_environ_variable "INFLUX_PASSWORD" "$INFLUX_PASSWORD"
     fi
     if ! influx -execute "show users" | grep -q "$INFLUX_USERNAME";
     then
         influx_e "CREATE USER $INFLUX_USERNAME WITH PASSWORD '$INFLUX_PASSWORD' WITH ALL PRIVILEGES"
     fi
-    influx_e "GRANT ALL PRIVILEGES ON $db TO $INFLUX_USERNAME"
+    influx_e "GRANT ALL PRIVILEGES ON multi_ear TO $INFLUX_USERNAME"
     influx_e "GRANT ALL PRIVILEGES ON telegraf TO $INFLUX_USERNAME"
     # create read-only user
-    local ro='ear'
-    if ! influx -execute "show users" | grep -q "$ro";
+    if ! influx -execute "show users" | grep -q "ear";
     then
-        influx_e "CREATE USER $ro WITH PASSWORD 'listener'"
+        influx_e "CREATE USER ear WITH PASSWORD 'listener'"
     fi
     # revoke read-only user permissions
-    influx_e "REVOKE ALL PRIVILEGES FROM $ro"
-    influx_e "GRANT READ ON $db TO $ro"
-
-    # create self-signed certificate
-    sudo openssl req -x509 -nodes -newkey rsa:2048 -keyout /etc/ssl/influxdb-selfsigned.key -out /etc/ssl/influxdb-selfsigned.crt -days 3650 -subj "/C=NL/ST=Zuid-Holland/L=Delft/O=Delft University of Technology/OU=Geoscience and Engineering/CN=multi-ear.org" >> $LOG_FILE 2>&1
-    sudo chown influxdb:influxdb /etc/ssl/influxdb-selfsigned.* >> $LOG_FILE 2>&1
+    influx_e "REVOKE ALL PRIVILEGES FROM ear"
+    influx_e "GRANT READ ON multi_ear TO ear"
+    influx_e "GRANT READ ON telegraf TO ear"
 
     # enforce multi-ear settings (requires login from now on!)
     verbose_msg "> enable multi-ear configuration" 1
@@ -572,12 +574,14 @@ function do_configure_influxdb
 function do_configure_telegraf
 {
     verbose_msg ".. configure telegraf"
+    # start and enable service
+    do_systemd_service_start "telegraf"
+    do_systemd_service_enable "telegraf"
     # logging and output
     sudo mkdir -p /var/log/telegraf /var/lib/telegraf
     sudo chown -R telegraf:telegraf /var/log/telegraf /var/lib/telegraf
     sudo chmod 755 /var/log/telegraf /var/lib/telegraf
-    # enable and start service
-    do_systemd_service_enable "telegraf"
+    # restart service
     do_systemd_service_restart "telegraf"
     verbose_done
 }
@@ -587,11 +591,20 @@ function do_configure_grafana
 {
     verbose_msg ".. configure grafana"
     # grafana-cli docs: https://grafana.com/docs/grafana/latest/administration/cli/
+    # start and enable service
+    do_systemd_service_start "grafana-server"
+    do_systemd_service_enable "grafana-server"
     # create local admin
-    local GRAFANA_USERNAME="${USER}_grafana"
-    do_export_environ_variable "GRAFANA_USERNAME" "$GRAFANA_USERNAME"
-    local GRAFANA_PASSWORD="$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c20)"
-    do_export_environ_variable "GRAFANA_PASSWORD" "$GRAFANA_PASSWORD"
+    if [ "$GRAFANA_USERNAME" == "" ];
+    then
+        GRAFANA_USERNAME="${USER}_grafana"
+        do_export_environ_variable "GRAFANA_USERNAME" "$GRAFANA_USERNAME"
+    fi
+    if [ "$GRAFANA_PASSWORD" == "" ] ;
+    then
+        GRAFANA_PASSWORD="$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c20)"
+        do_export_environ_variable "GRAFANA_PASSWORD" "$GRAFANA_PASSWORD"
+    fi
     # logging and output
     sudo mkdir -p /var/log/grafana /var/lib/grafana
     sudo chown -R grafana:grafana /var/log/grafana /var/lib/grafana
@@ -601,8 +614,7 @@ function do_configure_grafana
     # install plugins
     sudo grafana-cli plugins install grafana-clock-panel >> $LOG_FILE 2>&1
     # add dashboards!
-    # enable and start service
-    do_systemd_service_enable "grafana-server"
+    # restart service
     do_systemd_service_restart "grafana-server"
     # done
     verbose_done
@@ -612,7 +624,7 @@ function do_configure_grafana
 function do_daemon_reload
 {
     sudo systemctl daemon-reload >> $LOG_FILE 2>&1
-    # sudo systemctl reset-failed >> $LOG_FILE 2>&1
+    sudo systemctl reset-failed >> $LOG_FILE 2>&1
 }
 
 
@@ -663,17 +675,16 @@ function do_multi_ear_services
     $pip uninstall -y multi_ear_services . >> $LOG_FILE 2>&1
     $pip install . >> $LOG_FILE 2>&1
 
-    # multi-ear-ctrl
+    # Start and enable services
+    ## multi-ear-ctrl
     do_systemd_service_enable "multi-ear-ctrl.service"
     do_systemd_service_restart "multi-ear-ctrl.service"
     do_export_environ_variable "FLASK_APP" "multi_ear_services.ctrl"
     do_export_environ_variable "FLASK_ENV" "production"
-
-    # multi-ear-wifi
+    ## multi-ear-wifi
     do_systemd_service_enable "multi-ear-wifi.service"
     do_systemd_service_start "multi-ear-wifi.service"
-
-    # multi-ear-uart
+    ## multi-ear-uart
     do_systemd_service_enable "multi-ear-uart.service"
     do_systemd_service_start "multi-ear-uart.service"
 
@@ -683,14 +694,95 @@ function do_multi_ear_services
 
 
 #
+# Uninstall
+#
+function do_update
+{
+    # update repository --> should become optional
+    # git pull
+
+    # Rsync configure
+    do_rsync_etc
+
+    # Restart 3rd party services
+    do_systemd_service_restart "rsyslog"
+    do_systemd_service_restart "nginx"
+    do_systemd_service_restart "influxdb"
+    do_systemd_service_restart "telegraf"
+    do_systemd_service_restart "grafana-server"
+
+    # Pip multi-ear services
+    $pip uninstall -y multi_ear_services . >> $LOG_FILE 2>&1
+    $pip install . >> $LOG_FILE 2>&1
+
+    # Restart multi-ear services
+    do_systemd_service_restart "multi-ear-ctrl.service"
+    do_systemd_service_restart "multi-ear-uart.service"
+}
+
+
+#
+# Check
+#
+function do_check
+{
+    echo "Not implementen yet."
+    exit -1
+}
+
+
+#
+# Uninstall
+#
+function do_uninstall
+{
+    # Stop and disable services
+    ## multi-ear-ctrl
+    do_systemd_service_stop "multi-ear-ctrl.service"
+    do_systemd_service_disable "multi-ear-ctrl.service"
+    ## multi-ear-wifi
+    do_systemd_service_stop "multi-ear-wifi.service"
+    do_systemd_service_disable "multi-ear-wifi.service"
+    ## multi-ear-uart
+    do_systemd_service_stop "multi-ear-uart.service"
+    do_systemd_service_disable "multi-ear-uart.service"
+
+    # Enable wpa_supplicant
+    sudo sed -i -s "s/^nohook wpa_supplicant/#nohook wpa_supplicant/" /etc/dhcpcd.conf >> $LOG_FILE 2>&1
+
+    # Nginx proxy
+    sudo rm /etc/nginx/sites-available/multi-ear-ctrl.proxy
+    sudo rm /etc/nginx/sites-enabled/multi-ear-ctrl.proxy
+    do_systemd_service_restart "nginx"
+
+    # Rsyslog
+    sudo rm /etc/rsyslog.d/multi-ear.conf
+    do_systemd_service_restart "rsyslog"
+
+    # InfluxDB
+    ## link default settings
+    verbose_msg "> enable default configuration" 1
+    sudo ln -sf /etc/influxdb/default.conf /etc/influxdb/influxdb.conf >> $LOG_FILE 2>&1
+    ## restart with default settings
+    do_systemd_service_restart "influxdb.service"
+    ## Remove Influx Database
+    influx_e "DROP DATABASE 'multi_ear'"
+
+    # Disable venv activation and remove folder
+    sudo sed -i -s "s/^source \/home\/tud\/.py37\/bin\/activate/#source \/home\/tud\/.py37\/bin\/activate/" $HOME/.bashrc >> $LOG_FILE 2>&1
+    rm -rf $HOME/.py37
+}
+
+
+#
 # Process options
 #
 while (( $# ));
 do
     case "$1" in
-        --help | -h) usage
+        --help|-h|help) usage
         ;;
-        --version | -v) version
+        --version|-v|version) version
         ;;
         *) break
     esac
@@ -737,22 +829,24 @@ if [ ! -f $BASH_ENV.old ]; then cp $BASH_ENV $BASH_ENV.old; fi
 
 # Perform one step or the entire workflow
 case "$1" in
-    all|'')
+    install)
     rm -f $LOG_FILE
-    verbose_msg "Multi-EAR Software Install Tool v${VERSION}"
+    verbose_msg "Multi-EAR Services ${VERSION}"
     do_install
     do_py37_venv
     do_configure
     do_multi_ear_services
-    verbose_msg "Multi-EAR software install completed"
+    verbose_msg "Multi-EAR services install completed"
     ;;
-    packages) do_install
+    configure)
+    do_configure
+    do_multi_ear_services
     ;;
-    py37) do_py37_venv
+    check) do_check
     ;;
-    configure|config) do_configure
+    update) do_update
     ;;
-    services) do_multi_ear_services
+    uninstall) do_uninstall
     ;;
     do_*) LOG_FILE=/dev/stdout; $@;  # internal function calls for development (stdout-only)
     ;;
