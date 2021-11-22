@@ -10,7 +10,7 @@ include multi_ear_services/ctrl/site.webmanifest
 graft multi_ear_services/ctrl/static
 graft multi_ear_services/ctrl/templates
 
-include multi_ear_services/uart/influxdb.ini
+include multi_ear_services/uart/config.ini
 
 global-exclude __pycache__
 global-exclude *.py[cod]
