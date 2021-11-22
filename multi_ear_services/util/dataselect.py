@@ -285,35 +285,25 @@ class DataSelect(object):
         # https://docs.influxdata.com/influxdb/cloud/query-data/flux/
         # https://docs.influxdata.com/influxdb/cloud/query-data/optimize-queries/
 
-        q = 'from(bucket: "{}")'.format(self.bucket)
-
-        q += '|> range(start: {}Z, stop: {}Z)'.format(self.start.asm8,
-                                                      self.end.asm8)
-
-        def is_regex(s):
-            return any(o in s for o in ('.+', '*', '?', '^'))
-
-        if self.measurement != '*' or self.field != '*':
-            _filter = ''
-
-            if is_regex(self.measurement):
-                _filter = f'r["_measurement"] =~ /{self.measurement}/'
-            else:
-                _filter = f'r["_measurement"] == "{self.measurement}"'
-
-            if is_regex(self.field):
-                _filter += f' and r["_field"] =~ /{self.field}/'
-            else:
-                _filter += f' and r["_field"] == "{self.field}"'
-
-            q += '|> filter(fn: (r) => {})'.format(_filter)
-
-        q += ('|> pivot('
-              'rowKey:["_time"], '
-              'columnKey: ["_measurement", "_field"], '
-              'valueColumn: "_value")')
-
-        q += '|> drop(columns: ["_start", "_stop", "host"])'
+        q = (
+            'from(bucket: "{0}")'
+            ' |> range(start: {1}Z, stop: {2}Z)'
+            ' |> filter(fn: (r) =>'
+            ' r["_measurement"] =~ /{3}/ and'
+            ' r["_field"] =~ /{4}/)'
+            ' |> pivot('
+            ' rowKey:["_time"],'
+            ' columnKey: ["_measurement", "_field"],'
+            ' valueColumn: "_value")'
+            ' |> drop(columns: ["_start", "_stop", "host"])'
+        ).format(
+            self.bucket,
+            self.starttime.asm8,
+            self.endtime.asm8,
+            ('^' + self.measurement if self.measurement in ('*', '?')
+             else self.measurement),
+            '^' + self.field if self.field in ('*', '?') else self.field,
+        )
 
         return q
 
@@ -328,9 +318,7 @@ class DataSelect(object):
                 self.__error__ = f"No data found\n{self}"
             else:
                 self.__status__ = 200
-                self.__df__ = (df
-                               .drop(['result', 'table'], axis=1)
-                               .set_index('_time'))
+                self.__df__ = df.drop(['result', 'table'], axis=1)
         except Exception as e:
             self.__error__ = "Server Error: {}\n{}".format(
                 repr(e), ''.join(tb.format_exception(None, e, e.__traceback__))
@@ -365,15 +353,23 @@ class DataSelect(object):
         """
         if self._status == 100:
             self.query()
-        return self._df.to_json(orient=orient, date_format=date_format,
-                                indent=indent, **kwargs)
+        return self._df.set_index('_time').to_json(
+            orient=orient,
+            date_format=date_format,
+            indent=indent,
+            **kwargs
+        )
 
-    def _to_csv(self, date_format='%Y-%m-%dT%H-%M-%S.%fZ', **kwargs):
+    def _to_csv(self, date_format='%Y-%m-%dT%H:%M:%S.%fZ', **kwargs):
         """Returns the DataSelect request as csv.
         """
         if self._status == 100:
             self.query()
-        return self._df.to_csv(date_format=date_format, **kwargs)
+        return self._df.to_csv(
+            index=False,
+            date_format=date_format,
+            **kwargs
+        )
 
     def _to_miniseed(self):
         """Returns the DataSelect request as miniseed.

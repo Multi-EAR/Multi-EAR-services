@@ -137,6 +137,78 @@ function statusUpdate() {
 
 function loadDashboard() {
 
+    var charts = document.querySelector('#highcharts-figures')
+    charts.innerHTML = null
+
+    var chart, field
+
+    // System Load
+    chart = document.createElement('div');
+    field = 'system-load'
+
+    chart.setAttribute("id", field);
+
+    charts.appendChild(chart)
+
+    Highcharts.chart(field, {
+        chart: {
+            type: 'spline',
+            zoomType: 'x'
+        },
+        data: {
+            csvURL: '/api/dataselect/query?m=system&f=load&_f=csv',
+            enablePolling: true,
+            dataRefreshRate: 10,
+        },
+        xAxis: {
+            type: 'datetime'
+        },
+        yAxis: {
+            min: 0,
+            max: 1,
+            title: {
+                text: 'System load [-]',
+            },
+        },
+        title: {
+            text: 'System load'
+        },
+    });
+
+    // Memory
+    chart = document.createElement('div');
+    field = 'memory'
+
+    chart.setAttribute("id", field);
+
+    charts.appendChild(chart)
+
+    Highcharts.chart(field, {
+        chart: {
+            type: 'spline',
+            zoomType: 'x'
+        },
+        data: {
+            csvURL: '/api/dataselect/query?m=mem&f=_percent&_f=csv',
+            enablePolling: true,
+            dataRefreshRate: 10,
+        },
+        xAxis: {
+            type: 'datetime'
+        },
+        yAxis: {
+            min: 0,
+            max: 100,
+            title: {
+                text: 'Memory [%]',
+            },
+        },
+        title: {
+            text: 'Memory'
+        },
+    });
+
+/*
     getJSON("/api/dataselect/query", { measurement: 'mem' })
     .then(data => {
         return data;
@@ -146,8 +218,6 @@ function loadDashboard() {
         if (data === null) return
 
         if (typeof data === 'string' || data instanceof String) return
-
-        var figures = document.querySelector('#highcharts-figures');
 
         figures.innerHTML = null
 
@@ -174,11 +244,11 @@ function loadDashboard() {
                 title: {
                     text: field
                 },
-/*
+
                 subtitle: {
-                    text: 'Using the Boost module'
+                    //text: 'Using the Boost module'
                 },
-*/
+
                 tooltip: {
                     valueDecimals: 2
                 },
@@ -206,6 +276,7 @@ function loadDashboard() {
         }
 
     })
+*/
 
 }
 
