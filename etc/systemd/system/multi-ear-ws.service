@@ -1,0 +1,19 @@
+[Unit]
+Description=Multi-EAR WebsocketServer written in Python to send data over HTML5 websockets in the browser
+After=multi-user.target
+ 
+[Service]
+Type=simple
+User=tud
+Group=tud
+WorkingDirectory=/home/tud/
+Environment="VIRTUAL_ENV=/home/tud/.py37"
+Environment="PATH=$VIRTUAL_ENV/bin:$PATH"
+ExecStart=/home/tud/.py37/bin/python3 /home/tud/.py37/lib/python3.7/site-packages/multi_ear_services/ws/ws.py
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=multi-ear-ws
+Restart=always
+ 
+[Install]
+WantedBy=multi-user.target

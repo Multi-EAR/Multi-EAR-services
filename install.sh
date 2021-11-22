@@ -677,6 +677,10 @@ function do_multi_ear_services
     do_systemd_service_enable "multi-ear-uart.service"
     do_systemd_service_start "multi-ear-uart.service"
 
+    # multi-ear-ws
+    do_systemd_service_enable "multi-ear-ws.service"
+    do_systemd_service_start "multi-ear-ws.service"
+
     # done
     verbose_done
 }
