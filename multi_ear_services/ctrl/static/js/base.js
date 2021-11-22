@@ -160,6 +160,9 @@ function loadDashboard() {
             enablePolling: true,
             dataRefreshRate: 5,
         },
+        tooltip: {
+            valueDecimals: 2
+        },
         xAxis: {
             type: 'datetime'
         },
@@ -191,6 +194,9 @@ function loadDashboard() {
             csvURL: '/api/dataselect/query?m=mem&f=_percent&_f=csv',
             enablePolling: true,
             dataRefreshRate: 5,
+        },
+        tooltip: {
+            valueDecimals: 2
         },
         xAxis: {
             type: 'datetime'
