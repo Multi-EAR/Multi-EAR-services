@@ -135,6 +135,16 @@ function statusUpdate() {
 }
 
 
+function bytes(bytes, label) {
+    if (bytes == 0) return '';
+    var s = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB'];
+    var e = Math.floor(Math.log(bytes)/Math.log(1024));
+    var value = ((bytes/Math.pow(1024, Math.floor(e))).toFixed(2));
+    e = (e<0) ? (-e) : e;
+    if (label) value += ' ' + s[e];
+    return value;
+}
+
 function loadDashboard() {
 
     var charts = document.querySelector('#highcharts-figures')
@@ -156,7 +166,7 @@ function loadDashboard() {
             zoomType: 'x'
         },
         data: {
-            csvURL: '/api/dataselect/query?m=system&f=load&_f=csv',
+            csvURL: '/api/dataselect/query?m=system&f=load*&_f=csv',
             enablePolling: true,
             dataRefreshRate: 5,
         },
@@ -191,25 +201,26 @@ function loadDashboard() {
             zoomType: 'x'
         },
         data: {
-            csvURL: '/api/dataselect/query?m=mem&f=_percent&_f=csv',
+            csvURL: '/api/dataselect/query?m=mem&f=used,buffered,cached,free&_f=csv',
             enablePolling: true,
             dataRefreshRate: 5,
         },
         tooltip: {
-            valueDecimals: 2
+            formatter: function() { return bytes(this.y, true); }
         },
         xAxis: {
             type: 'datetime'
         },
         yAxis: {
-            min: 0,
-            max: 100,
             title: {
-                text: 'Memory [%]',
+                text: 'Memory usage',
+            },
+            labels: {
+                formatter: function() { return bytes(this.value, true); }
             },
         },
         title: {
-            text: 'Memory'
+            text: 'Memory usage'
         },
     });
 
