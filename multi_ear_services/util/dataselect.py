@@ -14,7 +14,7 @@ class DataSelect(object):
     For details see the :meth:`__init__()` method.
     """
 
-    def __init__(self, client, starttime=None, endtime=None, duration=None,
+    def __init__(self, client, starttime=None, endtime=None,
                  field=None, measurement=None, bucket=None, database=None,
                  retention_policy=None, format=None, nodata=None, query=True):
         """
@@ -28,8 +28,6 @@ class DataSelect(object):
             Set the start time.
         endtime : str or Timestamp
             Set the end time.
-        duration : str or Timedelta
-            Set the duration.
         field : str or list of str
             Set the field code. Comma separate multiple codes.
             Regex wildcards are allowed.
@@ -65,7 +63,7 @@ class DataSelect(object):
         self.__error__ = None
         self.__df__ = None
 
-        self.set_time(starttime, endtime, duration)
+        self.set_time(starttime, endtime)
         self.field = field
         self.measurement = measurement
         if bucket is not None:
@@ -138,24 +136,26 @@ class DataSelect(object):
         """
         return self.__endtime__
 
-    def set_time(self, start=None, end=None, delta=None):
+    def set_time(self, start=None, end=None):
         """Set the start and end time
 
         Parameters
         ----------
-        start : str or Timestamp, default `None`
+        start : str, Timestamp or Timedelta (default '30min')
             Sets the dataselect start time.
-        end : str or Timestamp, default 'now'
+        end : str or Timestamp (default 'now')
             Sets the dataselect end time.
-        delta : str or Timedelta, default ‘15min’
-            Sets the start time if not explicitely set.
         """
         self.__endtime__ = pd.to_datetime(end or 'now', unit='ns', utc=True)
-        if start is None:
-            delta = pd.to_timedelta(delta or '30min')
+
+        try:
+            delta = pd.to_timedelta(start or '30min')
             self.__starttime__ = self.__endtime__ - delta
-        else:
+        except (pd.errors.ParserError, ValueError):
             self.__starttime__ = pd.to_datetime(start, unit='ns', utc=True)
+
+        if self.__starttime__ > self.__endtime__:
+            raise ValueError('end time should be after start time')
 
     @property
     def measurement(self):
