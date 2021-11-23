@@ -30,10 +30,12 @@ class DataSelect(object):
             Set the end time.
         duration : str or Timedelta
             Set the duration.
-        field : str
-            Set the field code.
-        measurement : str
-            Set the measurement code.
+        field : str or list of str
+            Set the field code. Comma separate multiple codes.
+            Regex wildcards are allowed.
+        measurement : str or list of str
+            Set the measurement code. Comma separate multiple codes.
+            Regex wildcards are allowed.
         bucket : str
             Set the bucket code.
         database : str
@@ -156,30 +158,60 @@ class DataSelect(object):
             self.__starttime__ = pd.to_datetime(start, unit='ns', utc=True)
 
     @property
-    def field(self):
-        """DataSelect field code (default: '*')
-        """
-        return self.__field__
-
-    @field.setter
-    def field(self, field):
-        field = field or '*'
-        if not isinstance(field, str):
-            raise TypeError('field code should be a string')
-        self.__field__ = field
-
-    @property
     def measurement(self):
-        """DataSelect measurement code (default: '*')
+        """DataSelect measurement code as a string (default: '*')
         """
-        return self.__measurement__
+        return ','.join(self.__measurement__)
 
     @measurement.setter
     def measurement(self, measurement):
         measurement = measurement or '*'
-        if not isinstance(measurement, str):
-            raise TypeError('measurement code should be a string')
+        if isinstance(measurement, str):
+            measurement = measurement.split(',')
+        elif isinstance(measurement, (list, tuple)):
+            if not all(isinstance(item, str) for item in measurement):
+                raise TypeError(
+                    'measurement code list should all be a strings'
+                )
+        else:
+            raise TypeError(
+                'measurement code should be a string or a list strings'
+            )
         self.__measurement__ = measurement
+
+    @property
+    def measurements(self):
+        """DataSelect measurement code as a list (default: ['*'])
+        """
+        return self.__measurement__
+
+    @property
+    def field(self):
+        """DataSelect field code as a string (default: '*')
+        """
+        return ','.join(self.__field__)
+
+    @field.setter
+    def field(self, field):
+        field = field or '*'
+        if isinstance(field, str):
+            field = field.split(',')
+        elif isinstance(field, (list, tuple)):
+            if not all(isinstance(item, str) for item in field):
+                raise TypeError(
+                    'field code list should all be a strings'
+                )
+        else:
+            raise TypeError(
+                'field code should be a string or a list strings'
+            )
+        self.__field__ = field
+
+    @property
+    def fields(self):
+        """DataSelect field code as a list (default: ['*'])
+        """
+        return self.__field__
 
     @property
     def bucket(self):
@@ -285,12 +317,24 @@ class DataSelect(object):
         # https://docs.influxdata.com/influxdb/cloud/query-data/flux/
         # https://docs.influxdata.com/influxdb/cloud/query-data/optimize-queries/
 
+        def qfilt(key, value):
+            if value == '*':
+                return
+            elif any(i in value for i in '*?.'):
+                return f'r["{key}"] =~ /{value}/'
+            else:
+                return f'r["{key}"] == "{value}"'
+
+        qfilter_m = ' or '.join(filter(None, [qfilt('_measurement', _m)
+                                              for _m in self.measurements]))
+        qfilter_f = ' or '.join(filter(None, [qfilt('_field', _f)
+                                              for _f in self.fields]))
+        qfilter = ') and ('.join(filter(None, [qfilter_m, qfilter_f]))
+
         q = (
             'from(bucket: "{0}")'
             ' |> range(start: {1}Z, stop: {2}Z)'
-            ' |> filter(fn: (r) =>'
-            ' r["_measurement"] =~ /{3}/ and'
-            ' r["_field"] =~ /{4}/)'
+            ' |> filter(fn: (r) => ({3}))'
             ' |> pivot('
             ' rowKey:["_time"],'
             ' columnKey: ["_measurement", "_field"],'
@@ -300,9 +344,7 @@ class DataSelect(object):
             self.bucket,
             self.starttime.asm8,
             self.endtime.asm8,
-            ('^' + self.measurement if self.measurement in ('*', '?')
-             else self.measurement),
-            '^' + self.field if self.field in ('*', '?') else self.field,
+            qfilter,
         )
 
         return q
