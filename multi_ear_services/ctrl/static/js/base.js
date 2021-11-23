@@ -168,7 +168,7 @@ function loadDashboard() {
         data: {
             csvURL: '/api/dataselect/query?m=system&f=load*&_f=csv',
             enablePolling: true,
-            dataRefreshRate: 5,
+            dataRefreshRate: 10,
         },
         tooltip: {
             valueDecimals: 2
@@ -203,7 +203,7 @@ function loadDashboard() {
         data: {
             csvURL: '/api/dataselect/query?m=mem&f=used,buffered,cached,free&_f=csv',
             enablePolling: true,
-            dataRefreshRate: 5,
+            dataRefreshRate: 10,
         },
         tooltip: {
             formatter: function() { return bytes(this.y, true); }
