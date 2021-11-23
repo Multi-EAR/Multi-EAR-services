@@ -590,10 +590,6 @@ function do_configure_telegraf
 function do_configure_grafana
 {
     verbose_msg ".. configure grafana"
-    # grafana-cli docs: https://grafana.com/docs/grafana/latest/administration/cli/
-    # start and enable service
-    do_systemd_service_start "grafana-server"
-    do_systemd_service_enable "grafana-server"
     # create local admin
     if [ "$GRAFANA_USERNAME" == "" ];
     then
@@ -605,10 +601,14 @@ function do_configure_grafana
         GRAFANA_PASSWORD="$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c20)"
         do_export_environ_variable "GRAFANA_PASSWORD" "$GRAFANA_PASSWORD"
     fi
+    # grafana-cli docs: https://grafana.com/docs/grafana/latest/administration/cli/
+    # start and enable service
+    do_systemd_service_start "grafana-server"
+    do_systemd_service_enable "grafana-server"
     # logging and output
-    sudo mkdir -p /var/log/grafana /var/lib/grafana
-    sudo chown -R grafana:grafana /var/log/grafana /var/lib/grafana
-    sudo chmod 755 /var/log/grafana /var/lib/grafana
+    sudo mkdir -p /var/log/grafana /var/lib/grafana /var/lib/grafana/plugins
+    sudo chown -R grafana:grafana /var/log/grafana /var/lib/grafana /var/lib/grafana/plugins
+    sudo chmod 755 /var/log/grafana /var/lib/grafana /var/lib/grafana/plugins
     # set password
     sudo grafana-cli admin reset-admin-password $GRAFANA_PASSWORD >> $LOG_FILE 2>&1
     # install plugins
