@@ -318,17 +318,17 @@ class DataSelect(object):
         # https://docs.influxdata.com/influxdb/cloud/query-data/optimize-queries/
 
         def qfilt(key, value):
-            if value == '*':
-                return
+            if value == '*' or value == '?':
+                return f'r["{key}"] =~ /^{value}/'
             elif any(i in value for i in '*?.'):
                 return f'r["{key}"] =~ /{value}/'
             else:
                 return f'r["{key}"] == "{value}"'
 
-        qfilter_m = ' or '.join(filter(None, [qfilt('_measurement', _m)
-                                              for _m in self.measurements]))
-        qfilter_f = ' or '.join(filter(None, [qfilt('_field', _f)
-                                              for _f in self.fields]))
+        qfilter_m = ' or '.join([qfilt('_measurement', _m)
+                                 for _m in self.measurements])
+        qfilter_f = ' or '.join([qfilt('_field', _f)
+                                 for _f in self.fields])
         qfilter = ') and ('.join(filter(None, [qfilter_m, qfilter_f]))
 
         q = (
