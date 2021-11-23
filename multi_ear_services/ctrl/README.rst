@@ -2,10 +2,9 @@
 Multi-EAR services - CTRL 
 *************************************
 
-Simplified control, monitoring, documentation and data visualization via a web browser.
+Local web service to access and monitor both the device and data.
 
 The web service is started automatically via the ``multi-ear-ctrl.service`` in ``/etc/systemd/system`` via a ``uwsgi`` socket handled via ``nginx`` on the default http port 80.
-
 
 Service
 =======
@@ -21,6 +20,36 @@ Service
 :Log:
     /var/log/multi-ear/ctrl.log
 
+API
+===
+
+DataSelect
+----------
+
+.. code-block::
+
+    /api/dataselect/health
+    /api/dataselect/query
+
+:starttime:
+    Date time string (UTC) or time delta string (defaults to 30min).
+:endtime:
+    Defaults to now (UTC).
+:measurement:
+    '*'. Allows multiple items (comma separeted) and regex.
+:field:
+    '*'. Allows multiple items (comma separeted) and regex.
+:bucket:
+    telegraf/
+:database:
+    telegraf
+:retention_policy:
+    Empty (default database retention policy)
+:format:
+    json (default), csv or miniseed
+:nodata:
+    204 (default) or 404
+
 
 Usage
 =====
@@ -28,7 +57,7 @@ Usage
 Command line
 ------------
 
-You can also manually start the web-service on `http://127.0.0.1:5000`_.
+You can also manually start the web-service on `http://127.0.0.1:5000`_ for development (bypassing uWSGI and nginx).
 
 First check if the Flask environment variables are set correctly.
 
@@ -49,7 +78,6 @@ Start the web-service
 .. code-block:: console
 
     flask run
-
 
 Python
 ------

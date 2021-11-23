@@ -1,5 +1,5 @@
 *************************************
-multi-ear-lora
+Multi-EAR services - LORA
 *************************************
 
 Remote monitoring of the Multi-EAR device via LoRa-WAN.

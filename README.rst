@@ -57,15 +57,12 @@ Activate the Python3 virtual environment
     source ~/.py37/bin/activate
 
 
-Multi-EAR services
-==================
+Services
+========
 
-- ``multi-ear-ctrl`` : local web service to control and monitor the device
-- ``multi-ear-data`` : data transfer to the central database
-- ``multi-ear-lora`` : remote monitoring of the device via LoRaWAN
-- ``multi-ear-uart`` : sensorboard serial readout and local data storage
+- ``multi-ear-ctrl`` : local web service to access and monitor the device and data
+- ``multi-ear-uart`` : sensorboard serial readout with local data storage and broadcast via websockets
 - ``multi-ear-wifi`` : automatically generates a Wi-Fi hotspot when no known SSID is in range
-
 
 Multi-EAR services are controlled and monitored via systemd_ system services.
 

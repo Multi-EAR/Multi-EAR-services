@@ -4,12 +4,11 @@ Multi-EAR services
 
 Multi-EAR system services for the host Raspberry Pi OS LITE (32-bit) with sensorboard.
 
-
 Installation
 ============
 
-Installation of the Python module is included in the ``install.sh`` script.
-Manual installation of the Python module
+Installation of the Python module is included in the ``multi-ear-services.sh`` script.
+Manual installation of the Python module via ``pip``
 
 .. code-block:: console
 
@@ -33,17 +32,16 @@ Versioning is obtained via git.
 
     print(multi_ear_services.__version__)
 
-
 Entry-points
-==================
+============
 
-- ``multi-ear-ctrl`` : local web service to control and monitor the device
-- ``multi-ear-data`` : data transfer to the central database
+- ``multi-ear-ctrl`` : local web service to access and monitor the device and data
 - ``multi-ear-lora`` : remote monitoring of the device via LoRaWAN
-- ``multi-ear-uart`` : sensorboard serial readout and local data storage
-
+- ``multi-ear-sync`` : data transfer to the central database
+- ``multi-ear-uart`` : sensorboard serial readout with local data storage and broadcast via websockets
 
 Scripts
-==================
+=======
 
-- ``multi-ear-wifi`` : automatically generates an wlan hotspot when no a valid ssid is in range
+- ``autohotspot`` : automatically generates an wlan hotspot when no a valid ssid is in range
+- ``append_wpa_supplicant`` : append a new network with encrypted PSK to wpa_supplicants

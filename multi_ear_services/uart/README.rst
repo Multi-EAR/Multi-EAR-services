@@ -2,8 +2,8 @@
 Multi-EAR services - UART
 *************************************
 
-Sensorboard serial readout via UART with data storage in a local InfluxDB database.
-
+Sensorboard serial readout via UART with data storage in a local InfluxDB database
+and broadcast via websockets.
 
 Service
 =======
@@ -18,7 +18,6 @@ Service
     multi-ear-uart
 :Log:
     /var/log/multi-ear/uart.log
-
 
 Usage
 =====
@@ -43,7 +42,6 @@ Stop the service.
 .. code-block:: console
 
     sudo systemctl stop multi-ear-uart
-
 
 Python
 ------

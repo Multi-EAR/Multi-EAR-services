@@ -11,7 +11,6 @@ Checkout _raspberryconnect for the original `autohotspot` script!
 
 The Wi-Fi hotspot systemd .service is triggered on boot or when a new Wi-Fi network is added in the ctrl interface using `append_wpa_supplicant`.
 
-
 Service
 =======
 
