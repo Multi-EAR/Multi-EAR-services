@@ -86,6 +86,6 @@ Licensing
 
 The source code for Multi-EAR-services is licensed under MIT that can be found under the LICENSE file.
 
-This repository includes third-party software stored inside the lib directory. The code in this folder may be constrained by additional licenses and should be treated as such. The distribution of third-party software through this repository is warranted because of scientific reproducibility that cannot be guaranteed through a dynamic CDN.
+This repository includes third-party software, which may be constrained by additional licenses and should be treated as such. The distribution of third-party software through this repository is warranted because of scientific reproducibility that cannot be guaranteed through a dynamic CDN.
 
 Multi-EAR.org © 2021. All rights reserved.
