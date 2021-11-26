@@ -320,7 +320,7 @@ class DataSelect(object):
         def qfilt(key, value):
             if value == '*' or value == '?':
                 return f'r["{key}"] =~ /^{value}/'
-            elif any(i in value for i in '*?.'):
+            elif any(i in value for i in '^*?.'):
                 return f'r["{key}"] =~ /{value}/'
             else:
                 return f'r["{key}"] == "{value}"'
