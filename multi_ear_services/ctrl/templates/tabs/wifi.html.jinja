@@ -1,93 +1,91 @@
 <h1 class="h2 pt-3 pb-2 mb-3 border-bottom">Wi-Fi</h1>
-
 <div class="container-md p-0">
 
-    <h3 class="mb-3 hstack gap-3">Hotspot mode <div class="vr"></div> <small class="text-muted">create a wireless network</small></h3>
-    <p>The Multi-EAR automatically connects to known wireless networks in range.<br> 
-       If no known network is in range the Multi-EAR creates it's own wireless network:</p>
+  <h3 class="mb-3 hstack gap-3">Hotspot mode <div class="vr"></div> <small class="text-muted">create a wireless network</small></h3>
 
-    <div class="row mb-3">
+  <p>The Multi-EAR automatically connects to available wireless networks in range. 
+     If no configured network is in range, the Multi-EAR creates its wireless network.
+  </p>
+
+  <div class="row mb-2 md-md-3">
+    <div class="col-md-3 text-md-end">
+      <label for="staticNetworkName" class="col-form-label">Name/SSID</label>
+    </div>
+    <div class="col-md-9">
+      <input type="text" class="form-control" id="staticNetworkName" value="{{hostapd.ssid}}" readonly>
+    </div>
+  </div>
+
+  <div class="row mb-4">
+    <div class="col-md-3 text-md-end">
+      <label for="staticPassword" class="col-form-label">WPA{{hostapd.wpa}} passphrase</label>
+    </div>
+    <div class="col-md-9">
+      <input type="text" class="form-control" id="staticPassword" value="{{hostapd.wpa_passphrase}}" readonly>
+    </div>
+  </div>
+
+  <p>Reach the Multi-EAR at <code>http://{{hostname}}.local</code> or <code>http://192.168.128.1</code></p>
+
+  <p><b>Note:</b> this network shall not have internet access!</p>
+
+  <hr class="my-4 my-md-5">
+
+  <h3 class="mb-3 hstack gap-3">Client mode <div class="vr"></div> <small class="text-muted">join a known wireless network</small></h3>
+
+  <p>Manually trigger the autohotspot script and connect to available wireless networks in range or self-host a network.</p>
+
+  <p class="text-center text-md-start">
+    <button class="btn btn-sm btn-outline-dark" onclick="autohotspot();" type="">Start multi-ear-wifi.service</button>
+  </p>
+
+  <p>Enter the <code>name</code> and <code>passphrase</code> to connect to a new wireless network. 
+     The network and encrypted passphrase will be added to the configured networks.<br> 
+     Only visible and WPA2 (WPA Personal) secured networks are supported.
+  </p>
+
+  <form class="needs-validation pb-4" novalidate>
+
+    <div class="row mb-2 mb-md-3">
       <div class="col-md-3 text-md-end">
-        <label for="staticNetworkName" class="col-form-label">Name/SSID</label>
+        <label for="inputSSID" class="col-form-label">Name/SSID</label>
       </div>
       <div class="col-md-9">
-        <input type="text" class="form-control" id="staticNetworkName" value="{{hostapd.ssid}}" readonly>
-      </div>
-    </div>
-
-    <div class="row mb-3">
-      <div class="col-md-3 text-md-end">
-        <label for="staticPassword" class="col-form-label">WPA{{hostapd.wpa}} passphrase</label>
-      </div>
-      <div class="col-md-9">
-        <input type="text" class="form-control" id="staticPassword" value="{{hostapd.wpa_passphrase}}" readonly>
-      </div>
-    </div>
-
-    <p>Connect to the Multi-EAR via <code>http://{{hostname}}.local</code> or <code>http://192.168.128.1</code></p>
-    <p><b>Note:</b> this network shall not have internet access!</p>
-
-    <hr class="my-5">
-
-    <h3 class="mb-3 hstack gap-3">Client mode <div class="vr"></div> <small class="text-muted">join a known wireless network</small></h3>
-
-
-    <div class="row mb-3">
-      <div class="col-md-3 d-md-flex align-items-center">
-        Manually trigger the autohotspot script
-      </div>
-      <div class="col-md-9 d-md-flex align-items-center"> 
-        <button class="btn btn-sm btn-outline-dark" onclick="autohotspot();" type="">Start multi-ear-wifi.service</button>
-      </div>
-    </div>
-
-    <div class="row mb-3"> 
-      <p>Enter the <code>name</code> and <code>passphrase</code> to connect to a wireless network.<br> 
-      Only visible and WPA2 (WPA Personal) secured networks are supported.</p>
-    </div>
-
-    <form class="needs-validation pb-4" novalidate>
-
-      <div class="row mb-3">
-        <div class="col-md-3 text-md-end">
-          <label for="inputSSID" class="col-form-label">Name/SSID</label>
+        <input type="text" id="inputSSID" class="form-control" spellcheck="false"
+         autocorrect="off" autocapitalize="off" required>
+        <div class="invalid-feedback">
+          Please enter a valid network name.
         </div>
-        <div class="col-md-9">
-          <input type="text" id="inputSSID" class="form-control" spellcheck="false"
-           autocorrect="off" autocapitalize="off" required>
+      </div>
+    </div>
+
+    <div class="row mb-4">
+      <div class="col-md-3 text-md-end">
+        <label for="inputPSK" class="col-form-label">WPA2 passphrase</label>
+      </div>
+      <div class="col-md-9">
+        <div class="input-group">
+          <input type="password" id="inputPSK" class="form-control" spellcheck="false"
+           autocorrect="off" autocapitalize="off" minlength="8" maxlength="63" required>
+          <button id="toggle-password" type="button" class="d-none"
+           aria-label="Show password as plain text. Warning: this will display your password on the screen.">
+          </button>
           <div class="invalid-feedback">
-            Please enter a valid network name.
+            Please enter a WPA2 security key of length 8 to 63 characters.
           </div>
         </div>
       </div>
+    </div>
 
-      <div class="row mb-3">
-        <div class="col-md-3 text-md-end">
-          <label for="inputPSK" class="col-form-label">WPA2 passphrase</label>
-        </div>
-        <div class="col-md-9">
-          <div class="input-group">
-            <input type="password" id="inputPSK" class="form-control" spellcheck="false"
-             autocorrect="off" autocapitalize="off" minlength="8" maxlength="63" required>
-            <button id="toggle-password" type="button" class="d-none"
-             aria-label="Show password as plain text. Warning: this will display your password on the screen.">
-            </button>
-            <div class="invalid-feedback">
-              Please enter a WPA2 security key of length 8 to 63 characters.
-            </div>
-          </div>
-        </div>
-      </div>
-
-    <div class="row mb-3 justify-content-end">
+    <div class="row mb-4 justify-content-end">
       <div class="col-md-9">
         <button class="btn btn-primary" type="submit" value="submit">Add</button>
         <button class="btn btn-outline-primary" type="reset">Cancel</button>
       </div>
     </div>
 
-    <p>Connect to the Multi-EAR via <code>http://{{hostname}}.local</code> or the ip-address set by the router.</p>
-
   </form>
+
+  <p>Reach the Multi-EAR at <code>http://{{hostname}}.local</code> or the IPv4 address established by the router.</p>
 
 </div>

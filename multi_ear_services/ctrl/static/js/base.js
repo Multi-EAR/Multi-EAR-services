@@ -340,43 +340,72 @@ function loadContent(nav) {
 let statusUpdater = null;
 
 (function () {
+
     'use strict'
+
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+
     tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+
         new bootstrap.Tooltip(tooltipTriggerEl)
+
     })
 
     loadContent();
 
     var navLeft = [].slice.call(document.querySelectorAll('#navLeft > button[data-bs-toggle="tab"]'))
+
     navLeft.forEach(function (nav) {
+
         nav.addEventListener('shown.bs.tab', function (event) {
+
             loadContent(nav);
+
             var navTOld = document.querySelector('#navTop > ul > li > a.nav-link.active[aria-controls]')
             navTOld.classList.remove('active')
+
             var navTNew = document.querySelector('#navTop > ul > li > a.nav-link[aria-controls="' + nav.getAttribute("aria-controls") + '"]')
             navTNew.classList.add('active')
+
         })
+
+    })
+
+    var navTopToggle = new bootstrap.Collapse(document.querySelector('#navTop'), {
+        toggle: false
     })
 
     var navTop = [].slice.call(document.querySelectorAll('#navTop > ul > li > a.nav-link[aria-controls]'))
+
     navTop.forEach(function (nav) {
+
         nav.addEventListener('click', function (event) {
+
             loadContent(nav);
+
             var navTOld = document.querySelector('#navTop > ul > li > a.nav-link.active[aria-controls]')
             navTOld.classList.remove('active')
             nav.classList.add('active')
+
             var navLOld = document.querySelector('#navLeft > button.nav-link.active[aria-controls]')
             navLOld.classList.remove('active')
+
             var navLNew = document.querySelector('#navLeft > button.nav-link[aria-controls="' + nav.getAttribute("aria-controls") + '"]')
             navLNew.classList.add('active')
+
+            navTopToggle.toggle()
+
             return false;
+
         })
+
     })
 
     // prevent page reload
     window.onbeforeunload = function(event) {
+
         event.preventDefault();
+
     }
 
 })()
