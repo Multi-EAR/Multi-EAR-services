@@ -1,10 +1,21 @@
 /* global bootstrap: false */
 
+
+function sleep(ms) {
+
+    return new Promise(resolve => setTimeout(resolve, ms));
+
+}
+
+
 function resetWifiForm(form) {
+
     form.reset()
     form.classList.remove('was-validated')
     form.querySelector('button[type=submit]').disabled = false;
+
 }
+
 
 function validateWifiForm() {
 
@@ -60,6 +71,7 @@ function autohotspot() {
         if (data === null) return
         console.log(data);
     });
+
 }
 
 
@@ -82,6 +94,7 @@ function statusUpdateLoop() {
         }
         progressbar.style.width = width + '%'; 
       }
+
 }
 
 
@@ -136,14 +149,21 @@ function statusUpdate() {
 
 
 function bytes(bytes, label) {
+
     if (bytes == 0) return '';
+
     var s = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB'];
     var e = Math.floor(Math.log(bytes)/Math.log(1024));
     var value = ((bytes/Math.pow(1024, Math.floor(e))).toFixed(2));
+
     e = (e<0) ? (-e) : e;
+
     if (label) value += ' ' + s[e];
+
     return value;
+
 }
+
 
 function loadDashboard() {
 
@@ -224,75 +244,55 @@ function loadDashboard() {
         },
     });
 
-/*
-    getJSON("/api/dataselect/query", { measurement: 'mem' })
-    .then(data => {
-        return data;
+}
+
+
+function loadPCB () {
+
+    resizePCB()
+
+    var pcbItems = [].slice.call(document.querySelectorAll('.pcb > svg > *'))
+
+    var pcbPopovers = pcbItems.map(function (item) {
+
+        var id = item.id.replace('PCB-', '')
+
+        var popover = new bootstrap.Popover(item, {
+            content: id,
+            placement: 'left',
+            trigger: 'hover focus',
+        })
+
+        var dl = document.querySelector('#' + id)
+
+        dl.addEventListener('mouseenter', function () {
+            popover.show()
+        })
+        dl.addEventListener('mouseleave', function () {
+            popover.hide()
+        })
+
+        return popover
     })
-    .then(function(data) {
 
-        if (data === null) return
+}
 
-        if (typeof data === 'string' || data instanceof String) return
 
-        figures.innerHTML = null
+async function resizePCB () {
 
-        for (var key in data['columns']) {
+    var pcbImg = document.querySelector('.pcb > img')
+    var pcbSvg = document.querySelector('.pcb > svg')
 
-            var field = data['columns'][key]
-            var fig = document.createElement('div');
+    if (pcbImg === null | pcbSvg === null) return
 
-            fig.setAttribute("id", field);
-            fig.innerHTML = field;
+    while (pcbImg.width == 0) { await sleep(50);}
 
-            figures.appendChild(fig)
+    let w = pcbImg.width
+    let h = pcbImg.height
 
-            Highcharts.chart(field, {
-
-                boost: {
-                    allowForce: true,
-                },
-
-                chart: {
-                    zoomType: 'x'
-                },
-
-                title: {
-                    text: field
-                },
-
-                subtitle: {
-                    //text: 'Using the Boost module'
-                },
-
-                tooltip: {
-                    valueDecimals: 2
-                },
-
-                xAxis: {
-                    type: 'datetime'
-                },
-
-                series: [{
-                    data: data['index'].map(function(t, i) {
-                        return [t, data['data'][i][key]]
-                    }),
-                    lineWidth: 0.5,
-                    //name: 'Hourly data points'
-                }],
-
-                plotOptions: {
-                    series: {
-                        color: '#00a6d6'
-                    }
-                },
-
-            });
-
-        }
-
-    })
-*/
+    pcbSvg.style.width = w + "px"
+    pcbSvg.style.height = h + "px"
+    pcbSvg.setAttribute("viewbox", [0, 0, w, h])
 
 }
 
@@ -319,6 +319,9 @@ function loadContent(nav) {
     })
     .finally(function() {
         switch (nav.getAttribute("aria-controls")) {
+            case "pcb":
+                loadPCB()
+                break;
             case "dashboard":
                 loadDashboard()
                 break;
@@ -334,7 +337,9 @@ function loadContent(nav) {
                 // do nothing
         }
     });
+
 }
+
 
 // globals
 let statusUpdater = null;
@@ -400,6 +405,8 @@ let statusUpdater = null;
         })
 
     })
+
+    window.addEventListener("resize", resizePCB);
 
     // prevent page reload
     window.onbeforeunload = function(event) {

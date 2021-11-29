@@ -10,13 +10,13 @@ The microcontroller gathers all data locally stored on flash memory or on a micr
 
 <h4 class="my-3 pt-3 border-top">Microcontroller</h4>
 
-<dl class="row" id="MSP430">
+<dl class="row pcb" id="MSP430">
   <dt class="col-sm-3 text-sm-end">Type</dt>
   <dd class="col-sm-9">MSP430 FR5994 rev C</dd>
   <dt class="col-sm-3 text-sm-end">Manufacturer</dt>
   <dd class="col-sm-9">Texas instruments</dd>
   <dt class="col-sm-3 text-sm-end">Description</dt>
-  <dd class="col-sm-9">Embedded multi purpose 16-bit microcontroller (MCU) up to 16-MHz clock</dd>
+  <dd class="col-sm-9">Embedded multi purpose 16-bit microcontroller (MCU) up to a 16-MHz clock</dd>
   <dt class="col-sm-3 text-sm-end">Datasheet</dt>
   <dd class="col-sm-9"><a href="{{ url_for('static', filename='datasheet/MSP430.pdf') }}">MSP430 Datasheet (PDF)</a></dd>
 </dl>
@@ -24,7 +24,7 @@ The microcontroller gathers all data locally stored on flash memory or on a micr
 
 <h4 class="my-3 pt-3 border-top">Communication</h4>
 
-<dl class="row" id="RFLoRa">
+<dl class="row pcb" id="RFLoRa">
   <dt class="col-sm-3 text-sm-end">Type</dt>
   <dd class="col-sm-9">RF-LORA-868-SO</dd>
   <dt class="col-sm-3 text-sm-end">Manufacturer</dt>
@@ -38,7 +38,7 @@ The microcontroller gathers all data locally stored on flash memory or on a micr
 
 <h4 class="my-3 pt-3 border-top">Timing and location</h4>
 
-<dl class="row" id="GNS413">
+<dl class="row pcb" id="GNS413">
   <dt class="col-sm-3 text-sm-end">Type</dt>
   <dd class="col-sm-9">GNS413sLP</dd>
   <dt class="col-sm-3 text-sm-end">Manufacturer</dt>
@@ -51,7 +51,7 @@ The microcontroller gathers all data locally stored on flash memory or on a micr
 
 <h4 class="my-3 pt-3 border-top">Audible sound</h4>
 
-<dl class="row" id="">
+<dl class="row pcb" id="ICS">
   <dt class="col-sm-3 text-sm-end">Type</dt>
   <dd class="col-sm-9">ICS-40300</dd>
   <dt class="col-sm-3 text-sm-end">Manufacturer</dt>
@@ -70,7 +70,7 @@ The microcontroller gathers all data locally stored on flash memory or on a micr
 
 <h4 class="my-3 pt-3 border-top">Absolute pressure</h4>
 
-<dl class="row" id="LPS33HW">
+<dl class="row pcb" id="LPS33">
   <dt class="col-sm-3 text-sm-end">Type</dt>
   <dd class="col-sm-9">LPS33HW</dd>
   <dt class="col-sm-3 text-sm-end">Manufacturer</dt>
@@ -91,7 +91,7 @@ The microcontroller gathers all data locally stored on flash memory or on a micr
 
 <h4 class="my-3 pt-3 border-top">Differential pressure</h4>
 
-<dl class="row" id="SP210">
+<dl class="row pcb" id="SP210">
   <dt class="col-sm-3 text-sm-end">Type</dt>
   <dd class="col-sm-9">SP210-SM02-R</dd>
   <dt class="col-sm-3 text-sm-end">Manufacturer</dt>
@@ -108,7 +108,7 @@ The microcontroller gathers all data locally stored on flash memory or on a micr
   <dd class="col-sm-9">0.1 %</dd>
 </dl>
 
-<dl class="row" id="DLVR-L01D">
+<dl class="row pcb" id="DLVR">
   <dt class="col-sm-3 text-sm-end">Type</dt>
   <dd class="col-sm-9">DLVR-L01D E1NJ-C NI3F</dd>
   <dt class="col-sm-3 text-sm-end">Manufacturer</dt>
@@ -128,7 +128,7 @@ The microcontroller gathers all data locally stored on flash memory or on a micr
 
 <h4 class="my-3 pt-3 border-top">Temperature and humidity</h4>
 
-<dl class="row" id="SHT85">
+<dl class="row pcb" id="SHT85">
   <dt class="col-sm-3 text-sm-end">Type</dt>
   <dd class="col-sm-9">SHT85</dd>
   <dt class="col-sm-3 text-sm-end">Manufacturer</dt>
@@ -148,7 +148,7 @@ The microcontroller gathers all data locally stored on flash memory or on a micr
 
 <h4 class="my-3 pt-3 border-top">Inertial measurement units</h4>
 
-<dl class="row" id="LSM303">
+<dl class="row pcb" id="LSM303">
   <dt class="col-sm-3 text-sm-end">Type</dt>
   <dd class="col-sm-9">LSM303</dd>
   <dt class="col-sm-3 text-sm-end">Manufacturer</dt>
@@ -165,7 +165,7 @@ The microcontroller gathers all data locally stored on flash memory or on a micr
   <dd class="col-sm-9">..</dd>
 </dl>
 
-<dl class="row" id="LIS3DH">
+<dl class="row pcb" id="LIS3DH">
   <dt class="col-sm-3 text-sm-end">Type</dt>
   <dd class="col-sm-9">LIS3DH</dd>
   <dt class="col-sm-3 text-sm-end">Manufacturer</dt>
@@ -185,7 +185,19 @@ The microcontroller gathers all data locally stored on flash memory or on a micr
 </div>
 
 <div class="d-none d-md-flex col-md-4 pcb">
-<img src="{{ url_for('static', filename='img/pcb.png') }}" class="mx-auto img-fluid" width="90%">
+  <img src="{{ url_for('static', filename='img/pcb.png') }}">
+  <svg class="" xmlns="http://www.w3.org/2000/svg" version="1.1">
+    <rect class="btn" id="PCB-MSP430" x="33.7%" y="47.7%" width="21.2%" height="13.2%" />
+    <rect class="btn" id="PCB-RFLoRa" x="59.1%" y="59.4%" width="34.6%" height="24.8%" />
+    <rect class="btn" id="PCB-GNS413" x="37.0%" y="75.0%" width="17.0%" height="09.8%" />
+    <rect class="btn" id="PCB-LIS3DH" x="17.2%" y="76.8%" width="04.9%" height="03.7%" />
+    <rect class="btn" id="PCB-LSM303" x="17.2%" y="87.6%" width="04.9%" height="03.8%" />
+    <rect class="btn" id="PCB-SHT85"  x="09.2%" y="25.5%" width="03.0%" height="06.3%" />
+    <rect class="btn" id="PCB-LPS33"  x="06.0%" y="19.5%" width="06.0%" height="04.0%" />
+    <rect class="btn" id="PCB-SP210"  x="18.0%" y="06.0%" width="23.0%" height="22.0%" />
+    <rect class="btn" id="PCB-DLVR"   x="45.0%" y="04.0%" width="28.0%" height="15.0%" />
+    <rect class="btn" id="PCB-ICS"    x="77.0%" y="06.0%" width="08.0%" height="06.0%" />
+  </svg>
 </div>
 
 </div>
