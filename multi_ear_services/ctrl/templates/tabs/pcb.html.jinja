@@ -5,7 +5,7 @@
 
 <p class="py-4 lead mr-md-5">The Multi-EAR uses digital Microelectromechanical Systems (MEMS) embedded on a Printed Circuit Board (PCB).
 A programmable microcontroller regulates all sensors and aligns the sampling frequency and timing. The GNSS receiver serves as an accurate clock. 
-The microcontroller gathers all data locally stored on flash memory or on a micro-SD card. Data is transferred to the Raspberry Pi via serial communication over the GPIO.</p>
+The microcontroller gathers all data locally stored on flash memory or on a micro-SD card. Data is transferred to the Raspberry Pi via serial communication over the <a href="https://pinout.xyz" target="_blank"> GPIO</a> (General Purpose Input/Output).</p>
 
 
 <h4 class="my-3 pt-3 border-top">Microcontroller</h4>
@@ -187,16 +187,36 @@ The microcontroller gathers all data locally stored on flash memory or on a micr
 <div class="d-none d-md-flex col-md-4 pcb">
   <img src="{{ url_for('static', filename='img/pcb.png') }}">
   <svg class="" xmlns="http://www.w3.org/2000/svg" version="1.1">
-    <rect class="btn" id="PCB-MSP430" x="33.7%" y="47.7%" width="21.2%" height="13.2%" />
-    <rect class="btn" id="PCB-RFLoRa" x="59.1%" y="59.4%" width="34.6%" height="24.8%" />
-    <rect class="btn" id="PCB-GNS413" x="37.0%" y="75.0%" width="17.0%" height="09.8%" />
-    <rect class="btn" id="PCB-LIS3DH" x="17.2%" y="76.8%" width="04.9%" height="03.7%" />
-    <rect class="btn" id="PCB-LSM303" x="17.2%" y="87.6%" width="04.9%" height="03.8%" />
-    <rect class="btn" id="PCB-SHT85"  x="09.2%" y="25.5%" width="03.0%" height="06.3%" />
-    <rect class="btn" id="PCB-LPS33"  x="06.0%" y="19.5%" width="06.0%" height="04.0%" />
-    <rect class="btn" id="PCB-SP210"  x="18.0%" y="06.0%" width="23.0%" height="22.0%" />
-    <rect class="btn" id="PCB-DLVR"   x="45.0%" y="04.0%" width="28.0%" height="15.0%" />
-    <rect class="btn" id="PCB-ICS"    x="77.0%" y="06.0%" width="08.0%" height="06.0%" />
+    <rect class="btn" id="PCB-MSP430" data-bs-content="MSP430 microcontroller"
+     x="34%" y="48%" width="21%" height="13%" />
+    <rect class="btn" id="PCB-RFLoRa" data-bs-content="LoRa telecommunication"
+     x="59%" y="59%" width="35%" height="25%" />
+    <rect class="btn" id="PCB-GNS413" data-bs-content="GNS413 timing and location"
+     x="37%" y="75%" width="17%" height="10%" />
+    <rect class="btn" id="PCB-LIS3DH" data-bs-content="LIS3DH"
+     x="92%" y="21%" width="05%" height="05%" />
+    <rect class="btn" id="PCB-LSM303" data-bs-content="LSM303"
+     x="78%" y="16%" width="06%" height="04%" />
+    <rect class="btn" id="PCB-SHT85" data-bs-content="SHT85"
+     x="09%" y="25%" width="03%" height="07%" />
+    <rect class="btn" id="PCB-LPS33" data-bs-content="LPS33HW"
+     x="06%" y="19%" width="06%" height="04%" />
+    <rect class="btn" id="PCB-SP210"  data-bs-content="SP210-SM02R"
+     x="19%" y="06%" width="21%" height="22%" />
+    <rect class="btn" id="PCB-DLVR" data-bs-content="DLVR-L01D"
+     x="45%" y="04%" width="28%" height="15%" />
+    <rect class="btn" id="PCB-ICS" data-bs-content="ICS-40300"
+     x="77%" y="06%" width="08%" height="06%" />
+    <rect class="btn" id="PCB-GPIO" data-bs-content="GPIO pins"
+     x="06%" y="54%" width="08%" height="35%" />
+    <rect class="btn" id="PCB-GPIO" data-bs-content="micro-SD card"
+     x="72%" y="33%" width="27%" height="14%" />
+    <rect class="btn" id="PCB-FLASH" data-bs-content="local flash memory"
+     x="47%" y="22%" width="08%" height="05%" />
+    <rect class="btn" id="PCB-GNS413-ANT" data-bs-content="GNS413 antenna"
+     x="39%" y="89%" width="11%" height="07%" />
+    <rect class="btn" id="PCB-RFLoRa-ANT" data-bs-content="RF-LORA antenna"
+     x="75%" y="89%" width="11%" height="07%" />
   </svg>
 </div>
 

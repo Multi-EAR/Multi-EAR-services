@@ -258,19 +258,22 @@ function loadPCB () {
         var id = item.id.replace('PCB-', '')
 
         var popover = new bootstrap.Popover(item, {
-            content: id,
             placement: 'left',
             trigger: 'hover focus',
         })
 
         var dl = document.querySelector('#' + id)
 
-        dl.addEventListener('mouseenter', function () {
-            popover.show()
-        })
-        dl.addEventListener('mouseleave', function () {
-            popover.hide()
-        })
+        if (dl !== null) {
+
+            dl.addEventListener('mouseenter', function () {
+                popover.show()
+            })
+            dl.addEventListener('mouseleave', function () {
+                popover.hide()
+            })
+
+        }
 
         return popover
     })
