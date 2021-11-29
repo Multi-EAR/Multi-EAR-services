@@ -517,6 +517,7 @@ function do_configure_influxdb
     #
     # influx docs: https://docs.influxdata.com/influxdb/v1.8/
     #
+    influx_e "DROP DATABASE '_internal'"
     # retention policies
     local rp_m="onemonth" rp_m_specs="DURATION 30d REPLICATION 1 SHARD DURATION 5d"
     local rp_y="oneyear"  rp_y_specs="DURATION 366d REPLICATION 1 SHARD DURATION 7d"
