@@ -1,223 +1,234 @@
 <h1 class="h2 pt-3 pb-2 mb-3 border-bottom">MEMS embedded on a PCB</h1>
 
 <div class="row">
-<div class="col col-md-8">
 
-<p class="py-4 lead mr-md-5">The Multi-EAR uses digital Microelectromechanical Systems (MEMS) embedded on a Printed Circuit Board (PCB).
-A programmable microcontroller regulates all sensors and aligns the sampling frequency and timing. The GNSS receiver serves as an accurate clock. 
-The microcontroller gathers all data locally stored on flash memory or on a micro-SD card. Data is transferred to the Raspberry Pi via serial communication over the <a href="https://pinout.xyz" target="_blank"> GPIO</a> (General Purpose Input/Output).</p>
+  <div class="col-md-4 order-md-last pcb">
+    <img src="{{ url_for('static', filename='img/pcb.png') }}">
+    <svg class="" xmlns="http://www.w3.org/2000/svg" version="1.1">
+      <rect class="btn" id="PCB-MSP430" data-bs-content="MSP430 microcontroller"
+       x="34%" y="48%" width="21%" height="13%" />
+      <rect class="btn" id="PCB-RFLoRa" data-bs-content="LoRa telecommunication"
+       x="59%" y="59%" width="35%" height="25%" />
+      <rect class="btn" id="PCB-GNS413" data-bs-content="GNS413 timing and location"
+       x="37%" y="75%" width="17%" height="10%" />
+      <rect class="btn" id="PCB-LIS3DH" data-bs-content="LIS3DH"
+       x="92%" y="21%" width="05%" height="05%" />
+      <rect class="btn" id="PCB-LSM303" data-bs-content="LSM303"
+       x="78%" y="16%" width="06%" height="04%" />
+      <rect class="btn" id="PCB-SHT85" data-bs-content="SHT85"
+       x="09%" y="25%" width="03%" height="07%" />
+      <rect class="btn" id="PCB-LPS33" data-bs-content="LPS33HW"
+       x="06%" y="19%" width="06%" height="04%" />
+      <rect class="btn" id="PCB-SP210"  data-bs-content="SP210-SM02R"
+       x="19%" y="06%" width="21%" height="22%" />
+      <rect class="btn" id="PCB-DLVR" data-bs-content="DLVR-L01D"
+       x="45%" y="04%" width="28%" height="15%" />
+      <rect class="btn" id="PCB-ICS" data-bs-content="ICS-40300"
+       x="77%" y="06%" width="08%" height="06%" />
+      <rect class="btn" id="PCB-GPIO" data-bs-content="GPIO pins"
+       x="06%" y="54%" width="08%" height="35%" />
+      <rect class="btn" id="PCB-GPIO" data-bs-content="micro-SD card"
+       x="72%" y="33%" width="27%" height="14%" />
+      <rect class="btn" id="PCB-FLASH" data-bs-content="local flash memory"
+       x="47%" y="22%" width="08%" height="05%" />
+      <rect class="btn" id="PCB-GNS413-ANT" data-bs-content="GNS413 antenna"
+       x="39%" y="89%" width="11%" height="07%" />
+      <rect class="btn" id="PCB-RFLoRa-ANT" data-bs-content="RF-LORA antenna"
+       x="75%" y="89%" width="11%" height="07%" />
+    </svg>
+  </div>
 
+  <div class="col-md-8 order-md-first">
 
-<h4 class="my-3 pt-3 border-top">Microcontroller</h4>
+    <p class="py-4 lead mr-md-5">
+      The Multi-EAR uses digital Microelectromechanical Systems (MEMS) embedded on a Printed Circuit Board (PCB).
+      A programmable microcontroller regulates all sensors and aligns the sampling frequency and timing. 
+      The GNSS receiver serves as an accurate clock. 
+      The microcontroller gathers all data locally stored on flash memory or on a micro-SD card. 
+      Data is transferred to the Raspberry Pi via serial communication over the 
+      <a href="https://pinout.xyz" target="_blank"> GPIO</a> (General Purpose Input/Output).
+    </p>
 
-<dl class="row pcb" id="MSP430">
-  <dt class="col-sm-3 text-sm-end">Type</dt>
-  <dd class="col-sm-9">MSP430 FR5994 rev C</dd>
-  <dt class="col-sm-3 text-sm-end">Manufacturer</dt>
-  <dd class="col-sm-9">Texas instruments</dd>
-  <dt class="col-sm-3 text-sm-end">Description</dt>
-  <dd class="col-sm-9">Embedded multi purpose 16-bit microcontroller (MCU) up to a 16-MHz clock</dd>
-  <dt class="col-sm-3 text-sm-end">Datasheet</dt>
-  <dd class="col-sm-9"><a href="{{ url_for('static', filename='datasheet/MSP430.pdf') }}">MSP430 Datasheet (PDF)</a></dd>
-</dl>
+    <h4 class="my-3 pt-3 border-top">Microcontroller</h4>
+    <dl class="row pcb" id="MSP430">
+      <dt class="col-sm-3 text-sm-end">Type</dt>
+      <dd class="col-sm-9">MSP430 FR5994 rev C</dd>
+      <dt class="col-sm-3 text-sm-end">Manufacturer</dt>
+      <dd class="col-sm-9">Texas instruments</dd>
+      <dt class="col-sm-3 text-sm-end">Description</dt>
+      <dd class="col-sm-9">Embedded multi purpose 16-bit microcontroller (MCU) up to a 16-MHz clock</dd>
+      <dt class="col-sm-3 text-sm-end">Datasheet</dt>
+      <dd class="col-sm-9">
+        <a href="{{ url_for('static', filename='datasheet/MSP430.pdf') }}">MSP430 Datasheet (PDF)</a>
+      </dd>
+    </dl>
+ 
+    <h4 class="my-3 pt-3 border-top">Communication</h4>
+    <dl class="row pcb" id="RFLoRa">
+      <dt class="col-sm-3 text-sm-end">Type</dt>
+      <dd class="col-sm-9">RF-LORA-868-SO</dd>
+      <dt class="col-sm-3 text-sm-end">Manufacturer</dt>
+      <dd class="col-sm-9">RF Solutions</dd>
+      <dt class="col-sm-3 text-sm-end">Description</dt>
+      <dd class="col-sm-9">LoRa transceiver module pre set to 868MHz with integrated Semtech SX1272 modem</dd>
+      <dt class="col-sm-3 text-sm-end">Datasheet</dt>
+      <dd class="col-sm-9">
+        <a href="{{ url_for('static', filename='datasheet/RFLoRa.pdf') }}">RFLoRa Datasheet (PDF)</a> 
+        <a href="{{ url_for('static', filename='datasheet/SX1272.pdf') }}">SX1272 Datasheet (PDF)</a></dd>
+      </dl>
 
+    <h4 class="my-3 pt-3 border-top">Timing and location</h4>
+    <dl class="row pcb" id="GNS413">
+      <dt class="col-sm-3 text-sm-end">Type</dt>
+      <dd class="col-sm-9">GNS413sLP</dd>
+      <dt class="col-sm-3 text-sm-end">Manufacturer</dt>
+      <dd class="col-sm-9">Texim Europe</dd>
+      <dt class="col-sm-3 text-sm-end">Description</dt>
+      <dd class="col-sm-9">Multi-GNSS receiver for GPS, GLONASS, SBAS, QZSS, BeiDou and Galileo</dd>
+      <dt class="col-sm-3 text-sm-end">Datasheet</dt>
+      <dd class="col-sm-9">
+        <a href="{{ url_for('static', filename='datasheet/GNS41x.pdf') }}">GNS41x Datasheet (PDF)</a>
+      </dd>
+    </dl>
 
-<h4 class="my-3 pt-3 border-top">Communication</h4>
+    <h4 class="my-3 pt-3 border-top">Audible sound</h4>
+    <dl class="row pcb" id="ICS">
+      <dt class="col-sm-3 text-sm-end">Type</dt>
+      <dd class="col-sm-9">ICS-40300</dd>
+      <dt class="col-sm-3 text-sm-end">Manufacturer</dt>
+      <dd class="col-sm-9">InvenSense</dd>
+      <dt class="col-sm-3 text-sm-end">Description</dt>
+      <dd class="col-sm-9">High SPL analog microphone with extended low frequency response</dd>
+      <dt class="col-sm-3 text-sm-end">Datasheet</dt>
+      <dd class="col-sm-9">
+        <a href="{{ url_for('static', filename='datasheet/ICS40300.pdf') }}">ICS40300 Datasheet (PDF)</a>
+      </dd>
+      <dt class="col-sm-3 text-sm-end">Range</dt>
+      <dd class="col-sm-9">99 dB</dd>
+      <dt class="col-sm-3 text-sm-end">Sensitivity</dt>
+      <dd class="col-sm-9">-45 dBV</dd>
+      <dt class="col-sm-3 text-sm-end">Accuracy</dt>
+      <dd class="col-sm-9">&#177;2 dB</dd>
+    </dl>
 
-<dl class="row pcb" id="RFLoRa">
-  <dt class="col-sm-3 text-sm-end">Type</dt>
-  <dd class="col-sm-9">RF-LORA-868-SO</dd>
-  <dt class="col-sm-3 text-sm-end">Manufacturer</dt>
-  <dd class="col-sm-9">RF Solutions</dd>
-  <dt class="col-sm-3 text-sm-end">Description</dt>
-  <dd class="col-sm-9">LoRa transceiver module pre set to 868MHz with integrated Semtech SX1272 modem</dd>
-  <dt class="col-sm-3 text-sm-end">Datasheet</dt>
-  <dd class="col-sm-9"><a href="{{ url_for('static', filename='datasheet/RFLoRa.pdf') }}">RFLoRa Datasheet (PDF)</a> <a href="{{ url_for('static', filename='datasheet/SX1272.pdf') }}">SX1272 Datasheet (PDF)</a></dd>
-</dl>
+    <h4 class="my-3 pt-3 border-top">Absolute pressure</h4>
+    <dl class="row pcb" id="LPS33">
+      <dt class="col-sm-3 text-sm-end">Type</dt>
+      <dd class="col-sm-9">LPS33HW</dd>
+      <dt class="col-sm-3 text-sm-end">Manufacturer</dt>
+      <dd class="col-sm-9">ST Microelectronics</dd>
+      <dt class="col-sm-3 text-sm-end">Description</dt>
+      <dd class="col-sm-9">Direct piezoresistive pressure sensor</dd>
+      <dt class="col-sm-3 text-sm-end">Datasheet</dt>
+      <dd class="col-sm-9">
+        <a href="{{ url_for('static', filename='datasheet/LPS33HW.pdf') }}">LPS33HW Datasheet (PDF)</a>
+      </dd>
+      <dt class="col-sm-3 text-sm-end">Range</dt>
+      <dd class="col-sm-9">260-1260 hPa</dd>
+      <dt class="col-sm-3 text-sm-end">Resolution</dt>
+      <dd class="col-sm-9">24 bit</dd>
+      <dt class="col-sm-3 text-sm-end">Accuracy</dt>
+      <dd class="col-sm-9">&#177;0.1 hPa</dd>
+    </dl>
 
+    <h4 class="my-3 pt-3 border-top">Differential pressure</h4>
+    <dl class="row pcb" id="SP210">
+      <dt class="col-sm-3 text-sm-end">Type</dt>
+      <dd class="col-sm-9">SP210-SM02-R</dd>
+      <dt class="col-sm-3 text-sm-end">Manufacturer</dt>
+      <dd class="col-sm-9">Superior Sensor Technology</dd>
+      <dt class="col-sm-3 text-sm-end">Description</dt>
+      <dd class="col-sm-9">Direct piezoresistive differential pressure sensor</dd>
+      <dt class="col-sm-3 text-sm-end">Datasheet</dt>
+      <dd class="col-sm-9">
+        <a href="{{ url_for('static', filename='datasheet/SP210.pdf') }}">SP210 Datasheet (PDF)</a>
+      </dd>
+      <dt class="col-sm-3 text-sm-end">Range</dt>
+      <dd class="col-sm-9">&#177;250 Pa (programmable up to &#177;2.5 kPa)</dd>
+      <dt class="col-sm-3 text-sm-end">Resolution</dt>
+      <dd class="col-sm-9">16 bit</dd>
+      <dt class="col-sm-3 text-sm-end">Accuracy</dt>
+      <dd class="col-sm-9">0.1 %</dd>
+    </dl>
 
-<h4 class="my-3 pt-3 border-top">Timing and location</h4>
+    <dl class="row pcb" id="DLVR">
+      <dt class="col-sm-3 text-sm-end">Type</dt>
+      <dd class="col-sm-9">DLVR-L01D E1NJ-C NI3F</dd>
+      <dt class="col-sm-3 text-sm-end">Manufacturer</dt>
+      <dd class="col-sm-9">Amphenol All Sensors</dd>
+      <dt class="col-sm-3 text-sm-end">Description</dt>
+      <dd class="col-sm-9">Indirect piezoresistive differential pressure sensor (membrane)</dd>
+      <dt class="col-sm-3 text-sm-end">Datasheet</dt>
+      <dd class="col-sm-9">
+        <a href="{{ url_for('static', filename='datasheet/DLVR.pdf') }}">DLVR Datasheet (PDF)</a>
+      </dd>
+      <dt class="col-sm-3 text-sm-end">Range</dt>
+      <dd class="col-sm-9">&#177;1 inH2O (&#177;249 Pa)</dd>
+      <dt class="col-sm-3 text-sm-end">Resolution</dt>
+      <dd class="col-sm-9">14 bit</dd>
+      <dt class="col-sm-3 text-sm-end">Accuracy</dt>
+      <dd class="col-sm-9">1 % (0.02 Pa / count)</dd>
+    </dl>
 
-<dl class="row pcb" id="GNS413">
-  <dt class="col-sm-3 text-sm-end">Type</dt>
-  <dd class="col-sm-9">GNS413sLP</dd>
-  <dt class="col-sm-3 text-sm-end">Manufacturer</dt>
-  <dd class="col-sm-9">Texim Europe</dd>
-  <dt class="col-sm-3 text-sm-end">Description</dt>
-  <dd class="col-sm-9">Multi-GNSS receiver for GPS, GLONASS, SBAS, QZSS, BeiDou and Galileo</dd>
-  <dt class="col-sm-3 text-sm-end">Datasheet</dt>
-  <dd class="col-sm-9"><a href="{{ url_for('static', filename='datasheet/GNS41x.pdf') }}">GNS41x Datasheet (PDF)</a></dd>
-</dl>
+    <h4 class="my-3 pt-3 border-top">Temperature and humidity</h4>
+    <dl class="row pcb" id="SHT85">
+      <dt class="col-sm-3 text-sm-end">Type</dt>
+      <dd class="col-sm-9">SHT85</dd>
+      <dt class="col-sm-3 text-sm-end">Manufacturer</dt>
+      <dd class="col-sm-9">Sensirion</dd>
+      <dt class="col-sm-3 text-sm-end">Description</dt>
+      <dd class="col-sm-9">Humidity and temperature sensor with a pin-type connector</dd>
+      <dt class="col-sm-3 text-sm-end">Datasheet</dt>
+      <dd class="col-sm-9">
+        <a href="{{ url_for('static', filename='datasheet/SHT85.pdf') }}">SHT85 Datasheet (PDF)</a>
+      </dd>
+      <dt class="col-sm-3 text-sm-end">Range</dt>
+      <dd class="col-sm-9">0 to 100 %RH and -40 to 105 °C</dd>
+      <dt class="col-sm-3 text-sm-end">Resolution</dt>
+      <dd class="col-sm-9">16 bit</dd>
+      <dt class="col-sm-3 text-sm-end">Accuracy</dt>
+      <dd class="col-sm-9">&#177;1.5 %RH and &#177;0.1 °C</dd>
+    </dl>
 
-<h4 class="my-3 pt-3 border-top">Audible sound</h4>
+    <h4 class="my-3 pt-3 border-top">Inertial measurement units</h4>
+    <dl class="row pcb" id="LSM303">
+       <dt class="col-sm-3 text-sm-end">Type</dt>
+      <dd class="col-sm-9">LSM303</dd>
+      <dt class="col-sm-3 text-sm-end">Manufacturer</dt>
+      <dd class="col-sm-9">ST Microelectronics</dd>
+      <dt class="col-sm-3 text-sm-end">Description</dt>
+      <dd class="col-sm-9">three-axis linear accelerometer and 3-axis magnetometer</dd>
+      <dt class="col-sm-3 text-sm-end">Datasheet</dt>
+      <dd class="col-sm-9">
+        <a href="{{ url_for('static', filename='datasheet/LSM303.pdf') }}">LSM303 Datasheet (PDF)</a>
+      </dd>
+      <dt class="col-sm-3 text-sm-end">Range</dt>
+      <dd class="col-sm-9">&#177;2 to &#177;16 G</dd>
+      <dt class="col-sm-3 text-sm-end">Resolution</dt>
+      <dd class="col-sm-9">16 bit</dd>
+      <dt class="col-sm-3 text-sm-end">Accuracy</dt>
+      <dd class="col-sm-9">..</dd>
+    </dl>
 
-<dl class="row pcb" id="ICS">
-  <dt class="col-sm-3 text-sm-end">Type</dt>
-  <dd class="col-sm-9">ICS-40300</dd>
-  <dt class="col-sm-3 text-sm-end">Manufacturer</dt>
-  <dd class="col-sm-9">InvenSense</dd>
-  <dt class="col-sm-3 text-sm-end">Description</dt>
-  <dd class="col-sm-9">High SPL analog microphone with extended low frequency response</dd>
-  <dt class="col-sm-3 text-sm-end">Datasheet</dt>
-  <dd class="col-sm-9"><a href="{{ url_for('static', filename='datasheet/ICS40300.pdf') }}">ICS40300 Datasheet (PDF)</a></dd>
-  <dt class="col-sm-3 text-sm-end">Range</dt>
-  <dd class="col-sm-9">99 dB</dd>
-  <dt class="col-sm-3 text-sm-end">Sensitivity</dt>
-  <dd class="col-sm-9">-45 dBV</dd>
-  <dt class="col-sm-3 text-sm-end">Accuracy</dt>
-  <dd class="col-sm-9">&#177;2 dB</dd>
-</dl>
+    <dl class="row pcb" id="LIS3DH">
+      <dt class="col-sm-3 text-sm-end">Type</dt>
+      <dd class="col-sm-9">LIS3DH</dd>
+      <dt class="col-sm-3 text-sm-end">Manufacturer</dt>
+      <dd class="col-sm-9">ST Microelectronics</dd>
+      <dt class="col-sm-3 text-sm-end">Description</dt>
+      <dd class="col-sm-9">three-axis linear accelerometer</dd>
+      <dt class="col-sm-3 text-sm-end">Datasheet</dt>
+      <dd class="col-sm-9">
+        <a href="{{ url_for('static', filename='datasheet/LIS3DH.pdf') }}">LIS3DH Datasheet (PDF)</a>
+      </dd>
+      <dt class="col-sm-3 text-sm-end">Range</dt>
+      <dd class="col-sm-9">&#177;2 to &#177;16 G</dd>
+      <dt class="col-sm-3 text-sm-end">Resolution</dt>
+      <dd class="col-sm-9">16 bit</dd>
+      <dt class="col-sm-3 text-sm-end">Accuracy</dt>
+      <dd class="col-sm-9">&#177;40 mG (zero-G)</dd>
+    </dl>
 
-<h4 class="my-3 pt-3 border-top">Absolute pressure</h4>
-
-<dl class="row pcb" id="LPS33">
-  <dt class="col-sm-3 text-sm-end">Type</dt>
-  <dd class="col-sm-9">LPS33HW</dd>
-  <dt class="col-sm-3 text-sm-end">Manufacturer</dt>
-  <dd class="col-sm-9">ST Microelectronics</dd>
-  <dt class="col-sm-3 text-sm-end">Description</dt>
-
-  <dd class="col-sm-9">Direct piezoresistive pressure sensor</dd>
-  <dt class="col-sm-3 text-sm-end">Datasheet</dt>
-  <dd class="col-sm-9"><a href="{{ url_for('static', filename='datasheet/LPS33HW.pdf') }}">LPS33HW Datasheet (PDF)</a></dd>
-  <dt class="col-sm-3 text-sm-end">Range</dt>
-  <dd class="col-sm-9">260-1260 hPa</dd>
-  <dt class="col-sm-3 text-sm-end">Resolution</dt>
-  <dd class="col-sm-9">24 bit</dd>
-  <dt class="col-sm-3 text-sm-end">Accuracy</dt>
-  <dd class="col-sm-9">&#177;0.1 hPa</dd>
-</dl>
-
-
-<h4 class="my-3 pt-3 border-top">Differential pressure</h4>
-
-<dl class="row pcb" id="SP210">
-  <dt class="col-sm-3 text-sm-end">Type</dt>
-  <dd class="col-sm-9">SP210-SM02-R</dd>
-  <dt class="col-sm-3 text-sm-end">Manufacturer</dt>
-  <dd class="col-sm-9">Superior Sensor Technology</dd>
-  <dt class="col-sm-3 text-sm-end">Description</dt>
-  <dd class="col-sm-9">Direct piezoresistive differential pressure sensor</dd>
-  <dt class="col-sm-3 text-sm-end">Datasheet</dt>
-  <dd class="col-sm-9"><a href="{{ url_for('static', filename='datasheet/SP210.pdf') }}">SP210 Datasheet (PDF)</a></dd>
-  <dt class="col-sm-3 text-sm-end">Range</dt>
-  <dd class="col-sm-9">&#177;250 Pa (programmable up to &#177;2.5 kPa)</dd>
-  <dt class="col-sm-3 text-sm-end">Resolution</dt>
-  <dd class="col-sm-9">16 bit</dd>
-  <dt class="col-sm-3 text-sm-end">Accuracy</dt>
-  <dd class="col-sm-9">0.1 %</dd>
-</dl>
-
-<dl class="row pcb" id="DLVR">
-  <dt class="col-sm-3 text-sm-end">Type</dt>
-  <dd class="col-sm-9">DLVR-L01D E1NJ-C NI3F</dd>
-  <dt class="col-sm-3 text-sm-end">Manufacturer</dt>
-  <dd class="col-sm-9">Amphenol All Sensors</dd>
-  <dt class="col-sm-3 text-sm-end">Description</dt>
-  <dd class="col-sm-9">Indirect piezoresistive differential pressure sensor (membrane)</dd>
-  <dt class="col-sm-3 text-sm-end">Datasheet</dt>
-  <dd class="col-sm-9"><a href="{{ url_for('static', filename='datasheet/DLVR.pdf') }}">DLVR Datasheet (PDF)</a></dd>
-  <dt class="col-sm-3 text-sm-end">Range</dt>
-  <dd class="col-sm-9">&#177;1 inH2O (&#177;249 Pa)</dd>
-  <dt class="col-sm-3 text-sm-end">Resolution</dt>
-  <dd class="col-sm-9">14 bit</dd>
-  <dt class="col-sm-3 text-sm-end">Accuracy</dt>
-  <dd class="col-sm-9">1 % (0.02 Pa / count)</dd>
-</dl>
-
-
-<h4 class="my-3 pt-3 border-top">Temperature and humidity</h4>
-
-<dl class="row pcb" id="SHT85">
-  <dt class="col-sm-3 text-sm-end">Type</dt>
-  <dd class="col-sm-9">SHT85</dd>
-  <dt class="col-sm-3 text-sm-end">Manufacturer</dt>
-  <dd class="col-sm-9">Sensirion</dd>
-  <dt class="col-sm-3 text-sm-end">Description</dt>
-  <dd class="col-sm-9">Humidity and temperature sensor with a pin-type connector</dd>
-  <dt class="col-sm-3 text-sm-end">Datasheet</dt>
-  <dd class="col-sm-9"><a href="{{ url_for('static', filename='datasheet/SHT85.pdf') }}">SHT85 Datasheet (PDF)</a></dd>
-  <dt class="col-sm-3 text-sm-end">Range</dt>
-  <dd class="col-sm-9">0 to 100 %RH and -40 to 105 °C</dd>
-  <dt class="col-sm-3 text-sm-end">Resolution</dt>
-  <dd class="col-sm-9">16 bit</dd>
-  <dt class="col-sm-3 text-sm-end">Accuracy</dt>
-  <dd class="col-sm-9">&#177;1.5 %RH and &#177;0.1 °C</dd>
-</dl>
-
-
-<h4 class="my-3 pt-3 border-top">Inertial measurement units</h4>
-
-<dl class="row pcb" id="LSM303">
-  <dt class="col-sm-3 text-sm-end">Type</dt>
-  <dd class="col-sm-9">LSM303</dd>
-  <dt class="col-sm-3 text-sm-end">Manufacturer</dt>
-  <dd class="col-sm-9">ST Microelectronics</dd>
-  <dt class="col-sm-3 text-sm-end">Description</dt>
-  <dd class="col-sm-9">three-axis linear accelerometer and 3-axis magnetometer</dd>
-  <dt class="col-sm-3 text-sm-end">Datasheet</dt>
-  <dd class="col-sm-9"><a href="{{ url_for('static', filename='datasheet/LSM303.pdf') }}">LSM303 Datasheet (PDF)</a></dd>
-  <dt class="col-sm-3 text-sm-end">Range</dt>
-  <dd class="col-sm-9">&#177;2 to &#177;16 G</dd>
-  <dt class="col-sm-3 text-sm-end">Resolution</dt>
-  <dd class="col-sm-9">16 bit</dd>
-  <dt class="col-sm-3 text-sm-end">Accuracy</dt>
-  <dd class="col-sm-9">..</dd>
-</dl>
-
-<dl class="row pcb" id="LIS3DH">
-  <dt class="col-sm-3 text-sm-end">Type</dt>
-  <dd class="col-sm-9">LIS3DH</dd>
-  <dt class="col-sm-3 text-sm-end">Manufacturer</dt>
-  <dd class="col-sm-9">ST Microelectronics</dd>
-  <dt class="col-sm-3 text-sm-end">Description</dt>
-  <dd class="col-sm-9">three-axis linear accelerometer</dd>
-  <dt class="col-sm-3 text-sm-end">Datasheet</dt>
-  <dd class="col-sm-9"><a href="{{ url_for('static', filename='datasheet/LIS3DH.pdf') }}">LIS3DH Datasheet (PDF)</a></dd>
-  <dt class="col-sm-3 text-sm-end">Range</dt>
-  <dd class="col-sm-9">&#177;2 to &#177;16 G</dd>
-  <dt class="col-sm-3 text-sm-end">Resolution</dt>
-  <dd class="col-sm-9">16 bit</dd>
-  <dt class="col-sm-3 text-sm-end">Accuracy</dt>
-  <dd class="col-sm-9">&#177;40 mG (zero-G)</dd>
-</dl>
-
-</div>
-
-<div class="d-none d-md-flex col-md-4 pcb">
-  <img src="{{ url_for('static', filename='img/pcb.png') }}">
-  <svg class="" xmlns="http://www.w3.org/2000/svg" version="1.1">
-    <rect class="btn" id="PCB-MSP430" data-bs-content="MSP430 microcontroller"
-     x="34%" y="48%" width="21%" height="13%" />
-    <rect class="btn" id="PCB-RFLoRa" data-bs-content="LoRa telecommunication"
-     x="59%" y="59%" width="35%" height="25%" />
-    <rect class="btn" id="PCB-GNS413" data-bs-content="GNS413 timing and location"
-     x="37%" y="75%" width="17%" height="10%" />
-    <rect class="btn" id="PCB-LIS3DH" data-bs-content="LIS3DH"
-     x="92%" y="21%" width="05%" height="05%" />
-    <rect class="btn" id="PCB-LSM303" data-bs-content="LSM303"
-     x="78%" y="16%" width="06%" height="04%" />
-    <rect class="btn" id="PCB-SHT85" data-bs-content="SHT85"
-     x="09%" y="25%" width="03%" height="07%" />
-    <rect class="btn" id="PCB-LPS33" data-bs-content="LPS33HW"
-     x="06%" y="19%" width="06%" height="04%" />
-    <rect class="btn" id="PCB-SP210"  data-bs-content="SP210-SM02R"
-     x="19%" y="06%" width="21%" height="22%" />
-    <rect class="btn" id="PCB-DLVR" data-bs-content="DLVR-L01D"
-     x="45%" y="04%" width="28%" height="15%" />
-    <rect class="btn" id="PCB-ICS" data-bs-content="ICS-40300"
-     x="77%" y="06%" width="08%" height="06%" />
-    <rect class="btn" id="PCB-GPIO" data-bs-content="GPIO pins"
-     x="06%" y="54%" width="08%" height="35%" />
-    <rect class="btn" id="PCB-GPIO" data-bs-content="micro-SD card"
-     x="72%" y="33%" width="27%" height="14%" />
-    <rect class="btn" id="PCB-FLASH" data-bs-content="local flash memory"
-     x="47%" y="22%" width="08%" height="05%" />
-    <rect class="btn" id="PCB-GNS413-ANT" data-bs-content="GNS413 antenna"
-     x="39%" y="89%" width="11%" height="07%" />
-    <rect class="btn" id="PCB-RFLoRa-ANT" data-bs-content="RF-LORA antenna"
-     x="75%" y="89%" width="11%" height="07%" />
-  </svg>
-</div>
+  </div>
 
 </div>

@@ -7,27 +7,9 @@ html {
   height: -webkit-fill-available;
 }
 
-@media (min-width: 768px) {
-  body {
-    display: flex;
-    flex-wrap: nowrap;
-    min-height: 100vh;
-    min-height: -webkit-fill-available;
-    overflow-x: auto;
-    overflow-y: hidden;
-  }
-  main {
-    min-height: 100vh;
-    min-height: -webkit-fill-available;
-    max-height: 100vh;
-    overflow-x: auto;
-    overflow-y: auto;
-  }
-}
-@media (max-width: 767px) {
-  .min-vh-100 {
-    min-height: 90vh!important;
-  }
+#navTop i {
+  padding-left: .5rem;
+  padding-right: .5rem;
 }
 
 .bi {
@@ -42,21 +24,6 @@ html {
 
 .nav-flush .nav-link {
   border-radius: 0;
-}
-
-dl.pcb {
-
-}
-
-div.pcb {
-  position: fixed;
-  left: inherit;
-  right: 1rem;
-  width: 30%;
-  height: auto;
-  vertical-align: middle;
-  z-index: 1030;
-  text-align: center;
 }
 
 div.pcb img {
@@ -77,19 +44,44 @@ div.pcb svg rect {
     opacity: 0;
 }
 
-/*
-div.pcb svg rect:hover {
-    fill: white;
-    opacity: .1;
-}
-*/
-
 div.pcb .debug rect {
   fill: purple;
   opacity: .5;
 }
 
-#navTop i {
-  padding-left: .5rem;
-  padding-right: .5rem;
+@media (min-width: 768px) {
+  body {
+    display: flex;
+    flex-wrap: nowrap;
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  main {
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+    max-height: 100vh;
+    overflow-x: auto;
+    overflow-y: auto;
+  }
+  div.pcb {
+    position: fixed;
+    left: inherit;
+    right: 1rem;
+    width: 30%;
+    height: auto;
+    vertical-align: middle;
+    z-index: 1030;
+  }
+}
+
+@media (max-width: 767px) {
+  .min-vh-100 {
+    min-height: 90vh!important;
+  }
+  div.pcb {
+      position: relative;
+      display: inline-block;
+  }
 }
