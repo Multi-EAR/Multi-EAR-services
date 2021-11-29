@@ -4,6 +4,7 @@ Documentation=https://docs.influxdata.com/influxdb/
 After=network-online.target
 
 [Service]
+Type=simple
 User=influxdb
 Group=influxdb
 LimitNOFILE=65536
@@ -11,7 +12,6 @@ EnvironmentFile=-/etc/default/influxdb
 ExecStart=/usr/bin/influxd -config /etc/influxdb/influxdb.conf -pidfile /var/lib/influxdb/influxdb.pid
 KillMode=control-group
 Restart=on-failure
-Type=forking
 PIDFile=/var/lib/influxdb/influxd.pid
 
 [Install]
