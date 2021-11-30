@@ -24,6 +24,9 @@ function getJSON(url, qs_params, qs_type) {
 
         req.onload = function() {
 
+            resolve(req)
+
+            /*
             if (req.status >= 200 && req.status < 400) {
 
                 resolve(JSON.parse(req.responseText));
@@ -33,6 +36,7 @@ function getJSON(url, qs_params, qs_type) {
                 resolve(req.responseText);
 
             }
+            */
 
         };
 
