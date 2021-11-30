@@ -7,9 +7,9 @@
     <svg class="" xmlns="http://www.w3.org/2000/svg" version="1.1">
       <rect class="btn" id="PCB-MSP430" data-bs-content="MSP430 microcontroller"
        x="34%" y="48%" width="21%" height="13%" />
-      <rect class="btn" id="PCB-RFLoRa" data-bs-content="LoRa telecommunication"
+      <rect class="btn" id="PCB-RFLORA" data-bs-content="LoRa module"
        x="59%" y="59%" width="35%" height="25%" />
-      <rect class="btn" id="PCB-GNS413" data-bs-content="GNS413 timing and location"
+      <rect class="btn" id="PCB-GNS413" data-bs-content="GNS413"
        x="37%" y="75%" width="17%" height="10%" />
       <rect class="btn" id="PCB-LIS3DH" data-bs-content="LIS3DH"
        x="92%" y="21%" width="05%" height="05%" />
@@ -25,16 +25,22 @@
        x="45%" y="04%" width="28%" height="15%" />
       <rect class="btn" id="PCB-ICS" data-bs-content="ICS-40300"
        x="77%" y="06%" width="08%" height="06%" />
+      <rect class="btn" id="PCB-GNS413-ANT" data-bs-content="GNS413 antenna"
+       x="39%" y="89%" width="11%" height="07%" />
+      <rect class="btn" id="PCB-RFLORA-ANT" data-bs-content="LoRa antenna"
+       x="75%" y="89%" width="11%" height="07%" />
       <rect class="btn" id="PCB-GPIO" data-bs-content="GPIO pins"
        x="06%" y="54%" width="08%" height="35%" />
       <rect class="btn" id="PCB-GPIO" data-bs-content="micro-SD card"
        x="72%" y="33%" width="27%" height="14%" />
       <rect class="btn" id="PCB-FLASH" data-bs-content="local flash memory"
        x="47%" y="22%" width="08%" height="05%" />
-      <rect class="btn" id="PCB-GNS413-ANT" data-bs-content="GNS413 antenna"
-       x="39%" y="89%" width="11%" height="07%" />
-      <rect class="btn" id="PCB-RFLoRa-ANT" data-bs-content="RF-LORA antenna"
-       x="75%" y="89%" width="11%" height="07%" />
+      <rect class="btn" id="PCB-USB" data-bs-content="USB-mini connector"
+       x="01%" y="34%" width="15%" height="08%" />
+      <rect class="btn" id="PCB-SERIAL" data-bs-content="Serial connector"
+       x="16%" y="63%" width="14%" height="10%" />
+      <rect class="btn" id="PCB-ICD4" data-bs-content="ICD4 connector"
+       x="91%" y="50%" width="08%" height="05%" />
     </svg>
   </div>
 
@@ -64,7 +70,7 @@
     </dl>
  
     <h4 class="my-3 pt-3 border-top">Communication</h4>
-    <dl class="row pcb" id="RFLoRa">
+    <dl class="row pcb" id="RFLORA">
       <dt class="col-sm-3 text-sm-end">Type</dt>
       <dd class="col-sm-9">RF-LORA-868-SO</dd>
       <dt class="col-sm-3 text-sm-end">Manufacturer</dt>
@@ -73,7 +79,7 @@
       <dd class="col-sm-9">LoRa transceiver module pre set to 868MHz with integrated Semtech SX1272 modem</dd>
       <dt class="col-sm-3 text-sm-end">Datasheet</dt>
       <dd class="col-sm-9">
-        <a href="{{ url_for('static', filename='datasheet/RFLoRa.pdf') }}">RFLoRa Datasheet (PDF)</a> 
+        <a href="{{ url_for('static', filename='datasheet/RFLoRa.pdf') }}">RF-LORA Datasheet (PDF)</a> 
         <a href="{{ url_for('static', filename='datasheet/SX1272.pdf') }}">SX1272 Datasheet (PDF)</a></dd>
       </dl>
 
