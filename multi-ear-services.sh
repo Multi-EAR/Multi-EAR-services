@@ -676,6 +676,12 @@ function do_multi_ear_services
     $pip uninstall -y multi_ear_services . >> $LOG_FILE 2>&1
     $pip install . >> $LOG_FILE 2>&1
 
+    # set default wifi secret
+    if [ "$MULTI_EAR_WIFI_SECRET" == "" ];
+    then
+        do_export_environ_variable "MULTI_EAR_WIFI_SECRET" "albatross"
+    fi
+
     # Start and enable services
     ## multi-ear-ctrl
     do_systemd_service_enable "multi-ear-ctrl.service"

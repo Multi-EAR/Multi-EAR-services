@@ -50,6 +50,9 @@ def create_app(test_config=None):
                        '../../etc') if app.debug else '/etc'
     hostapd = parse_config(os.path.join(etc, 'hostapd', 'hostapd.conf'))
 
+    # wifi secret
+    wifi_secret = os.environ.get('MULTI_EAR_WIFI_SECRET') or 'albatross'
+
     # prepare template globals
     context_globals = dict(
         hostname=hostname.replace('.local',''),
@@ -103,34 +106,51 @@ def create_app(test_config=None):
 
     @app.route("/_append_wpa_supplicant", methods=['POST'])
     def append_wpa_supplicant():
+
         if not is_internal_referer():
             return "Invalid request", 403
+
+        if not is_rpi:
+            return "I'm not Raspberry Pi", 418
+
+        secret = request.args.get('secret')
+        if secret != wifi_secret:
+            return "Secret invalid", 403
+
         ssid = request.args.get('ssid')
         passphrase = request.args.get('passphrase')
-        if is_rpi and ssid and passphrase:
-            resp = utils.wlan_ssid_passphrase(ssid, passphrase)
-        else:
-            resp = None
-        return jsonify(resp)
+        if not (ssid and passphrase):
+            return "Invalid ssid and/or passphrase arguments", 400
+        
+        resp = utils.wlan_ssid_passphrase(ssid, passphrase)
+
+        return jsonify(resp), 200
 
     @app.route("/_autohotspot", methods=['POST'])
     def autohotspot():
+
         if not is_internal_referer():
             return "Invalid request", 403
-        command = request.args.get('action')
-        if is_rpi and command == 'start':
-            resp = utils.wlan_autohotspot()
-        else:
-            resp = None
-        return jsonify(resp)
+
+        if not is_rpi:
+            return "I'm not Raspberry Pi", 418
+
+        secret = request.args.get('secret')
+        if secret != wifi_secret:
+            return "Secret invalid", 403
+
+        start = request.args.get('start')
+        if not start:
+            return "Invalid command argument", 400
+        
+        resp = utils.wlan_autohotspot()
+
+        return jsonify(resp), 200
+
 
     @app.route("/api/dataselect/health", methods=['GET'])
     def api_dataselect_health():
-        return Response(
-            response=repr(db_client.health()),
-            status=200,
-            mimetype='text/plain',
-        )
+        return repr(db_client.health()), 200
 
     @app.route("/api/dataselect/query", methods=['GET', 'POST'])
     def api_dataselect_query():
