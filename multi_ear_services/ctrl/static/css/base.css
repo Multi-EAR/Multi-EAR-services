@@ -26,6 +26,14 @@ html {
   border-radius: 0;
 }
 
+div.pcb {
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+}
+
 div.pcb img {
   display: block;
   max-width: 100%;
