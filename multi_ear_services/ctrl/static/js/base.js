@@ -54,7 +54,7 @@ function wifiSecret() {
         focus: true,
     })
 
-    return new Promise((resolve, reject) => {
+    return new Promise(resolve => {
 
         modal.show()
 
@@ -77,16 +77,7 @@ function wifiSecret() {
         modal._element.addEventListener('hidden.bs.modal', function (event) {
 
             form.reset()
-
-            if ( secret === null | secret === '' ) {
-
-                reject()
-
-            } else {
-
-                resolve(secret === 'albatross')
-
-            }
+            resolve(secret)
 
         })
 
@@ -97,59 +88,56 @@ function wifiSecret() {
 
 function append_wpa_supplicant(form) {
 
-    wifiSecret().then( pass => {
+    wifiSecret().then(secret => {
 
-        if (pass === true) {
+        if (secret === null) return
 
-            var ssid = form.elements["inputSSID"].value
-            var psk = form.elements["inputPSK"].value
+        var ssid = form.elements["inputSSID"].value
+        var psk = form.elements["inputPSK"].value
 
-            getJSON("/_append_wpa_supplicant", { ssid: ssid, passphrase: psk }, 'POST')
-            .then(data => {
+        getJSON("/_append_wpa_supplicant", { ssid: ssid, passphrase: psk, secret: secret }, 'POST')
+        .then(resp => {
 
-                if (data === null) return
+            if (resp.status !== 200) {
 
-                console.log(data);
+                alert("Error: " + resp.responseText)
 
+            } else {
+    
                 alert("\"" + ssid + "\" added to the list of known wireless networks.")
                 resetWifiForm(form)
 
-            });
+            }
 
-        } else {
+        });
 
-            alert("Incorret Wi-Fi secret")
-
-        }
-
-    }, error => {} );
+    });
 
 }
 
 
 function autohotspot() {
 
-    wifiSecret().then( pass => {
+    wifiSecret().then(secret => {
 
-        if (pass === true) {
+        if (secret === null) return
 
-            alert("Wi-Fi autohotspot script triggered.\n\nConnection to the device could be lost.")
+        getJSON("/_autohotspot", { start: true, secret: secret }, 'POST')
+        .then(resp => {
 
-            getJSON("/_autohotspot", { command: 'start' }, 'POST')
-            .then(data => {
+            if (resp.status !== 200) {
 
-                if (data === null) return
-                console.log(data);
+                alert("Error: " + resp.responseText)
 
-            });
+            } else {
 
-        } else {
+                alert("Wi-Fi autohotspot script triggered.\n\nConnection to the device could be lost.")
 
-            alert("Incorret Wi-Fi secret")
+            }
 
-        }
+        });
 
-    }, error => {} );
+    });
 
 }
 
@@ -165,13 +153,20 @@ function statusUpdateLoop() {
     statusUpdater = setInterval(progressBarWidth, 100);  // ms, times 100 gives 10s
 
     function progressBarWidth() {
+
         if (width == 100) {
+
             width = 0;
             statusUpdate()
+
         } else {
+
             width++;
+
         }
-        progressbar.style.width = width + '%'; 
+
+        progressbar.style.width = width + '%';
+ 
       }
 
 }
@@ -180,9 +175,11 @@ function statusUpdateLoop() {
 function statusUpdate() {
 
     getJSON("/_systemd_status", { service: '*' })
-    .then(function(data) {
+    .then(function(resp) {
 
-        if (data === null) return
+        if (resp.status !== 200) return
+
+        var data = JSON.parse(resp.responseText)
 
         for (const [service, response] of Object.entries(data)) {
 
@@ -395,29 +392,39 @@ function loadContent(nav) {
 
     // lazy load new content and trigger nav related functions
     getJSON("/_tab/" + nav.getAttribute("aria-controls"))
-    .then(function(data) {
-        if (data === null) return
-        content.innerHTML = data.html
+    .then(function(resp) {
+
+        if (resp.status !== 200) { console.log(resp); return; }
+        content.innerHTML = JSON.parse(resp.responseText).html
+
     })
     .finally(function() {
+
         switch (nav.getAttribute("aria-controls")) {
+
             case "pcb":
                 loadPCB()
                 break;
+
             case "dashboard":
                 loadDashboard()
                 break;
+
             case "wifi":
                 showPasswordToggle()
                 validateWifiForm()
                 break;
+
             case "status":
                 statusUpdate()
                 statusUpdateLoop()
                 break;
+
             default:
                 // do nothing
+
         }
+
     });
 
 }
