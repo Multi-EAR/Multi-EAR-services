@@ -58,7 +58,7 @@ function wifiSecret() {
 
         modal.show()
 
-        let form = modal._element.getElementsByTagName('form')[0]
+        var form = modal._element.getElementsByTagName('form')[0]
         var secret = null
 
         form.addEventListener('submit', function (event) {
@@ -66,11 +66,17 @@ function wifiSecret() {
             event.preventDefault();
             event.stopPropagation();
 
-            secret = form.elements["inputSECRET"].value //.toLowerCase()
+            if (form.checkValidity()) {
 
-            form.removeEventListener('submit', null);
+                secret = form.elements["inputSECRET"].value
 
-            modal.hide()
+                form.removeEventListener('submit', null);
+
+                modal.hide()
+
+            }
+
+            form.classList.add('was-validated')
 
         }, false)
 
