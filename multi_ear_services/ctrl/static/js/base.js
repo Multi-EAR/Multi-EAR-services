@@ -249,20 +249,7 @@ function bytes(bytes, label) {
 
 function loadDashboard() {
 
-    var charts = document.querySelector('#highcharts-figures')
-    charts.innerHTML = null
-
-    var chart, field
-
-    // System Load
-    chart = document.createElement('div');
-    field = 'system-load'
-
-    chart.setAttribute("id", field);
-
-    charts.appendChild(chart)
-
-    Highcharts.chart(field, {
+    const chart_load = Highcharts.chart('chart-system-load', {
         chart: {
             type: 'spline',
             zoomType: 'x'
@@ -289,15 +276,7 @@ function loadDashboard() {
         },
     });
 
-    // Memory
-    chart = document.createElement('div');
-    field = 'memory'
-
-    chart.setAttribute("id", field);
-
-    charts.appendChild(chart)
-
-    Highcharts.chart(field, {
+    const chart_memory = Highcharts.chart('chart-memory', {
         chart: {
             type: 'spline',
             zoomType: 'x'
