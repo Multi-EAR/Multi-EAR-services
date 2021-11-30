@@ -173,7 +173,7 @@ function statusUpdateLoop() {
 
         progressbar.style.width = width + '%';
  
-      }
+    }
 
 }
 
