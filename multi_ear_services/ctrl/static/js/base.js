@@ -19,58 +19,137 @@ function resetWifiForm(form) {
 
 function validateWifiForm() {
 
-    // Fetch all the forms we want to apply custom Bootstrap validation styles to
-    var forms = document.querySelectorAll('.needs-validation')
+    var form = document.getElementById('wifi-add')
 
-    // Loop over them and prevent submission
-    Array.prototype.slice.call(forms)
-    .forEach(function (form) {
+    form.addEventListener('submit', function (event) {
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (form.checkValidity()) {
+
+            append_wpa_supplicant(form)
+            form.querySelector('button[type=submit]').disabled = true
+
+        }
+
+        form.classList.add('was-validated')
+
+    }, false)
+
+    form.addEventListener('reset', function (event) {
+
+        resetWifiForm(form)
+
+    }, false)
+
+}
+
+
+function wifiSecret() {
+
+    var modal = new bootstrap.Modal(document.getElementById('wifi-modal'), {
+        backdrop: 'static',
+        keyboard: false,
+        focus: true,
+    })
+
+    return new Promise((resolve, reject) => {
+
+        modal.show()
+
+        let form = modal._element.getElementsByTagName('form')[0]
+        var secret = null
 
         form.addEventListener('submit', function (event) {
 
             event.preventDefault();
             event.stopPropagation();
 
-            if (form.checkValidity()) {
-                append_wpa_supplicant(form)
-                form.querySelector('button[type=submit]').disabled = true
+            secret = form.elements["inputSECRET"].value //.toLowerCase()
+
+            form.removeEventListener('submit', null);
+
+            modal.hide()
+
+        }, false)
+
+        modal._element.addEventListener('hidden.bs.modal', function (event) {
+
+            form.reset()
+
+            if ( secret === null | secret === '' ) {
+
+                reject()
+
+            } else {
+
+                resolve(secret === 'albatross')
+
             }
 
-            form.classList.add('was-validated')
+        })
 
-        }, false)
+    });
 
-        form.addEventListener('reset', function (event) {
-            resetWifiForm(form)
-        }, false)
-
-    })
 }
 
 
 function append_wpa_supplicant(form) {
 
-    var ssid = form.elements["inputSSID"].value
-    var psk = form.elements["inputPSK"].value
+    wifiSecret().then( pass => {
 
-    getJSON("/_append_wpa_supplicant", { ssid: ssid, passphrase: psk }, 'POST')
-    .then(data => {
-        if (data === null) return
-        console.log(data);
-        alert("\"" + ssid + "\" added to the list of known wireless networks.")
-        resetWifiForm(form)
-    });
+        if (pass === true) {
+
+            var ssid = form.elements["inputSSID"].value
+            var psk = form.elements["inputPSK"].value
+
+            getJSON("/_append_wpa_supplicant", { ssid: ssid, passphrase: psk }, 'POST')
+            .then(data => {
+
+                if (data === null) return
+
+                console.log(data);
+
+                alert("\"" + ssid + "\" added to the list of known wireless networks.")
+                resetWifiForm(form)
+
+            });
+
+        } else {
+
+            alert("Incorret Wi-Fi secret")
+
+        }
+
+    }, error => {} );
+
 }
 
 
 function autohotspot() {
 
-    alert("Wi-Fi autohotspot script triggered.\n\nConnection to the device could be lost.")
-    getJSON("/_autohotspot", { command: 'start' }, 'POST')
-    .then(data => {
-        if (data === null) return
-        console.log(data);
-    });
+    wifiSecret().then( pass => {
+
+        if (pass === true) {
+
+            alert("Wi-Fi autohotspot script triggered.\n\nConnection to the device could be lost.")
+
+            getJSON("/_autohotspot", { command: 'start' }, 'POST')
+            .then(data => {
+
+                if (data === null) return
+                console.log(data);
+
+            });
+
+        } else {
+
+            alert("Incorret Wi-Fi secret")
+
+        }
+
+    }, error => {} );
 
 }
 
@@ -288,7 +367,7 @@ async function resizePCB () {
 
     if (pcbImg === null | pcbSvg === null) return
 
-    while (pcbImg.width == 0) { await sleep(50);}
+    while (pcbImg.width == 0) { await sleep(100); }
 
     let w = pcbImg.width
     let h = pcbImg.height

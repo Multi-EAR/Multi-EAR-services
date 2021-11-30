@@ -42,7 +42,7 @@
      Only visible and WPA2 (WPA Personal) secured networks are supported.
   </p>
 
-  <form class="needs-validation pb-4" novalidate>
+  <form class="needs-validation pb-4" id="wifi-add" novalidate>
 
     <div class="row mb-2 mb-md-3">
       <div class="col-md-3 text-md-end">
@@ -77,11 +77,43 @@
 
     <div class="row mb-4 justify-content-end">
       <div class="col-md-9">
-        <button class="btn btn-primary" type="submit" value="submit">Add</button>
         <button class="btn btn-outline-primary" type="reset">Cancel</button>
+        <button class="btn btn-primary" type="submit" value="submit">Add network</button>
       </div>
     </div>
 
   </form>
 
+</div>
+
+<div class="modal fade" id="wifi-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Wi-Fi secret</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form class="needs-validation" id="wifi-secret" novalidate>
+          <div class="mb-3">
+            <label for="message-text" class="col-form-label">Enter the Wi-Fi secret to proceed:</label>
+            <div class="input-group">
+              <input type="password" id="inputSECRET" class="form-control" spellcheck="false"
+               autocorrect="off" autocapitalize="off" minlength="6" required>
+              <button id="toggle-password" type="button" class="d-none"
+               aria-label="Show secret as plain text. Warning: this will display the secret on the screen.">
+              </button>
+              <div class="invalid-feedback">
+                Please enter the secret.
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary">Submit</button>
+      </div>
+    </div>
+  </div>
 </div>
