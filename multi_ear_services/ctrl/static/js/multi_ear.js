@@ -196,33 +196,52 @@ function statusUpdate() {
             if (response.returncode === null) continue
 
             if (response.returncode === 4) {
+
                 obj_response.innerHTML = response.stderr
                 obj_status.innerHTML = 'not found'
+
                 if (!obj_status.classList.contains('bg-secondary')) {
+
                     obj_status.classList.remove('bg-success', 'bg-warning', 'bg-danger')
                     obj_status.classList.add('bg-secondary')
                 }
+
                 continue;
+
             }
+
             obj_response.innerHTML = response.stdout
             obj_status.innerHTML = response.status
 
            if (response.returncode === 0) {
+
                 if (!obj_status.classList.contains('bg-success')) {
+
                     obj_status.classList.remove('bg-secondary', 'bg-warning', 'bg-danger')
                     obj_status.classList.add('bg-success')
+
                 }
+
             } else if (response.status.includes('activating') || response.status.includes('inactive')) {
+
                 if (!obj_status.classList.contains('bg-warning')) {
+
                     obj_status.classList.remove('bg-secondary', 'bg-success', 'bg-danger')
                     obj_status.classList.add('bg-warning')
+
                 }
+
             } else {
+
                 if (!obj_status.classList.contains('bg-danger')) {
+
                     obj_status.classList.remove('bg-secondary', 'bg-success', 'bg-warning')
                     obj_status.classList.add('bg-danger')
+
                 }
+
             }
+
         }
 
     })
@@ -364,10 +383,13 @@ async function resizePCB () {
 function loadContent(nav) {
 
     // nav object set?
-    if (nav === undefined) var nav = document.querySelector('#navLeft > .active')
+    if (nav === undefined) var nav = document.querySelector('#navbar > ul > li > a.active')
+
+    // extract tab
+    var tab = nav.getAttribute("data-bs-target")
 
     // get nav-content div
-    var content = document.querySelector('#nav-content');
+    var content = document.querySelector('#content');
 
     // clear content on load
     content.innerHTML = ''
@@ -376,7 +398,7 @@ function loadContent(nav) {
     clearInterval(statusUpdater);
 
     // lazy load new content and trigger nav related functions
-    getJSON("/_tab/" + nav.getAttribute("aria-controls"))
+    getJSON("/_tab/" + tab)
     .then(function(resp) {
 
         if (resp.status !== 200) { console.log(resp); return; }
@@ -385,7 +407,7 @@ function loadContent(nav) {
     })
     .finally(function() {
 
-        switch (nav.getAttribute("aria-controls")) {
+        switch (tab) {
 
             case "pcb":
                 loadPCB()
@@ -422,6 +444,9 @@ let statusUpdater = null;
 
     'use strict'
 
+    loadContent();
+
+    /*
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
 
     tooltipTriggerList.forEach(function (tooltipTriggerEl) {
@@ -429,52 +454,18 @@ let statusUpdater = null;
         new bootstrap.Tooltip(tooltipTriggerEl)
 
     })
+    */
 
-    loadContent();
+    var navbar = new bootstrap.Collapse(document.querySelector('#navbar'), {toggle: false})
 
-    var navLeft = [].slice.call(document.querySelectorAll('#navLeft > button[data-bs-toggle="tab"]'))
+    var navs = [].slice.call(document.querySelectorAll('#navbar > ul > li > a[data-bs-toggle="tab"]'))
 
-    navLeft.forEach(function (nav) {
+    navs.forEach(function (nav) {
 
         nav.addEventListener('shown.bs.tab', function (event) {
 
             loadContent(nav);
-
-            var navTOld = document.querySelector('#navTop > ul > li > a.nav-link.active[aria-controls]')
-            navTOld.classList.remove('active')
-
-            var navTNew = document.querySelector('#navTop > ul > li > a.nav-link[aria-controls="' + nav.getAttribute("aria-controls") + '"]')
-            navTNew.classList.add('active')
-
-        })
-
-    })
-
-    var navTopToggle = new bootstrap.Collapse(document.querySelector('#navTop'), {
-        toggle: false
-    })
-
-    var navTop = [].slice.call(document.querySelectorAll('#navTop > ul > li > a.nav-link[aria-controls]'))
-
-    navTop.forEach(function (nav) {
-
-        nav.addEventListener('click', function (event) {
-
-            loadContent(nav);
-
-            var navTOld = document.querySelector('#navTop > ul > li > a.nav-link.active[aria-controls]')
-            navTOld.classList.remove('active')
-            nav.classList.add('active')
-
-            var navLOld = document.querySelector('#navLeft > button.nav-link.active[aria-controls]')
-            navLOld.classList.remove('active')
-
-            var navLNew = document.querySelector('#navLeft > button.nav-link[aria-controls="' + nav.getAttribute("aria-controls") + '"]')
-            navLNew.classList.add('active')
-
-            navTopToggle.toggle()
-
-            return false;
+            navbar.hide();
 
         })
 
