@@ -34,25 +34,25 @@ div.pcb {
   user-select: none;
 }
 
-div.pcb img {
+.pcb img {
   display: block;
   max-width: 100%;
   height: auto;
   z-index: 1031;
 }
 
-div.pcb svg {
+.pcb svg {
   position: absolute;
   top: 0;
   z-index: 1032;
 }
 
-div.pcb svg rect {
+.pcb svg rect {
     fill: white;
     opacity: 0;
 }
 
-div.pcb .debug rect {
+.pcb .debug rect {
   fill: purple;
   opacity: .5;
 }
@@ -91,5 +91,8 @@ div.pcb .debug rect {
   div.pcb {
       position: relative;
       display: inline-block;
+  }
+  .pcb img {
+    width: 100%;
   }
 }
