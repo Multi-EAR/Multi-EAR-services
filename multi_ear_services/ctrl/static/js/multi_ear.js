@@ -68,7 +68,7 @@ function wifiSecret() {
 
             if (form.checkValidity()) {
 
-                secret = form.elements["inputSECRET"].value
+                secret = CryptoJS.SHA256(form.elements["inputSECRET"].value).toString()
 
                 form.removeEventListener('submit', null);
 
@@ -128,7 +128,7 @@ function autohotspot() {
 
         if (secret === null) return
 
-        getJSON("/_autohotspot", { start: true, secret: secret }, 'POST')
+        getJSON("/_autohotspot", { secret: secret }, 'POST')
         .then(resp => {
 
             if (resp.status !== 200) {

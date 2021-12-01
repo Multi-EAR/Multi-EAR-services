@@ -1,6 +1,7 @@
 # absolute imports
 import os
 import socket
+import hashlib
 from flask import Flask, Response, jsonify, request, render_template
 from flask_cors import CORS
 from influxdb_client import InfluxDBClient
@@ -51,7 +52,9 @@ def create_app(test_config=None):
     hostapd = parse_config(os.path.join(etc, 'hostapd', 'hostapd.conf'))
 
     # wifi secret
-    wifi_secret = os.environ.get('MULTI_EAR_WIFI_SECRET') or 'albatross'
+    wifi_secret = hashlib.sha256(
+        bytes(os.environ.get('MULTI_EAR_WIFI_SECRET') or 'albatross', 'utf-8')
+    ).hexdigest()
 
     # prepare template globals
     context_globals = dict(
@@ -79,30 +82,37 @@ def create_app(test_config=None):
 
     @app.route("/_tab/<tab>", methods=['GET'])
     def load_tab(tab="home"):
+
         if not is_internal_referer():
             return "Invalid request", 400
+
         try:
             html = render_template(f"tabs/{tab}.html.jinja")
         except FileNotFoundError:
-            html = None
+            return f"Tab {tab} not found", 404
+        except Exception as e:
+            return f"Server Error: {e}", 500
+
         resp = {
-            "succes": True if html else False,
+            "succes": True,
             "tab": tab,
             "html": html,
         }
-        return jsonify(resp)
+        return jsonify(resp), 200
 
     @app.route("/_systemd_status", methods=['GET'])
     def systemd_status():
+
+        if not is_rpi:
+            return "I'm not Raspberry Pi", 418
+
         service = request.args.get('service') or '*'
-        if is_rpi:
-            if is_rpi and service == '*': 
-                resp = utils.systemd_status_all()
-            else:
-                resp = utils.systemd_status(service)
+        if service == '*': 
+            resp = utils.systemd_status_all()
         else:
-             resp = None
-        return jsonify(resp)
+            resp = utils.systemd_status(service)
+
+        return jsonify(resp), 200
 
     @app.route("/_append_wpa_supplicant", methods=['POST'])
     def append_wpa_supplicant():
@@ -138,10 +148,6 @@ def create_app(test_config=None):
         secret = request.args.get('secret')
         if secret != wifi_secret:
             return "Secret invalid", 403
-
-        start = request.args.get('start')
-        if not start:
-            return "Invalid command argument", 400
         
         resp = utils.wlan_autohotspot()
 
