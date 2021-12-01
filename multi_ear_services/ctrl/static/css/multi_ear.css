@@ -7,11 +7,6 @@ html {
   height: -webkit-fill-available;
 }
 
-#navTop i {
-  padding-left: .5rem;
-  padding-right: .5rem;
-}
-
 .bi {
   vertical-align: -.125em;
   pointer-events: none;
@@ -57,6 +52,14 @@ div.pcb {
   opacity: .5;
 }
 
+.nav-link {
+  padding-top: 1rem!important;
+  padding-bottom: 1rem!important;
+}
+.navbar-dark .nav-link {
+  color: #f9fafb;
+}
+
 @media (min-width: 768px) {
   body {
     display: flex;
@@ -82,9 +85,30 @@ div.pcb {
     vertical-align: middle;
     z-index: 1030;
   }
+  nav.navbar {
+    width: 4.5rem;
+  }
+  nav.navbar > .container-fluid {
+    height: 100vh!important;
+    flex-direction: column!important;
+  }
+  .navbar-brand {
+    text-decoration: none;
+    line-height: 1.2;
+  }
+  .nav-item {
+    width: 4.5rem;
+    font-size: 1.5rem;
+  }
+  .navbar-brand {
+    font-size: 1rem;
+    text-align: center;
+    margin: 0!important;
+    padding: .5rem!important;
+  }
 }
 
-@media (max-width: 767px) {
+@media (max-width: 767.98px) {
   .min-vh-100 {
     min-height: 90vh!important;
   }
@@ -94,5 +118,12 @@ div.pcb {
   }
   .pcb img {
     width: 100%;
+  }
+  nav.navbar i {
+    padding-left: .5rem;
+    padding-right: .5rem;
+  }
+  .navbar .border-top {
+    border-top: 0!important;
   }
 }

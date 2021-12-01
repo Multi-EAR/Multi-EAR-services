@@ -32,100 +32,61 @@
   {% endblock %}
 </head>
 <body class="bg-light">
-  <nav class="navbar d-md-none navbar-dark bg-dark">
+  <nav class="navbar navbar-expand-md flex-column navbar-dark bg-dark p-md-0">
     <div class="container-fluid">
-      <a class="navbar-brand" href="#" onclick="return false;">{{hostname}}</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navTop"
+      <a class="navbar-brand d-md-none" href="#" onclick="return false;">{{hostname}}</a>
+      <a class="navbar-brand d-none d-md-block" href="#" onclick="return false;">{{hostname|replace('-','<br>')}}</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar"
        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
-      <div class="collapse navbar-collapse" id="navTop">
-        <ul class="navbar-nav">
-          <li class="nav-item">
-            <a class="nav-link active" href="#home" id="home-nav" aria-controls="home">
-              <i class="bi bi-house-door" alt="Home"></i> Home
+      <div class="collapse navbar-collapse flex-column text-center mt-2 mt-md-0" id="navbar">
+        <ul class="nav nav-pills nav-flush flex-column border-top mb-auto">
+          <li class="nav-item border-bottom">
+            <a class="active nav-link" aria-current="page" href="#" data-bs-toggle="tab" data-bs-target="home">
+              <i class="bi bi-house-door" alt="Home"></i><span class="d-md-none"> Home</span>
+            </a>
+          </li>
+          <li class="nav-item border-bottom">
+            <a class="nav-link" href="#pcb" data-bs-toggle="tab" data-bs-target="pcb">
+              <i class="bi bi-cpu" alt="MEMS on a PCB"></i><span class="d-md-none"> MEMS on a PCB</span>
+            </a>
+          </li>
+          <li class="nav-item border-bottom">
+            <a class="nav-link" href="#dashboard" data-bs-toggle="tab" data-bs-target="dashboard">
+              <i class="bi bi-speedometer2" alt="Dashboard"></i><span class="d-md-none"> Dashboard</span>
+            </a>
+          </li>
+          <li class="nav-item border-bottom">
+            <a class="nav-link" href="#wifi" data-bs-toggle="tab" data-bs-target="wifi">
+              <i class="bi bi-wifi" alt="Wi-Fi"></i><span class="d-md-none"> Wi-Fi control</span>
+            </a>
+          </li>
+          <li class="nav-item border-bottom">
+            <a class="nav-link" href="#status" data-bs-toggle="tab" data-bs-target="status">
+              <i class="bi bi-journal-code" alt="Status"></i><span class="d-md-none"> Status monitoring</span>
+            </a>
+          </li>
+        </ul>
+        <ul class="nav nav-pills flex-column border-top">
+          <li class="nav-item border-bottom">
+            <a class="nav-link" href="http://{{hostname}}.local:3000"
+             title="Grafana" target="_blank" rel="noopener noreferrer">
+              <i class="bi bi-server" alt="Grafana"></i><span class="d-md-none"> Grafana server</span>
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="#pcb" id="pcb-nav" aria-controls="pcb">
-              <i class="bi bi-cpu" alt="PCB"></i> MEMS on a PCB
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#dashboard" id="dashboard-nav" aria-controls="dashboard">
-              <i class="bi bi-speedometer2" alt="Dashboard"></i> Dashboard
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#wifi" id="wifi-nav" aria-controls="wifi">
-              <i class="bi bi-wifi" alt="Wi-Fi"></i> Wi-Fi control
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#status" id="status-nav" aria-controls="status">
-              <i class="bi bi-journal-code" alt="Status"></i> Status monitoring
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="http://{{hostname}}.local:3000" title="" target="_blank">
-              <i class="bi bi-server" alt="Grafana"></i> Grafana server
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="https://github.com/Multi-EAR" title="" target="_blank"
-             rel="noopener noreferrer">
-              <i class="bi bi-github" alt="Github"></i> Github project
+            <a class="nav-link" href="https://github.com/Multi-EAR"
+             title="Github" target="_blank" rel="noopener noreferrer">
+              <i class="bi bi-github" alt="Github"></i><span class="d-md-none"> Github project</span>
             </a>
           </li>
         </ul>
       </div>
     </div>
   </nav>
-  <nav class="d-none d-md-flex flex-column flex-shrink-0 bg-dark" style="width: 4.5rem;">
-    <!-- sidebar top -->
-    <a href="/" class="d-block p-2 m-0 link-light text-decoration-none text-center text-wrap h6"
-     onclick="return false;" style="line-height: 1.2;">
-      {{hostname|replace('-','<br>')}}
-    </a>
-    <!-- sidebar nav -->
-    <div class="nav nav-pills nav-flush flex-column mb-auto text-center" id="navLeft" role="tablist"
-     aria-orientation="vertical" style="font-size: 1.5rem">
-      <button class="nav-link active py-3 border-bottom border-top" id="home-tab" data-bs-toggle="tab" data-bs-target="#home"
-       type="button" role="tab" aria-controls="home" aria-selected="true">
-        <i class="bi bi-house-door text-light" alt="Home"></i>
-      </button>
-      <button class="nav-link py-3 border-bottom" id="pcb-tab" data-bs-toggle="tab" data-bs-target="#pcb"
-       type="button" role="tab" aria-controls="pcb" aria-selected="false">
-        <i class="bi bi-cpu text-light" alt="PCB"></i>
-      </button>
-      <button class="nav-link py-3 border-bottom" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard"
-       type="button" role="tab" aria-controls="dashboard" aria-selected="false">
-        <i class="bi bi-speedometer2 text-light" alt="Dashboard"></i>
-      </button>
-      <button class="nav-link py-3 border-bottom" id="wifi-tab" data-bs-toggle="tab" data-bs-target="#wifi"
-       type="button" role="tab" aria-controls="wifi" aria-selected="false">
-        <i class="bi bi-wifi text-light" alt="Wi-Fi"></i>
-      </button>
-      <button class="nav-link py-3 border-bottom" id="status-tab" data-bs-toggle="tab" data-bs-target="#status"
-       type="button" role="tab" aria-controls="status" aria-selected="false">
-        <i class="bi bi-journal-code text-light" alt="Status"></i>
-      </button>
-    </div>
-    <!-- sidebar bottom -->
-    <ul class="nav nav-pills nav-flush flex-column mt-auto text-center border-top">
-      <li>
-        <a href="http://{{hostname}}.local:3000" class="nav-link border-bottom py-3" title="" target="_blank">
-          <i class="bi bi-server text-light" alt="Grafana" style="font-size: 1.5rem;"></i>
-        </a>
-        <a href="https://github.com/Multi-EAR" class="nav-link py-3" title="" target="_blank"
-         rel="noopener noreferrer">
-          <i class="bi bi-github text-light" alt="Github" style="font-size: 1.5rem;"></i>
-        </a>
-      </li>
-    </ul>
-  </nav>
-  <main class="container-fluid bg-light ps-md-4">
-    {% block main %}<div class="tab-content" id="nav-content">..</div>{% endblock %}
+  <main class="container-fluid ps-md-4" id="content">
+    {% block main %}..{% endblock %}
   </main>
 
   <!-- JS -->
