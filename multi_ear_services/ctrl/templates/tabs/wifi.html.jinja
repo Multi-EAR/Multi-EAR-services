@@ -1,11 +1,21 @@
 <h1 class="h2 pt-3 pb-2 mb-3 border-bottom">Wi-Fi</h1>
-<div class="container-md p-0">
+<div class="row">
 
-  <h3 class="mb-3 hstack gap-3">Hotspot mode <div class="vr"></div> <small class="text-muted">create a wireless network</small></h3>
-
-  <p>The Multi-EAR automatically connects to available wireless networks in range. 
-     If no configured network is in range, the Multi-EAR creates its wireless network.
+  <p class="mt-4 mt-md-5 lead">
+    The Multi-EAR has an <code>autohotspot</code> feature such that it can always be reached via Wi-Fi. 
+    It connects to configured wireless networks in range and self-hosts a network if all are unavailable.<br>
+    The <code>autohotspot</code> script is executed on boot or when a network is added.<br>
+    Manually start the script:
   </p>
+  <p class="text-center text-md-start">
+    <button class="btn btn-outline-dark" onclick="autohotspot();" type="">Start autohotspot</button>
+  </p>
+
+  <hr class="my-4 my-md-5">
+
+  <h3 class="mb-3 hstack gap-3">Hotspot mode <div class="vr"></div> <small class="text-muted">self-host a wireless network</small></h3>
+
+  <p>The following wireless network is created when no configured network is in range.</p>
 
   <div class="row mb-2 md-md-3">
     <div class="col-md-3 text-md-end">
@@ -31,14 +41,8 @@
 
   <h3 class="mb-3 hstack gap-3">Client mode <div class="vr"></div> <small class="text-muted">join a known wireless network</small></h3>
 
-  <p>Manually trigger the autohotspot script and connect to available wireless networks in range or self-host a network.</p>
-
-  <p class="text-center text-md-start">
-    <button class="btn btn-sm btn-outline-dark" onclick="autohotspot();" type="">Start multi-ear-wifi.service</button>
-  </p>
-
-  <p>Enter the <code>name</code> and <code>passphrase</code> to connect to a new wireless network. 
-     The network and encrypted passphrase will be added to the configured networks.<br> 
+  <p>Enter the <code>name</code> and <code>passphrase</code> to add a wireless network. 
+     The passphrase will be encrypted.<br> 
      Only visible and WPA2 (WPA Personal) secured networks are supported.
   </p>
 

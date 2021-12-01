@@ -110,7 +110,7 @@ div.pcb {
 
 @media (max-width: 767.98px) {
   .min-vh-100 {
-    min-height: 90vh!important;
+    min-height: calc(100vh - 56px) !important;
   }
   div.pcb {
       position: relative;
