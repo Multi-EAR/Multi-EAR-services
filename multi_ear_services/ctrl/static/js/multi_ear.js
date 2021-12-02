@@ -432,6 +432,10 @@ function loadContent(nav) {
 
         }
 
+        // activate tooltips
+        var tooltips = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        tooltips.forEach(function (tooltip) { new bootstrap.Tooltip(tooltip, { placement: 'bottom' }) })
+
     });
 
 }
@@ -445,16 +449,6 @@ let statusUpdater = null;
     'use strict'
 
     loadContent();
-
-    /*
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-
-    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
-
-        new bootstrap.Tooltip(tooltipTriggerEl)
-
-    })
-    */
 
     var navbar = new bootstrap.Collapse(document.querySelector('#navbar'), {toggle: false})
 
