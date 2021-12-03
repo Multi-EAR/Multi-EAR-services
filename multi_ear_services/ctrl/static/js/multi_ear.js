@@ -274,7 +274,7 @@ function loadDashboard() {
             zoomType: 'x'
         },
         data: {
-            csvURL: '/api/dataselect/query?m=multi_ear&f=sp210&_f=csv',
+            csvURL: '/api/dataselect/query?d=multi_ear&m=multi_ear&f=SP210&_f=csv',
             enablePolling: true,
             dataRefreshRate: 10,
         },
@@ -300,7 +300,7 @@ function loadDashboard() {
             zoomType: 'x'
         },
         data: {
-            csvURL: '/api/dataselect/query?m=system&f=load*&_f=csv',
+            csvURL: '/api/dataselect/query?d=telegraf&m=system&f=load*&_f=csv',
             enablePolling: true,
             dataRefreshRate: 10,
         },
@@ -327,7 +327,7 @@ function loadDashboard() {
             zoomType: 'x'
         },
         data: {
-            csvURL: '/api/dataselect/query?m=mem&f=used,buffered,cached,free&_f=csv',
+            csvURL: '/api/dataselect/query?d=telegraf&m=mem&f=used,buffered,cached,free&_f=csv',
             enablePolling: true,
             dataRefreshRate: 10,
         },
