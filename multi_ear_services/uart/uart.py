@@ -146,7 +146,9 @@ def parse_read(read_buffer, data_points=[], debug=False):
         if read_buffer[i:i+_header_size] == _header:
 
             # local time stepping
+            print(_local_time, _delta)
             _local_time = _local_time + _delta
+            print(_local_time)
 
             # packet size
             packet_size = _header_size + int(read_buffer[i+_header_size])
