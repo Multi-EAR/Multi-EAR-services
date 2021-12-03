@@ -526,15 +526,15 @@ function do_configure_influxdb
     then
         influx_e "CREATE DATABASE telegraf"
     fi
-    influx_e "USE DATABASE 'telegraf'"
-    influx_e "CREATE RETENTION POLICY $rp_m ON telegraf $rp_m_specs"
+    # influx_e "USE DATABASE 'telegraf'"
+    # influx_e "CREATE RETENTION POLICY $rp_m ON telegraf $rp_m_specs"
     # create databases multi_ear?
     if ! influx -execute "show databases" | grep -q "multi_ear";
     then
         influx_e "CREATE DATABASE multi_ear"
     fi
-    influx_e "USE DATABASE 'multi_ear'"
-    influx_e "CREATE RETENTION POLICY $rp_y ON multi_ear $rp_y_specs"
+    # influx_e "USE DATABASE 'multi_ear'"
+    # influx_e "CREATE RETENTION POLICY $rp_y ON multi_ear $rp_y_specs"
     # create full-privilege user
     if [ "$INFLUX_USERNAME" == "" ];
     then
