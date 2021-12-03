@@ -2,11 +2,11 @@
 import atexit
 import numpy as np
 import pandas as pd
+import socket
 from serial import Serial
 from argparse import ArgumentParser
 from configparser import ConfigParser
-from influxdb_client import InfluxDBClient, WriteApi
-from influxdb_client.client.write_api import SYNCHRONOUS
+from influxdb_client import InfluxDBClient, Point, WriteApi
 
 # Relative imports
 from ..version import version
@@ -27,6 +27,9 @@ _buffer_bytes_min = 40  # minimum bytes to process a packet
 _sampling_rate = 16  # Hz
 _delta = pd.Timedelta(1/_sampling_rate, 'ns')
 # _time = None
+
+# Get hostname
+_hostname = socket.gethostname()
 
 
 def on_exit(db_client: InfluxDBClient, write_api: WriteApi, uart_conn: Serial):
@@ -78,7 +81,7 @@ def uart_readout(config_file='config.ini', debug=None, dry_run=False):
 
     # influx database connection
     _db_client = InfluxDBClient.from_config_file(config_file)
-    _write_api = _db_client.write_api(write_options=SYNCHRONOUS)
+    _write_api = _db_client.write_api()
 
     bucket = config_value('influx2', 'bucket')
 
@@ -158,7 +161,6 @@ def parse_read(read_buffer, read_time, data_points=[], debug=False):
 
         else:
             i += 1
-    print(data_points)
 
     # return tail
     return read_buffer[i:], data_points
@@ -178,45 +180,73 @@ def parse_payload(payload, backup_time, debug=False):
 
     Returns
     -------
-    data_point : `dict`
-        Dictionary with all fields for the given time step.
+    point : :class:`Point`
+        Influx Point object with all tags, fields for the given time step.
 
     """
+    # Init
     payload_size = len(payload)
-    fields = dict()
+    point = Point('multi_ear').tag('host', _hostname)
 
-    # Get date time cycle from buffer
+    # Get date, time, and cycle step from buffer
     y, m, d, H, M, S, step = np.frombuffer(payload, np.uint8, 7, 0)
 
     # GNSS lock?
-    if y != 0:
+    gnss = y != 0
+    if gnss:
         time = pd.Timestamp(2000 + y, m, d, H, M, S) + step * _delta
-        gnss = True
+        point.time(time).tag('clock', 'GNSS')
     else:
-        time = backup_time
-        gnss = False
+        point.time(backup_time).tag("clock", "local")
 
     # DLVR-F50D differential pressure (14-bit ADC)
     tmp = payload[7] | (payload[8] << 8)
-    fields['DLVR'] = (tmp | 0xF000) if (tmp & 0x1000) else (tmp & 0x1FFF)
+    point.field(
+        'DLVR',
+        (tmp | 0xF000) if (tmp & 0x1000) else (tmp & 0x1FFF)
+    )
 
     # SP210
-    fields['SP210'] = (payload[9] << 8) | payload[10]
+    point.field(
+        'SP210',
+        (payload[9] << 8) | payload[10]
+    )
 
     # LPS33HW barometric pressure (24-bit)
-    fields['LPS33'] = payload[11] + (payload[12] << 8) + (payload[13] << 16)
+    point.field(
+        'LPS33',
+        payload[11] + (payload[12] << 8) + (payload[13] << 16)
+    )
 
     # LIS3DH 3-axis accelerometer and gyroscope (3x 16-bit)
-    fields['LIS3_X'] = payload[14] | (payload[15] << 8)
-    fields['LIS3_Y'] = payload[16] | (payload[17] << 8)
-    fields['LIS3_Z'] = payload[18] | (payload[19] << 8)
+    point.field(
+        'LIS3_X',
+        payload[14] | (payload[15] << 8)
+    )
+    point.field(
+        'LIS3_Y',
+        payload[16] | (payload[17] << 8)
+    )
+    point.field(
+        'LIS3_Z',
+        payload[18] | (payload[19] << 8)
+    )
 
     if payload_size == 26 or payload_size == 50:
-        fields['SHT_T'] = (payload[20] << 8) | payload[21]
-        fields['SHT_H'] = (payload[22] << 8) | payload[23]
-        fields['ICS'] = (payload[24] << 8) | payload[25]
+        point.field(
+            'SHT_T',
+            (payload[20] << 8) | payload[21]
+        )
+        point.field(
+            'SHT_H',
+            (payload[22] << 8) | payload[23]
+        )
+        point.field(
+            'ICS',
+            (payload[24] << 8) | payload[25]
+        )
     else:
-        fields['ICS'] = (payload[20] << 8) | payload[21]
+        point.field('ICS', (payload[20] << 8) | payload[21])
 
     # Counts to unit conversions
     # DLVR counts_to_Pa = 0.01*250/6553  # 25/65530
@@ -229,25 +259,25 @@ def parse_payload(payload, backup_time, debug=False):
     # GNSS
     if gnss and payload_size > 26:
         i = payload_size - 24
-        fields['GNSS_LAT'] = payload[i] + (payload[i+1] << 8) + (payload[i+2] << 16)
+        point.field(
+            'GNSS_LAT',
+            payload[i] + (payload[i+1] << 8) + (payload[i+2] << 16)
+        )
         i += 3
-        fields['GNSS_LON'] = payload[i] + (payload[i+1] << 8) + (payload[i+2] << 16)
+        point.field(
+            'GNSS_LON',
+            payload[i] + (payload[i+1] << 8) + (payload[i+2] << 16)
+        )
         i += 3
-        fields['GNSS_ALT'] = payload[i] + (payload[i+1] << 8) + (payload[i+2] << 16)
-
-    # Construct data point
-    data_point = {
-        "measurement": 'multi_ear',
-        "time": f"{time.asm8}Z",
-        "fields": fields,
-    }
-    if gnss:
-        data_point['tag'] = 'GNSS'
+        point.field(
+            'GNSS_ALT',
+            payload[i] + (payload[i+1] << 8) + (payload[i+2] << 16)
+        )
 
     if debug:
-        print(data_point)
+        print(point.to_line_protocol())
 
-    return data_point
+    return point
 
 
 def main():
