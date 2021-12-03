@@ -268,7 +268,33 @@ function bytes(bytes, label) {
 
 function loadDashboard() {
 
-    const chart_sp210 = Highcharts.chart('chart-sp210', {
+    const chart_sp210 = Highcharts.chart('chart-pabs', {
+        chart: {
+            type: 'line',
+            zoomType: 'x'
+        },
+        data: {
+            csvURL: '/api/dataselect/query?d=multi_ear&m=multi_ear&f=LPS33&_f=csv',
+            enablePolling: true,
+            dataRefreshRate: 10,
+        },
+        tooltip: {
+            valueDecimals: 0
+        },
+        xAxis: {
+            type: 'datetime'
+        },
+        yAxis: {
+            title: {
+                text: 'Absolute pressure [count]',
+            },
+        },
+        title: {
+            text: 'Absolute Pressure'
+        },
+    });
+
+    const chart_sp210 = Highcharts.chart('chart-pdiff', {
         chart: {
             type: 'line',
             zoomType: 'x'
