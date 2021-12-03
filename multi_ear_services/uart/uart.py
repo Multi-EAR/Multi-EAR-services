@@ -9,10 +9,8 @@ from influxdb_client import InfluxDBClient, WriteApi
 from influxdb_client.client.write_api import SYNCHRONOUS
 
 # Relative imports
-#from ..version import version
-#from ..util.serial_read import read_lines
-from multi_ear_services import __version__ as version
-from multi_ear_services.util.serial_read import read_lines
+from ..version import version
+from ..util.serial_read import read_lines
 
 
 __all__ = ['uart_readout']
@@ -142,7 +140,7 @@ def parse_read(read_buffer, read_time, data_points=[], debug=False):
 
             # packet size
             packet_size = _header_size + int(read_buffer[i+_header_size])
-         
+
             # payload size
             i += 10
             payload_size = int(read_buffer[i])
@@ -197,7 +195,7 @@ def parse_payload(payload, backup_time, debug=False):
         gnss = False
 
     # DLVR-F50D differential pressure (14-bit ADC)
-    tmp = payload[7] | (payload[8] << 8) 
+    tmp = payload[7] | (payload[8] << 8)
     fields['DLVR'] = (tmp | 0xF000) if (tmp & 0x1000) else (tmp & 0x1FFF)
 
     # SP210
@@ -218,12 +216,12 @@ def parse_payload(payload, backup_time, debug=False):
     else:
         fields['ICS'] = (payload[20] << 8) | payload[21]
 
-    ## Counts to unit conversions
+    # Counts to unit conversions
     # DLVR counts_to_Pa = 0.01*250/6553  # 25/65530
     # SP210 counts_to_inH20 = 1/(0.9*32768)  # 10/(9*32768)
-    # LPS33HW counts_to_hPa = 1 / 4096 
+    # LPS33HW counts_to_hPa = 1 / 4096
     # LIS3 counts_to_ms2 = 0.076
-    # SHT8x temperature and humidity (2x 16-bit)
+    # SHT8x ...
     # ICS counts_to_dB = 100/4096
 
     # GNSS
@@ -239,7 +237,7 @@ def parse_payload(payload, backup_time, debug=False):
     data_point = {
         "measurement": 'multi_ear',
         "time": f"{time.asm8}Z",
-        "fields": fields, 
+        "fields": fields,
     }
     if gnss:
         data_point['tag'] = 'GNSS'
