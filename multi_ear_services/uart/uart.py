@@ -125,6 +125,7 @@ def parse_read(read_buffer, read_time, data_points=[], debug=False):
     """
     # get bytes received
     read_bytes = len(read_buffer)
+    read_bytes = len(read_buffer)
 
     # init packet scanning
     i = 0
@@ -150,13 +151,14 @@ def parse_read(read_buffer, read_time, data_points=[], debug=False):
             payload = read_buffer[i:i+payload_size]
 
             # convert payload to counts and add to data buffer
-            data_points.append(parse_payload(payload, read_time, debug))
+            data_points += [parse_payload(payload, read_time, debug)]
 
             # skip packet header scanning
             i += packet_size
 
         else:
             i += 1
+    print(data_points)
 
     # return tail
     return read_buffer[i:], data_points
