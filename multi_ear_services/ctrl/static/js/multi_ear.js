@@ -274,7 +274,7 @@ function loadDashboard() {
             zoomType: 'x'
         },
         data: {
-            csvURL: '/api/dataselect/query?d=multi_ear&m=multi_ear&f=LPS33&s=15m&_f=csv',
+            csvURL: '/api/dataselect/query?d=multi_ear&m=multi_ear&f=LPS33&s=10m&_f=csv',
             enablePolling: true,
             dataRefreshRate: 10,
         },
@@ -300,7 +300,7 @@ function loadDashboard() {
             zoomType: 'x'
         },
         data: {
-            csvURL: '/api/dataselect/query?d=multi_ear&m=multi_ear&f=SP210,DLVR&s=15m&_f=csv',
+            csvURL: '/api/dataselect/query?d=multi_ear&m=multi_ear&f=SP210,DLVR&s=10m&_f=csv',
             enablePolling: true,
             dataRefreshRate: 10,
         },
@@ -326,7 +326,7 @@ function loadDashboard() {
             zoomType: 'x'
         },
         data: {
-            csvURL: '/api/dataselect/query?d=telegraf&m=system&f=load*&_f=csv',
+            csvURL: '/api/dataselect/query?d=telegraf&m=system&f=load*&s=30m&_f=csv',
             enablePolling: true,
             dataRefreshRate: 10,
         },
@@ -353,7 +353,7 @@ function loadDashboard() {
             zoomType: 'x'
         },
         data: {
-            csvURL: '/api/dataselect/query?d=telegraf&m=mem&f=used,buffered,cached,free&_f=csv',
+            csvURL: '/api/dataselect/query?d=telegraf&m=mem&f=used,buffered,cached,free&s=30m&_f=csv',
             enablePolling: true,
             dataRefreshRate: 10,
         },

@@ -149,7 +149,7 @@ class DataSelect(object):
         self.__endtime__ = pd.to_datetime(end or 'now', unit='ns', utc=True)
 
         try:
-            delta = pd.to_timedelta(start or '30min')
+            delta = pd.to_timedelta(start or '10min')
             self.__starttime__ = self.__endtime__ - delta
         except (pd.errors.ParserError, ValueError):
             self.__starttime__ = pd.to_datetime(start, unit='ns', utc=True)
