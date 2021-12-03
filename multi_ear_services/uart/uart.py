@@ -9,21 +9,26 @@ from influxdb_client import InfluxDBClient, WriteApi
 from influxdb_client.client.write_api import SYNCHRONOUS
 
 # Relative imports
-from ..version import version
-from ..util.serial_read import read_lines
+#from ..version import version
+#from ..util.serial_read import read_lines
+from multi_ear_services import __version__ as version
+from multi_ear_services.util.serial_read import read_lines
 
 
 __all__ = ['uart_readout']
 
-
+#
+# Todo: make an UART class!
+#
 # data packet definition
-_packet_header = b'\x11\x99\x22\x88\x33\x73'  # 17 153 34 136 51 115
-_packet_header_bytes = len(_packet_header)
-_packet_bytes_min = 40  # minimum bytes to process a packet
+_header = b'\x11\x99\x22\x88\x33\x73'  # 17 153 34 136 51 115
+_header_size = len(_header)
+_buffer_bytes_min = 40  # minimum bytes to process a packet
 
 # sampling definition
 _sampling_rate = 16  # Hz
-_sampling_delta = pd.Timedelta(1/_sampling_rate, 'ns')
+_delta = pd.Timedelta(1/_sampling_rate, 'ns')
+# _time = None
 
 
 def on_exit(db_client: InfluxDBClient, write_api: WriteApi, uart_conn: Serial):
@@ -39,9 +44,9 @@ def on_exit(db_client: InfluxDBClient, write_api: WriteApi, uart_conn: Serial):
     uart_conn.close()
 
 
-def uart_readout(config_file='config.ini', debug=None):
+def uart_readout(config_file='config.ini', debug=None, dry_run=False):
     """Sensorboard serial readout via UART with data storage in a local
-    Influx v1.8 database.
+    Influx database.
 
     Configure all parameters via configuration file. The configuration file
     has to contain the sections 'influx2' and 'serial'.
@@ -79,18 +84,15 @@ def uart_readout(config_file='config.ini', debug=None):
 
     bucket = config_value('influx2', 'bucket')
 
-    if debug:
-        print(_db_client.health)
+    print("InfluxDB health =", _db_client.health())
 
     # serial port connection
     _uart_conn = Serial(
         port=config_value('serial', 'port'),
-        baudrate=config_value('serial', 'baudrate'),
-        timeout=config_value('serial', 'timeout') / 1000  # ms to s,
+        baudrate=int(config_value('serial', 'baudrate')),
+        timeout=int(config_value('serial', 'timeout')) / 1000  # ms to s,
     )
-
-    if debug:
-        print(_uart_conn)
+    print("UART connection =", _uart_conn)
 
     # automatically close clients on exit
     atexit.register(on_exit, _db_client, _write_api, _uart_conn)
@@ -100,36 +102,13 @@ def uart_readout(config_file='config.ini', debug=None):
     read_time = pd.to_datetime("now")  # backup if GPS fails
 
     # continuous serial readout while open
+    print("Start UART readout")
     while _uart_conn.isOpen():
         read_buffer, data_points = parse_read(
             read_lines(_uart_conn, read_buffer), read_time, debug=debug
         )
-        _write_api.write(bucket=bucket, record=data_points)
-
-
-# dtype shorts with byteswap ('_S' suffix)
-_u1 = np.dtype(np.uint8)
-_u8 = np.dtype(np.uint64)
-_i1 = np.dtype(np.int8)
-_i1_S = _i1.newbyteorder('S')
-_i2 = np.dtype(np.int16)
-_i2_S = _i2.newbyteorder('S')
-_i4 = np.dtype(np.int32)
-_i4_S = _i4.newbyteorder('S')
-_f4 = np.dtype(np.float32)
-
-
-def frombuffer(buffer, dtype=None, count=None, offset=None, **kwargs):
-    """Wrapper to np.frombuffer returning the item if count == 1
-
-    See np.frombuffer for the usage.
-    """
-    dtype = dtype or _f4
-    count = count or -1
-    offset = offset or 0
-    data = np.frombuffer(buffer, dtype=dtype, count=count, offset=offset,
-                         **kwargs)
-    return data.item() if count == 1 else data
+        if not dry_run:
+            _write_api.write(bucket=bucket, record=data_points)
 
 
 def parse_read(read_buffer, read_time, data_points=[], debug=False):
@@ -153,31 +132,30 @@ def parse_read(read_buffer, read_time, data_points=[], debug=False):
     i = 0
 
     # scan for packet header
-    while i < read_bytes - _packet_bytes_min:
+    while i < read_bytes - _buffer_bytes_min:
 
         # packet header match
-        if read_buffer[i:i+_packet_header_bytes] == _packet_header:
+        if read_buffer[i:i+_header_size] == _header:
 
             # backup time (inaccurate!)
-            read_time += _sampling_delta
+            read_time += _delta
 
+            # packet size
+            packet_size = _header_size + int(read_buffer[i+_header_size])
+         
             # payload size
             i += 10
-            payload_bytes = frombuffer(read_buffer, _i1, 1, i)
+            payload_size = int(read_buffer[i])
 
             # payload
             i += 1
-            payload = read_buffer[i:i+payload_bytes]
-
-            if debug:
-                print("payload size =", payload_bytes)
-                print("payload bytes =", payload)
+            payload = read_buffer[i:i+payload_size]
 
             # convert payload to counts and add to data buffer
             data_points.append(parse_payload(payload, read_time, debug))
 
             # skip packet header scanning
-            i += payload_bytes
+            i += packet_size
 
         else:
             i += 1
@@ -186,7 +164,7 @@ def parse_read(read_buffer, read_time, data_points=[], debug=False):
     return read_buffer[i:], data_points
 
 
-def parse_payload(payload, imprecise_time, debug=False):
+def parse_payload(payload, backup_time, debug=False):
     """
     Convert payload to Level-1 data in counts.
 
@@ -195,8 +173,8 @@ def parse_payload(payload, imprecise_time, debug=False):
     payload : `bytes`
         Raw payload stream in bytes.
 
-    imprecise_time : `np.datetime64`
-        Payload imprecise time used as backup if the GPS timestamp fails.
+    backup_time : `np.datetime64`
+        Payload imprecise time used as backup if the GNSS timestamp fails.
 
     Returns
     -------
@@ -204,71 +182,67 @@ def parse_payload(payload, imprecise_time, debug=False):
         Dictionary with all fields for the given time step.
 
     """
-    if debug:
-        print("imprecise time =", imprecise_time)
-        print("payload hex =", payload.hex())
+    payload_size = len(payload)
+    fields = dict()
 
-    # date time
-    y, m, d, H, M, S = frombuffer(payload, _u1, 6, 0)
-    step = frombuffer(payload, _u1, 1, 6)
-    # print(y, m, d, H, M, S, step)
+    # Get date time cycle from buffer
+    y, m, d, H, M, S, step = np.frombuffer(payload, np.uint8, 7, 0)
+
+    # GNSS lock?
+    if y != 0:
+        time = pd.Timestamp(2000 + y, m, d, H, M, S) + step * _delta
+        gnss = True
+    else:
+        time = backup_time
+        gnss = False
 
     # DLVR-F50D differential pressure (14-bit ADC)
-    # DLVR = int(payload[4] | payload[5])
-    DLVR = frombuffer(payload, _i1, 1, 4) | frombuffer(payload, _i1, 1, 5)
+    tmp = payload[7] | (payload[8] << 8) 
+    fields['DLVR'] = (tmp | 0xF000) if (tmp & 0x1000) else (tmp & 0x1FFF)
 
     # SP210
-    # SP210 = payload[6] << 8 | payload[7]  # wrong -> unsigned int?
-    # SP210 = frombuffer(payload, _i1, 1, 6) | frombuffer(payload, _i1, 1, 7)
-    SP210 = frombuffer(payload, _i2, 1, 6)
+    fields['SP210'] = (payload[9] << 8) | payload[10]
 
-    # LPS33HW barometric pressure (returns 32-bit)
-    LPS33HW = int.from_bytes(payload[8:11], "little")
-    LPS33HW = int.from_bytes(payload[8:11], "big")
-    LPS33HW = frombuffer(payload, _i4, 1, 8)
+    # LPS33HW barometric pressure (24-bit)
+    fields['LPS33'] = payload[11] + (payload[12] << 8) + (payload[13] << 16)
 
-    # LIS3DH 3-axis accelerometer and gyroscope (16-bit ADC)
-    LIS3DH_X, LIS3DH_Y, LIS3DH_Z = frombuffer(payload, _i2_S, 3, 14)
-    # LIS3_X = int(payload[11] << 8 | payload[12])
-    # LIS3_Y = int(payload[13] << 8 | payload[14])
-    # LIS3_Z = int(payload[15] << 8 | payload[16])
+    # LIS3DH 3-axis accelerometer and gyroscope (3x 16-bit)
+    fields['LIS3_X'] = payload[14] | (payload[15] << 8)
+    fields['LIS3_Y'] = payload[16] | (payload[17] << 8)
+    fields['LIS3_Z'] = payload[18] | (payload[19] << 8)
 
-    # LSM303 3-axis accelerometer and magnetometer (returns 8-bit)
-    LSM303_X, LSM303_Y, LSM303_Z = frombuffer(payload, _i1, 3, 20)
-    # int(payload[17]), int(payload[18]), int(payload[19])
+    if payload_size == 26 or payload_size == 50:
+        fields['SHT_T'] = (payload[20] << 8) | payload[21]
+        fields['SHT_H'] = (payload[22] << 8) | payload[23]
+        fields['ICS'] = (payload[24] << 8) | payload[25]
+    else:
+        fields['ICS'] = (payload[20] << 8) | payload[21]
 
-    # SHT8x temperature and humidity (16-bit ADC)
-    SHT8x_T, SHT8x_H = frombuffer(payload, _i2_S, 2, 23)
-    # SHT_T = int(payload[20] << 8 | payload[21])
-    # SHT_H = int(payload[22] << 8 | payload[23])
+    ## Counts to unit conversions
+    # DLVR counts_to_Pa = 0.01*250/6553  # 25/65530
+    # SP210 counts_to_inH20 = 1/(0.9*32768)  # 10/(9*32768)
+    # LPS33HW counts_to_hPa = 1 / 4096 
+    # LIS3 counts_to_ms2 = 0.076
+    # SHT8x temperature and humidity (2x 16-bit)
+    # ICS counts_to_dB = 100/4096
 
-    # Construct dictionary with data point
+    # GNSS
+    if gnss and payload_size > 26:
+        i = payload_size - 24
+        fields['GNSS_LAT'] = payload[i] + (payload[i+1] << 8) + (payload[i+2] << 16)
+        i += 3
+        fields['GNSS_LON'] = payload[i] + (payload[i+1] << 8) + (payload[i+2] << 16)
+        i += 3
+        fields['GNSS_ALT'] = payload[i] + (payload[i+1] << 8) + (payload[i+2] << 16)
+
+    # Construct data point
     data_point = {
         "measurement": 'multi_ear',
-        "time": f"{imprecise_time.asm8}Z",
-        "tag": '',
-        "fields": {
-            "step": step,
-            "DLVR": DLVR,
-            "SP210": SP210,
-            "LPS33HW": LPS33HW,
-            "LIS3DH_X": LIS3DH_X,
-            "LIS3DH_Y": LIS3DH_Y,
-            "LIS3DH_Z": LIS3DH_Z,
-            "LSM303_X": LSM303_X,
-            "LSM303_Y": LSM303_Y,
-            "LSM303_Z": LSM303_Z,
-            "SHT8x_T": SHT8x_T,
-            "SHT8x_H": SHT8x_H,
-        }
+        "time": f"{time.asm8}Z",
+        "fields": fields, 
     }
-
-    # Readout gnss at full cycle
-    # add GNSS quality
-    # if step == 0:
-    #     GNS_LAT, GNS_LON = frombuffer(payload, _f4, 2, 24)
-    #     data_point['fields']['GNS_LAT'] = GNS_LAT
-    #     data_point['fields']['GNS_LON'] = GNS_LON
+    if gnss:
+        data_point['tag'] = 'GNSS'
 
     if debug:
         print(data_point)
@@ -283,12 +257,16 @@ def main():
     parser = ArgumentParser(
         prog='multi-ear-uart',
         description=('Sensorboard serial readout via UART with '
-                     'data storage in a local InfluxDB database.'),
+                     'data storage in a local Influx database.'),
     )
 
     parser.add_argument(
         '-c', '--config_file', metavar='..', type=str, default='config.ini',
         help='Path to configuration file'
+    )
+    parser.add_argument(
+        '--dry-run', action='store_true',
+        help='UART readout without storage in the Influx database'
     )
     parser.add_argument(
         '--debug', action='store_true',
@@ -302,7 +280,7 @@ def main():
 
     args = parser.parse_args()
 
-    uart_readout(args.config_file, args.debug)
+    uart_readout(args.config_file, args.debug, args.dry_run)
 
 
 if __name__ == "__main__":
