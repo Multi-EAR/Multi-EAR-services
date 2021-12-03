@@ -162,9 +162,15 @@ def create_app(test_config=None):
     def api_dataselect_query():
         ds = DataSelect(
             db_client,
-            starttime=request.args.get('starttime') or request.args.get('start'),
-            endtime=request.args.get('endtime') or request.args.get('end'),
-            database=request.args.get('database') or request.args.get('d'),
+            starttime=(request.args.get('starttime') or
+                       request.args.get('start') or
+                       request.args.get('s')),
+            endtime=(request.args.get('endtime') or
+                     request.args.get('end') or
+                     request.args.get('e')),
+            database=(request.args.get('database') or
+                      request.args.get('db') or
+                      request.args.get('d')),
             measurement=request.args.get('measurement') or request.args.get('m'),
             field=request.args.get('field') or request.args.get('f'),
             format=request.args.get('format') or request.args.get('_f'),
