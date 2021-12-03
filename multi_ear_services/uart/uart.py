@@ -26,6 +26,7 @@ _buffer_bytes_min = 40  # minimum bytes to process a packet
 # timing
 _sampling_rate = 16  # Hz
 _delta = pd.Timedelta(1/_sampling_rate, 's')
+_local_time = None
 
 # Get hostname
 _hostname = socket.gethostname()
@@ -72,6 +73,8 @@ def uart_readout(config_file='config.ini', debug=None, dry_run=False):
         timeout = 2000
     """
 
+    global _local_time
+
     config = ConfigParser()
     config.read(config_file)
 
@@ -99,19 +102,21 @@ def uart_readout(config_file='config.ini', debug=None, dry_run=False):
 
     # init
     read_buffer = b""
-    read_time = pd.to_datetime("now")  # backup if GPS fails
+
+    # set time
+    _local_time = pd.to_datetime("now")  # backup if GPS fails
 
     # continuous serial readout while open
     print("Start UART readout")
     while _uart_conn.isOpen():
         read_buffer, data_points = parse_read(
-            read_lines(_uart_conn, read_buffer), read_time, debug=debug
+            read_lines(_uart_conn, read_buffer), debug=debug
         )
         if not dry_run:
             _write_api.write(bucket=bucket, record=data_points)
 
 
-def parse_read(read_buffer, read_time, data_points=[], debug=False):
+def parse_read(read_buffer, points=[], debug=False):
     """Parse read buffer for data packets with payload.
 
     Parameters
@@ -122,9 +127,12 @@ def parse_read(read_buffer, read_time, data_points=[], debug=False):
     read_buffer : `bytes`
         Bytes object that contains the remaining read_buffer.
 
-    data : `list`
+    points : `list`
         Data list with parsed payload in counts.
     """
+
+    global _local_time
+
     # get bytes received
     read_bytes = len(read_buffer)
     read_bytes = len(read_buffer)
@@ -139,7 +147,7 @@ def parse_read(read_buffer, read_time, data_points=[], debug=False):
         if read_buffer[i:i+_header_size] == _header:
 
             # backup time (inaccurate!)
-            read_time += _delta
+            _local_time += _delta
 
             # packet size
             packet_size = _header_size + int(read_buffer[i+_header_size])
@@ -153,7 +161,7 @@ def parse_read(read_buffer, read_time, data_points=[], debug=False):
             payload = read_buffer[i:i+payload_size]
 
             # convert payload to counts and add to data buffer
-            data_points += [parse_payload(payload, read_time, debug)]
+            points += [parse_payload(payload, _local_time, debug)]
 
             # skip packet header scanning
             i += packet_size
@@ -162,7 +170,7 @@ def parse_read(read_buffer, read_time, data_points=[], debug=False):
             i += 1
 
     # return tail
-    return read_buffer[i:], data_points
+    return read_buffer[i:], points
 
 
 def parse_payload(payload, local_time=None, debug=False):
