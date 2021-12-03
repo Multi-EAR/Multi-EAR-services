@@ -25,8 +25,7 @@ _buffer_bytes_min = 40  # minimum bytes to process a packet
 
 # timing
 _sampling_rate = 16  # Hz
-_delta = pd.Timedelta(1/_sampling_rate, 'ns')
-_local_time = None
+_delta = pd.Timedelta(1/_sampling_rate, 's')
 
 # Get hostname
 _hostname = socket.gethostname()
@@ -73,8 +72,6 @@ def uart_readout(config_file='config.ini', debug=None, dry_run=False):
         timeout = 2000
     """
 
-    global _local_time
-
     config = ConfigParser()
     config.read(config_file)
 
@@ -102,20 +99,19 @@ def uart_readout(config_file='config.ini', debug=None, dry_run=False):
 
     # init
     read_buffer = b""
-    _local_time = pd.to_datetime("now")  # backup if GNSS fails
+    read_time = pd.to_datetime("now")  # backup if GPS fails
 
     # continuous serial readout while open
     print("Start UART readout")
     while _uart_conn.isOpen():
         read_buffer, data_points = parse_read(
-            read_lines(_uart_conn, read_buffer),
-            debug=debug
+            read_lines(_uart_conn, read_buffer), read_time, debug=debug
         )
         if not dry_run:
             _write_api.write(bucket=bucket, record=data_points)
 
 
-def parse_read(read_buffer, data_points=[], debug=False):
+def parse_read(read_buffer, read_time, data_points=[], debug=False):
     """Parse read buffer for data packets with payload.
 
     Parameters
@@ -129,9 +125,6 @@ def parse_read(read_buffer, data_points=[], debug=False):
     data : `list`
         Data list with parsed payload in counts.
     """
-
-    global _local_time
-
     # get bytes received
     read_bytes = len(read_buffer)
     read_bytes = len(read_buffer)
@@ -145,10 +138,8 @@ def parse_read(read_buffer, data_points=[], debug=False):
         # packet header match
         if read_buffer[i:i+_header_size] == _header:
 
-            # local time stepping
-            print(_local_time, _delta)
-            _local_time = _local_time + _delta
-            print(_local_time)
+            # backup time (inaccurate!)
+            read_time += _delta
 
             # packet size
             packet_size = _header_size + int(read_buffer[i+_header_size])
@@ -162,7 +153,7 @@ def parse_read(read_buffer, data_points=[], debug=False):
             payload = read_buffer[i:i+payload_size]
 
             # convert payload to counts and add to data buffer
-            data_points += [parse_payload(payload, _local_time, debug)]
+            data_points += [parse_payload(payload, read_time, debug)]
 
             # skip packet header scanning
             i += packet_size
@@ -174,7 +165,7 @@ def parse_read(read_buffer, data_points=[], debug=False):
     return read_buffer[i:], data_points
 
 
-def parse_payload(payload, backup_time, debug=False):
+def parse_payload(payload, local_time=None, debug=False):
     """
     Convert payload to Level-1 data in counts.
 
@@ -183,7 +174,7 @@ def parse_payload(payload, backup_time, debug=False):
     payload : `bytes`
         Raw payload stream in bytes.
 
-    backup_time : `np.datetime64`
+    local_time : `np.datetime64`
         Payload imprecise time used as backup if the GNSS timestamp fails.
 
     Returns
@@ -205,7 +196,7 @@ def parse_payload(payload, backup_time, debug=False):
         time = pd.Timestamp(2000 + y, m, d, H, M, S) + step * _delta
         point.time(time).tag('clock', 'GNSS')
     else:
-        point.time(backup_time).tag("clock", "local")
+        point.time(local_time or pd.to_datetime('now')).tag("clock", "local")
 
     # DLVR-F50D differential pressure (14-bit ADC)
     tmp = payload[7] | (payload[8] << 8)
