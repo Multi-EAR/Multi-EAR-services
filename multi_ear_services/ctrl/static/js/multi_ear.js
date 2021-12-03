@@ -268,7 +268,33 @@ function bytes(bytes, label) {
 
 function loadDashboard() {
 
-    const chart_load = Highcharts.chart('chart-system-load', {
+    const chart_sp210 = Highcharts.chart('chart-sp210', {
+        chart: {
+            type: 'line',
+            zoomType: 'x'
+        },
+        data: {
+            csvURL: '/api/dataselect/query?m=multi_ear&f=sp210&_f=csv',
+            enablePolling: true,
+            dataRefreshRate: 10,
+        },
+        tooltip: {
+            valueDecimals: 0
+        },
+        xAxis: {
+            type: 'datetime'
+        },
+        yAxis: {
+            title: {
+                text: 'Differential pressure [count]',
+            },
+        },
+        title: {
+            text: 'Differential Pressure'
+        },
+    });
+
+    const chart_system_load = Highcharts.chart('chart-system-load', {
         chart: {
             type: 'spline',
             zoomType: 'x'
@@ -295,7 +321,7 @@ function loadDashboard() {
         },
     });
 
-    const chart_memory = Highcharts.chart('chart-memory', {
+    const chart_memory_usage = Highcharts.chart('chart-memory-usage', {
         chart: {
             type: 'spline',
             zoomType: 'x'
