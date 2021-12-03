@@ -268,7 +268,7 @@ function bytes(bytes, label) {
 
 function loadDashboard() {
 
-    const chart_sp210 = Highcharts.chart('chart-pabs', {
+    const chart_pabs = Highcharts.chart('chart-pabs', {
         chart: {
             type: 'line',
             zoomType: 'x'
@@ -294,7 +294,7 @@ function loadDashboard() {
         },
     });
 
-    const chart_sp210 = Highcharts.chart('chart-pdiff', {
+    const chart_pdiff = Highcharts.chart('chart-pdiff', {
         chart: {
             type: 'line',
             zoomType: 'x'
