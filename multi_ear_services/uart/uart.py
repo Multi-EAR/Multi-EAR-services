@@ -210,50 +210,53 @@ def parse_payload(payload, local_time=None, debug=False):
     tmp = payload[7] | (payload[8] << 8)
     point.field(
         'DLVR',
-        (tmp | 0xF000) if (tmp & 0x1000) else (tmp & 0x1FFF)
+        np.int16((tmp | 0xF000) if (tmp & 0x1000) else (tmp & 0x1FFF))
     )
 
     # SP210
     point.field(
         'SP210',
-        (payload[9] << 8) | payload[10]
+        np.int16((payload[9] << 8) | payload[10])
     )
 
     # LPS33HW barometric pressure (24-bit)
     point.field(
         'LPS33',
-        payload[11] + (payload[12] << 8) + (payload[13] << 16)
+        np.uint32(payload[11] + (payload[12] << 8) + (payload[13] << 16))
     )
 
     # LIS3DH 3-axis accelerometer and gyroscope (3x 16-bit)
     point.field(
         'LIS3_X',
-        payload[14] | (payload[15] << 8)
+        np.int16(payload[14] | (payload[15] << 8))
     )
     point.field(
         'LIS3_Y',
-        payload[16] | (payload[17] << 8)
+        np.int16(payload[16] | (payload[17] << 8))
     )
     point.field(
         'LIS3_Z',
-        payload[18] | (payload[19] << 8)
+        np.int16(payload[18] | (payload[19] << 8))
     )
 
     if payload_size == 26 or payload_size == 50:
         point.field(
             'SHT_T',
-            (payload[20] << 8) | payload[21]
+            np.uint16((payload[20] << 8) | payload[21])
         )
         point.field(
             'SHT_H',
-            (payload[22] << 8) | payload[23]
+            np.uint16((payload[22] << 8) | payload[23])
         )
         point.field(
             'ICS',
-            (payload[24] << 8) | payload[25]
+            np.uint16((payload[24] << 8) | payload[25])
         )
     else:
-        point.field('ICS', (payload[20] << 8) | payload[21])
+        point.field(
+            'ICS',
+            np.uint16((payload[20] << 8) | payload[21])
+        )
 
     # Counts to unit conversions
     # DLVR counts_to_Pa = 0.01*250/6553  # 25/65530
