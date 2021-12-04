@@ -207,10 +207,11 @@ def parse_payload(payload, local_time=None, debug=False):
         point.time(local_time or pd.to_datetime('now')).tag("clock", "local")
 
     # DLVR-F50D differential pressure (14-bit ADC)
-    tmp = payload[7] | (payload[8] << 8)
+    # tmp = payload[7] | (payload[8] << 8)
+    # np.int16((tmp | 0xF000) if (tmp & 0x1000) else (tmp & 0x1FFF))
     point.field(
         'DLVR',
-        np.int16((tmp | 0xF000) if (tmp & 0x1000) else (tmp & 0x1FFF))
+        np.int16(payload[7] | (payload[8] << 8))
     )
 
     # SP210
