@@ -3,296 +3,369 @@ import atexit
 import numpy as np
 import pandas as pd
 import socket
+from time import sleep
 from serial import Serial
 from argparse import ArgumentParser
 from configparser import ConfigParser
-from influxdb_client import InfluxDBClient, Point, WriteApi
+from influxdb_client import InfluxDBClient, Point
 from influxdb_client.client.write_api import SYNCHRONOUS
 
 # Relative imports
 from ..version import version
-from ..util.serial_read import read_lines
 
 
-__all__ = ['uart_readout']
-
-#
-# Todo: make an UART class!
-#
-# data packet definition
-_header = b'\x11\x99\x22\x88\x33\x73'  # 17 153 34 136 51 115
-_header_size = len(_header)
-_buffer_bytes_min = 40  # minimum bytes to process a packet
-
-# timing
-_sampling_rate = 16  # Hz
-_delta = pd.Timedelta(1/_sampling_rate, 's')
-_local_time = None
-
-# Get hostname
-_hostname = socket.gethostname()
+__all__ = ['UART']
 
 
-def on_exit(db_client: InfluxDBClient, write_api: WriteApi, uart_conn: Serial):
-    """Close clients after terminate a script.
+class UART(object):
 
-    :param db_client: InfluxDB client
-    :param write_api: WriteApi
-    :param uart_conn: Serial
-    :return: nothing
-    """
-    write_api.close()
-    db_client.close()
-    uart_conn.close()
+    def __init__(self, config_file='config.ini', debug=False, dry_run=False):
+        """Sensorboard serial readout via UART with data storage in a local
+        Influx database.
 
+        Configure all parameters via configuration file. The configuration file
+        has to contain the sections 'influx2' and 'serial'.
 
-def uart_readout(config_file='config.ini', debug=False, dry_run=False):
-    """Sensorboard serial readout via UART with data storage in a local
-    Influx database.
+        config.ini example::
+            [influx2]
+              url=http://localhost:8086
+              org=my-org
+              token=my-token
+              timeout=6000
+              connection_pool_maxsize=25
+              auth_basic=false
+              profilers=query,operator
+              proxy=http:proxy.domain.org:8080
+              bucket=database/retention_policy
+            [tags]
+              id = 132-987-655
+              customer = California Miner
+              data_center = ${env.data_center}
+            [serial]
+              port = /dev/ttyAMA0
+              baudrate = 115200
+              timeout = 2000
+        """
 
-    Configure all parameters via configuration file. The configuration file
-    has to contain the sections 'influx2' and 'serial'.
+        # parse configuration file
+        self.__config__ = ConfigParser()
+        self.__config__.read(config_file)
 
-    config.ini example::
-        [influx2]
-        url=http://localhost:8086
-        org=my-org
-        token=my-token
-        timeout=6000
-        connection_pool_maxsize=25
-        auth_basic=false
-        profilers=query,operator
-        proxy=http:proxy.domain.org:8080
-        bucket=database/retention_policy
-        [tags]
-        id = 132-987-655
-        customer = California Miner
-        data_center = ${env.data_center}
-        [serial]
-        port = /dev/ttyAMA0
-        baudrate = 115200
-        timeout = 2000
-    """
+        # influx database connection
+        self.__db__ = InfluxDBClient.from_config_file(config_file, debug=debug)
+        self.__bucket__ = self._config_value('influx2', 'bucket')
+        self.__write_api__ = self.__db__.write_api(write_options=SYNCHRONOUS)
 
-    global _local_time
+        # uart serial port connection
+        self.__serial__ = Serial(
+            port=self.config_value('serial', 'port'),
+            baudrate=int(self._config_value('serial', 'baudrate')),
+            timeout=int(self._config_value('serial', 'timeout')) / 1000,  # [s]
+        )
 
-    config = ConfigParser()
-    config.read(config_file)
+        # set options
+        self.__debug = debug or False
+        self.__dry_run = dry_run or False
 
-    def config_value(sec: str, key: str):
-        return config[sec][key].strip('"')
+        # init
+        self.__packet_start = b'\x11\x99\x22\x88\x33\x73'
+        self.__packet_start_len = len(self.__packet_start)
+        self.__packet_header_len = 11
+        self.__buffer = b''
+        self.__buffer_min_len = self.__packet_start_len + 1
+        self.__measurement = 'multi_ear'
+        self.__sampling_rate = 16  # [Hz]
+        self.__delta = pd.Timedelta(1/self.__sampling_rate, 's')
+        self.__hostname = socket.gethostname()
+        self.__time = None
+        self.__points = []
 
-    # influx database connection
-    _db_client = InfluxDBClient.from_config_file(config_file, debug=debug) 
-    bucket = config_value('influx2', 'bucket')
+        # terminate at exit
+        atexit.register(self.close)
 
-    print("InfluxDB health =", _db_client.health())
+    def close(self):
+        """Close clients.
+        """
+        self._write_api.close()
+        self._db_client.close()
+        self._serial.close()
 
-    # serial port connection
-    _uart_conn = Serial(
-        port=config_value('serial', 'port'),
-        baudrate=int(config_value('serial', 'baudrate')),
-        timeout=int(config_value('serial', 'timeout')) / 1000  # ms to s,
-    )
-    print("UART connection =", _uart_conn)
+    @property
+    def _bucket(self):
+        return self.__bucket
 
-    # automatically close clients on exit
-    atexit.register(on_exit, _db_client, _uart_conn)
+    def _buffer(self):
+        """Return a raw buffer sequence
+        """
+        return self.__buffer
 
-    # init
-    read_buffer = b""
+    @property
+    def _buffer_length(self):
+        return len(self.__buffer)
 
-    # set time
-    _local_time = pd.to_datetime("now")  # backup if GPS fails
+    @property
+    def _buffer_min_length(self):
+        return self.__buffer_min_len
 
-    # continuous serial readout while open
-    print("Start UART readout")
-    while _uart_conn.isOpen():
+    def _frombuffer(self, offset=0, count=1, dtype=np.int8, like=None):
+        """Return a dtype sequence from the buffer
+        """
+        return np.frombuffer(self._buffer, dtype, count, offset, like=like)
 
-        with _db_client.write_api(write_options=SYNCHRONOUS) as write_api:
+    @property
+    def _config(self):
+        return self.__config
 
-            read_buffer, data_points = parse_read(
-                read_lines(_uart_conn, read_buffer), debug=debug
+    def _config_value(self, sec: str, key: str):
+        return self.__config[sec][key].strip('"')
+
+    @property
+    def _data_points(self):
+        return self.__points
+
+    @property
+    def _db_client(self):
+        return self.__db_client
+
+    @property
+    def _hostname(self):
+        return self.__hostname
+
+    @property
+    def _measurement(self):
+        return self.__measurement
+
+    @property
+    def _packet_start(self):
+        return self.__packet_start
+
+    @property
+    def _packet_start_length(self):
+        return self.__packet_start_len
+
+    def _packet_starts(self, i):
+        """Returns True if the read buffer at the given start index matches the
+        packet start sequence.
+        """
+        return self._buffer[i:i+self.__packet_start_len] == self._packet_start
+
+    def _parse_buffer(self):
+        """Parse the read buffer for data points.
+        """
+
+        # init packet parsing
+        buffer_len = self._buffer_length
+        start_len = self._package_start_length
+        header_len = self._package_header_length
+        i = 0
+
+        # scan for packet start sequence
+        while i < buffer_len - self._buffer_min_length:
+
+            # packet header match?
+            if self._packet_starts(i):
+
+                # get packet length
+                packet_len = start_len + int(self._buffer[i+start_len])
+
+                # check buffer length
+                if i + packet_len > buffer_len:
+                    i += 1
+                    break
+
+                # increase local time
+                self.__time += self.__delta
+
+                # get payload length
+                payload_len = int(self._buffer[i+header_len])
+
+                # convert payload to point
+                point = self._parse_payload(
+                    i+header_len, payload_len, self._time
+                )
+                if self.debug:
+                    print(point.to_line_protocol())
+
+                # append point to data points
+                self.__points.append(point)
+
+                # shift buffer to next package
+                i += packet_len + 1
+
+            else:
+                i += 1
+
+        self.__buffer = self.__buffer[i:]
+
+    def parse_payload(self, offset, length, local_time=None) -> Point:
+        """Convert payload to Level-1 data to counts.
+        Returns
+        -------
+        point : :class:`Point`
+            Influx Point object with all tags, fields for the given time step.
+        """
+        # Init
+        payload = self._buffer[offset:offset+length]
+        point = Point(self._measurement).tag('host', self._hostname)
+
+        # Get date, time, and cycle step from buffer
+        y, m, d, H, M, S, step = np.frombuffer(payload, np.uint8, 7, 0)
+
+        # GNSS lock?
+        gnss = y != 0
+        if gnss:
+            time = pd.Timestamp(2000 + y, m, d, H, M, S) + step * self.__delta
+            point.time(time).tag('clock', 'GNSS')
+        else:
+            local_time or pd.to_datetime('now')
+            point.time(time).tag("clock", "local")
+
+        # DLVR-F50D differential pressure (14-bit ADC)
+        # tmp = payload[7] | (payload[8] << 8)
+        # np.int16((tmp | 0xF000) if (tmp & 0x1000) else (tmp & 0x1FFF))
+        point.field(
+            'DLVR',
+            np.int16(payload[7] | (payload[8] << 8))
+        )
+
+        # SP210
+        point.field(
+            'SP210',
+            np.int16((payload[9] << 8) | payload[10])
+        )
+
+        # LPS33HW barometric pressure (24-bit)
+        point.field(
+            'LPS33',
+            np.uint32(payload[11] + (payload[12] << 8) + (payload[13] << 16))
+        )
+
+        # LIS3DH 3-axis accelerometer and gyroscope (3x 16-bit)
+        point.field(
+            'LIS3_X',
+            np.int16(payload[14] | (payload[15] << 8))
+        )
+        point.field(
+            'LIS3_Y',
+            np.int16(payload[16] | (payload[17] << 8))
+        )
+        point.field(
+            'LIS3_Z',
+            np.int16(payload[18] | (payload[19] << 8))
+        )
+
+        if length == 26 or length == 50:
+            point.field(
+                'SHT_T',
+                np.uint16((payload[20] << 8) | payload[21])
+            )
+            point.field(
+                'SHT_H',
+                np.uint16((payload[22] << 8) | payload[23])
+            )
+            point.field(
+                'ICS',
+                np.uint16((payload[24] << 8) | payload[25])
+            )
+        else:
+            point.field(
+                'ICS',
+                np.uint16((payload[20] << 8) | payload[21])
             )
 
-            if not dry_run:
+        # Counts to unit conversions
+        # DLVR counts_to_Pa = 0.01*250/6553  # 25/65530
+        # SP210 counts_to_inH20 = 1/(0.9*32768)  # 10/(9*32768)
+        # LPS33HW counts_to_hPa = 1 / 4096
+        # LIS3 counts_to_ms2 = 0.076
+        # SHT8x ...
+        # ICS counts_to_dB = 100/4096
 
-                _write_api.write(bucket=bucket, record=data_points)
+        # GNSS
+        if gnss and length > 26:
+            i = length - 24
+            point.field(
+                'GNSS_LAT',
+                payload[i] + (payload[i+1] << 8) + (payload[i+2] << 16)
+            )
+            i += 3
+            point.field(
+                'GNSS_LON',
+                payload[i] + (payload[i+1] << 8) + (payload[i+2] << 16)
+            )
+            i += 3
+            point.field(
+                'GNSS_ALT',
+                payload[i] + (payload[i+1] << 8) + (payload[i+2] << 16)
+            )
 
+        return point
 
-def parse_read(read_buffer, points=[], debug=False):
-    """Parse read buffer for data packets with payload.
+    def _read_lines(self):
+        """Read all available lines from the serial port
+        and append to the read buffer.
+        """
+        read = self._serial.readline()
+        sleep(.2)
+        in_waiting = self._serial.in_waiting
+        read += self._serial.readline(in_waiting)
 
-    Parameters
-    ----------
+        self.__buffer += read
 
-    Returns
-    -------
-    read_buffer : `bytes`
-        Bytes object that contains the remaining read_buffer.
+    @property
+    def _points(self):
+        return self.__points
 
-    points : `list`
-        Data list with parsed payload in counts.
-    """
+    @property
+    def _serial(self):
+        return self.__serial
 
-    global _local_time
+    @property
+    def _write_api(self):
+        return self.__write_api
 
-    # get bytes received
-    read_bytes = len(read_buffer)
-    read_bytes = len(read_buffer)
+    def _write_points(self, clear=True):
+        """Write points to Influx database
+        """
+        if not self.dry_run and len(self._points) > 0:
+            self._write_api.write(
+                bucket=self._bucket,
+                record=self._points,
+            )
+        if clear:
+            self.__points = []
 
-    # init packet scanning
-    i = 0
+    @property
+    def debug(self):
+        return self.__debug
 
-    # scan for packet header
-    while i < read_bytes - _buffer_bytes_min:
+    @debug.setter
+    def debug(self, debug):
+        if not isinstance(debug, bool):
+            raise TypeError("debug should be a of type bool")
+        self.__debug = debug
 
-        # packet header match
-        if read_buffer[i:i+_header_size] == _header:
+    @property
+    def dry_run(self):
+        return self.__dry_run
 
-            # backup time (inaccurate!)
-            _local_time += _delta
+    @dry_run.setter
+    def dry_run(self, dry_run):
+        if not isinstance(dry_run, bool):
+            raise TypeError("dry_run should be a of type bool")
+        self.__dry_run = dry_run
 
-            # packet size
-            packet_size = _header_size + int(read_buffer[i+_header_size])
+    def readout(self):
+        """Contiously read UART serial data into a binary buffer, parse the
+        payload and write measurements to the Influx time series database.
+        """
+        # set local time as backup if GNSS fails
+        self.__time = pd.to_datetime("now")
 
-            # payload size
-            i += 10
-            payload_size = int(read_buffer[i])
-
-            # payload
-            i += 1
-            payload = read_buffer[i:i+payload_size]
-
-            # convert payload to counts and add to data buffer
-            points += [parse_payload(payload, _local_time, debug)]
-
-            # skip packet header scanning
-            i += packet_size
-
-        else:
-            i += 1
-
-    # return tail
-    return read_buffer[i:], points
-
-
-def parse_payload(payload, local_time=None, debug=False):
-    """
-    Convert payload to Level-1 data in counts.
-
-    Parameters
-    ----------
-    payload : `bytes`
-        Raw payload stream in bytes.
-
-    local_time : `np.datetime64`
-        Payload imprecise time used as backup if the GNSS timestamp fails.
-
-    Returns
-    -------
-    point : :class:`Point`
-        Influx Point object with all tags, fields for the given time step.
-
-    """
-    # Init
-    payload_size = len(payload)
-    point = Point('multi_ear').tag('host', _hostname)
-
-    # Get date, time, and cycle step from buffer
-    y, m, d, H, M, S, step = np.frombuffer(payload, np.uint8, 7, 0)
-
-    # GNSS lock?
-    gnss = y != 0
-    if gnss:
-        time = pd.Timestamp(2000 + y, m, d, H, M, S) + step * _delta
-        point.time(time).tag('clock', 'GNSS')
-    else:
-        point.time(local_time or pd.to_datetime('now')).tag("clock", "local")
-
-    # DLVR-F50D differential pressure (14-bit ADC)
-    # tmp = payload[7] | (payload[8] << 8)
-    # np.int16((tmp | 0xF000) if (tmp & 0x1000) else (tmp & 0x1FFF))
-    point.field(
-        'DLVR',
-        np.int16(payload[7] | (payload[8] << 8))
-    )
-
-    # SP210
-    point.field(
-        'SP210',
-        np.int16((payload[9] << 8) | payload[10])
-    )
-
-    # LPS33HW barometric pressure (24-bit)
-    point.field(
-        'LPS33',
-        np.uint32(payload[11] + (payload[12] << 8) + (payload[13] << 16))
-    )
-
-    # LIS3DH 3-axis accelerometer and gyroscope (3x 16-bit)
-    point.field(
-        'LIS3_X',
-        np.int16(payload[14] | (payload[15] << 8))
-    )
-    point.field(
-        'LIS3_Y',
-        np.int16(payload[16] | (payload[17] << 8))
-    )
-    point.field(
-        'LIS3_Z',
-        np.int16(payload[18] | (payload[19] << 8))
-    )
-
-    if payload_size == 26 or payload_size == 50:
-        point.field(
-            'SHT_T',
-            np.uint16((payload[20] << 8) | payload[21])
-        )
-        point.field(
-            'SHT_H',
-            np.uint16((payload[22] << 8) | payload[23])
-        )
-        point.field(
-            'ICS',
-            np.uint16((payload[24] << 8) | payload[25])
-        )
-    else:
-        point.field(
-            'ICS',
-            np.uint16((payload[20] << 8) | payload[21])
-        )
-
-    # Counts to unit conversions
-    # DLVR counts_to_Pa = 0.01*250/6553  # 25/65530
-    # SP210 counts_to_inH20 = 1/(0.9*32768)  # 10/(9*32768)
-    # LPS33HW counts_to_hPa = 1 / 4096
-    # LIS3 counts_to_ms2 = 0.076
-    # SHT8x ...
-    # ICS counts_to_dB = 100/4096
-
-    # GNSS
-    if gnss and payload_size > 26:
-        i = payload_size - 24
-        point.field(
-            'GNSS_LAT',
-            payload[i] + (payload[i+1] << 8) + (payload[i+2] << 16)
-        )
-        i += 3
-        point.field(
-            'GNSS_LON',
-            payload[i] + (payload[i+1] << 8) + (payload[i+2] << 16)
-        )
-        i += 3
-        point.field(
-            'GNSS_ALT',
-            payload[i] + (payload[i+1] << 8) + (payload[i+2] << 16)
-        )
-
-    if debug:
-        print(point.to_line_protocol())
-
-    return point
+        while self._serial.isOpen():
+            self._read_lines()
+            self._parse_buffer()
+            self._write_points()
 
 
 def main():
@@ -314,7 +387,7 @@ def main():
         help='UART readout without storage in the Influx database'
     )
     parser.add_argument(
-        '--debug', action='store_true', default=False
+        '--debug', action='store_true', default=False,
         help='Make the operation a lot more talkative'
     )
 
@@ -325,7 +398,8 @@ def main():
 
     args = parser.parse_args()
 
-    uart_readout(args.config_file, args.debug, args.dry_run)
+    uart = UART(args.config_file, args.debug, args.dry_run)
+    uart.readout()
 
 
 if __name__ == "__main__":
