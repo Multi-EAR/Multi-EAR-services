@@ -280,7 +280,6 @@ function loadDashboard() {
             parsed: function (columns) {
                 console.log(columns)
             },
-        }
         },
         tooltip: {
             valueDecimals: 0
