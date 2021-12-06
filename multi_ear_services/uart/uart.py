@@ -92,7 +92,8 @@ class UART(object):
         self.__buffer_min_len = self.__pck_start_len + 1
         self.__sampling_rate = 16  # [Hz]
         self.__delta = pd.Timedelta(1/self.__sampling_rate, 's')
-        self.__measurement = socket.gethostname().lower().replace('-', '_')
+        self.__measurement = 'multi_ear'
+        self.__hostname = socket.gethostname()
 
         # init
         self.__buffer = b''
@@ -150,6 +151,10 @@ class UART(object):
     @property
     def _db_client(self):
         return self.__db_client
+
+    @property
+    def _hostname(self):
+        return self.__hostname
 
     @property
     def _measurement(self):
@@ -244,7 +249,8 @@ class UART(object):
         # Create point
         point = (Point(self._measurement)
                  .time(time)
-                 .tag('clock', clock))
+                 .tag('clock', clock)
+                 .tag('host', self._hostname))
 
         # DLVR-F50D differential pressure (14-bit ADC)
         tmp = payload[7] | (payload[8] << 8)
