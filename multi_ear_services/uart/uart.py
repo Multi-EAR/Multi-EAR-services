@@ -58,13 +58,13 @@ class UART(object):
         )
         self.__bucket = self._config_value('influx2', 'bucket')
 
-        self.__write_api = self.__db_client.write_api(
+        self.__write_api = self._db_client.write_api(
             write_options=SYNCHRONOUS
         )
 
         # uart serial port connection
         self.__serial__ = Serial(
-            port=self.config_value('serial', 'port'),
+            port=self._config_value('serial', 'port'),
             baudrate=int(self._config_value('serial', 'baudrate')),
             timeout=int(self._config_value('serial', 'timeout')) / 1000,  # [s]
         )
@@ -73,16 +73,18 @@ class UART(object):
         self.__debug = debug or False
         self.__dry_run = dry_run or False
 
-        # init
+        # configure
         self.__packet_start = b'\x11\x99\x22\x88\x33\x73'
         self.__packet_start_len = len(self.__packet_start)
         self.__packet_header_len = 11
-        self.__buffer = b''
         self.__buffer_min_len = self.__packet_start_len + 1
-        self.__measurement = 'multi_ear'
         self.__sampling_rate = 16  # [Hz]
         self.__delta = pd.Timedelta(1/self.__sampling_rate, 's')
         self.__hostname = socket.gethostname()
+        self.__measurement = 'multi_ear'
+
+        # init
+        self.__buffer = b''
         self.__time = None
         self.__points = []
 
@@ -365,6 +367,11 @@ class UART(object):
         """Contiously read UART serial data into a binary buffer, parse the
         payload and write measurements to the Influx time series database.
         """
+
+        # init
+        self.__buffer = b''
+        self.__points = []
+
         # set local time as backup if GNSS fails
         self.__time = pd.to_datetime("now")
 
