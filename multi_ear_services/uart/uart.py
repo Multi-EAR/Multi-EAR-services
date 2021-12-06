@@ -54,6 +54,7 @@ class UART(object):
         """
 
         # parse configuration file
+        self.__config_file = config_file
         self.__config = ConfigParser()
         self.__config.read(config_file)
 
@@ -127,6 +128,10 @@ class UART(object):
         return np.frombuffer(self._buffer, dtype, count, offset, like=like)
 
     @property
+    def _config_file(self):
+        return self.__config_file
+
+    @property
     def _config(self):
         return self.__config
 
@@ -161,7 +166,7 @@ class UART(object):
         """Returns True if the read buffer at the given start index matches the
         packet start sequence.
         """
-        return self._buffer[i:i+self.__packet_start_len] == self._packet_start
+        return self._buffer[i:i+self.__packet_start_len] == self.__packet_start
 
     def _parse_buffer(self):
         """Parse the read buffer for data points.
@@ -169,8 +174,8 @@ class UART(object):
 
         # init packet parsing
         buffer_len = self._buffer_length
-        start_len = self._package_start_length
-        header_len = self._package_header_length
+        start_len = self._packet_start_length
+        header_len = self._packet_header_length
         i = 0
 
         # scan for packet start sequence
@@ -203,7 +208,7 @@ class UART(object):
                 # append point to data points
                 self.__points.append(point)
 
-                # shift buffer to next package
+                # shift buffer to next packet
                 i += packet_len + 1
 
             else:
