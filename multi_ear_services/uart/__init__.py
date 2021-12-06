@@ -1,3 +1,3 @@
-from .uart import uart_readout
+from .uart import UART 
 
-__all__ = ['uart_readout']
+__all__ = ['UART']
