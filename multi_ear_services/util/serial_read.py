@@ -29,7 +29,7 @@ def read_lines(ser: Serial, read_buffer: bytes = b'', **args) -> bytes:
        drop-in replacement for this function.
     """
     read = ser.readline()
-    time.sleep(.5)
+    time.sleep(.4)
     in_waiting = ser.in_waiting
     read += ser.readline(in_waiting)
 
