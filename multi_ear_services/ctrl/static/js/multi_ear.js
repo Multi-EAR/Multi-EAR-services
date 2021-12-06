@@ -278,8 +278,9 @@ function loadDashboard() {
             enablePolling: true,
             dataRefreshRate: 5,
             parsed: function (columns) {
-                console.log(columns)
-                console.log(columns[1])
+                columns[1] = columns[1].map(function (value, index) {
+                    return value ? index === 0 : value/4096
+                })
             },
         },
         tooltip: {
@@ -307,6 +308,9 @@ function loadDashboard() {
             csvURL: '/api/dataselect/query?d=multi_ear&m=multi_ear&f=SP210,DLVR&s=2m&_f=csv',
             enablePolling: true,
             dataRefreshRate: 5,
+            parsed: function (columns) {
+                console.log(columns)
+            },
         },
         tooltip: {
             valueDecimals: 0
