@@ -274,7 +274,7 @@ function loadDashboard() {
             zoomType: 'x'
         },
         data: {
-            csvURL: '/api/dataselect/query?d=multi_ear&m=multi_ear&f=LPS33HW&s=3m&_f=csv',
+            csvURL: '/api/dataselect/query?d=multi_ear&m=multi_ear&f=LPS33HW&s=2m&_f=csv',
             enablePolling: true,
             dataRefreshRate: 10,
             parsed: function (columns) {
@@ -304,7 +304,7 @@ function loadDashboard() {
             zoomType: 'x'
         },
         data: {
-            csvURL: '/api/dataselect/query?d=multi_ear&m=multi_ear&f=SP210,DLVR&s=3m&_f=csv',
+            csvURL: '/api/dataselect/query?d=multi_ear&m=multi_ear&f=SP210,DLVR&s=2m&_f=csv',
             enablePolling: true,
             dataRefreshRate: 10,
         },
