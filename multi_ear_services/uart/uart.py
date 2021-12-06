@@ -7,6 +7,7 @@ from serial import Serial
 from argparse import ArgumentParser
 from configparser import ConfigParser
 from influxdb_client import InfluxDBClient, Point, WriteApi
+from influxdb_client.client.write_api import SYNCHRONOUS
 
 # Relative imports
 from ..version import version
@@ -45,7 +46,7 @@ def on_exit(db_client: InfluxDBClient, write_api: WriteApi, uart_conn: Serial):
     uart_conn.close()
 
 
-def uart_readout(config_file='config.ini', debug=None, dry_run=False):
+def uart_readout(config_file='config.ini', debug=False, dry_run=False):
     """Sensorboard serial readout via UART with data storage in a local
     Influx database.
 
@@ -82,8 +83,8 @@ def uart_readout(config_file='config.ini', debug=None, dry_run=False):
         return config[sec][key].strip('"')
 
     # influx database connection
-    _db_client = InfluxDBClient.from_config_file(config_file)
-    _write_api = _db_client.write_api()
+    _db_client = InfluxDBClient.from_config_file(config_file, debug=debug)
+    _write_api = _db_client.write_api(write_options=SYNCHRONOUS)
 
     bucket = config_value('influx2', 'bucket')
 
