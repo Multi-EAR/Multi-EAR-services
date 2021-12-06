@@ -81,10 +81,10 @@ class UART(object):
         self.__dry_run = dry_run or False
 
         # configure
-        self.__packet_start = b'\x11\x99\x22\x88\x33\x73'
-        self.__packet_start_len = len(self.__packet_start)
-        self.__packet_header_len = 11
-        self.__buffer_min_len = self.__packet_start_len + 1
+        self.__pck_start = b'\x11\x99\x22\x88\x33\x73'
+        self.__pck_start_len = len(self.__pck_start)
+        self.__pck_header_len = 11
+        self.__buffer_min_len = self.__pck_start_len + 1
         self.__sampling_rate = 16  # [Hz]
         self.__delta = pd.Timedelta(1/self.__sampling_rate, 's')
         self.__hostname = socket.gethostname()
@@ -110,7 +110,7 @@ class UART(object):
         return self.__bucket
 
     def _buffer(self):
-        """Return a raw buffer sequence
+        """Return the raw buffer sequence
         """
         return self.__buffer
 
@@ -156,21 +156,21 @@ class UART(object):
 
     @property
     def _packet_header_length(self):
-        return self.__packet_header_len
+        return self.__pck_header_len
 
     @property
     def _packet_start(self):
-        return self.__packet_start
+        return self.__pck_start
 
     @property
     def _packet_start_length(self):
-        return self.__packet_start_len
+        return self.__pck_start_len
 
     def _packet_starts(self, i):
         """Returns True if the read buffer at the given start index matches the
         packet start sequence.
         """
-        return self._buffer[i:i+self.__packet_start_len] == self.__packet_start
+        return self.__buffer[i:i+self.__pck_start_len] == self.__pck_start
 
     def _parse_buffer(self):
         """Parse the read buffer for data points.
