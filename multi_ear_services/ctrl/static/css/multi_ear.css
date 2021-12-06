@@ -120,6 +120,7 @@ div.pcb {
     width: 100%;
   }
   nav.navbar i {
+    margin-left: -1.5rem;
     padding-right: .5rem;
   }
   .navbar .border-top {
