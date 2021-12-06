@@ -13,7 +13,7 @@ from influxdb_client.client.write_api import SYNCHRONOUS
 from influxdb_client.client.util.date_utils_pandas import PandasDateTimeHelper
 
 # Relative imports
-from ..version import version
+from multi_ear_services import __version__ as  version
 
 
 __all__ = ['UART']
@@ -59,10 +59,7 @@ class UART(object):
         self.__config.read(config_file)
 
         # influx database connection
-        self.__db_client = InfluxDBClient.from_config_file(
-            config_file,
-            debug=debug,
-        )
+        self.__db_client = InfluxDBClient.from_config_file(config_file)
         self.__bucket = self._config_value('influx2', 'bucket')
 
         self.__write_api = self._db_client.write_api(
@@ -201,7 +198,7 @@ class UART(object):
                 self.__time += self.__delta
 
                 # get payload length
-                payload_len = int(self._buffer[i+header_len])
+                payload_len = int(self._buffer[i+header_len-1])
 
                 # convert payload to point
                 point = self._parse_payload(
@@ -241,7 +238,7 @@ class UART(object):
             time = pd.Timestamp(2000 + y, m, d, H, M, S) + step * self.__delta
             point.time(time).tag('clock', 'GNSS')
         else:
-            local_time or pd.to_datetime('now')
+            time = local_time or pd.to_datetime('now')
             point.time(time).tag("clock", "local")
 
         # DLVR-F50D differential pressure (14-bit ADC)
