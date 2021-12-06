@@ -279,7 +279,7 @@ function loadDashboard() {
             dataRefreshRate: 5,
             parsed: function (columns) {
                 columns[1] = columns[1].map(function (value, index) {
-                    return value ? index === 0 : value/4096
+                    return (index === 0) ? value : value/4096
                 })
             },
         },
