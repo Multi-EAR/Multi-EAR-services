@@ -279,7 +279,8 @@ function loadDashboard() {
             dataRefreshRate: 10,
             parsed: function (columns) {
                 console.log(columns)
-                columns[1]/4096
+                columns[1] = columns[1]/4096
+                console.log(columns)
             },
         },
         tooltip: {
