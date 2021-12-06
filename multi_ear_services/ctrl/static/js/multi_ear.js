@@ -279,7 +279,7 @@ function loadDashboard() {
             dataRefreshRate: 10,
             parsed: function (columns) {
                 console.log(columns)
-            });
+            },
         }
         },
         tooltip: {
