@@ -8,6 +8,7 @@ from serial import Serial
 from argparse import ArgumentParser
 from configparser import ConfigParser
 from influxdb_client import InfluxDBClient, Point
+from influxdb_client.client.exceptions import InfluxDBError
 import influxdb_client.client.util.date_utils as date_utils
 from influxdb_client.client.write_api import SYNCHRONOUS
 from influxdb_client.client.util.date_utils_pandas import PandasDateTimeHelper
@@ -15,7 +16,7 @@ from influxdb_client.client.util.date_utils_pandas import PandasDateTimeHelper
 # Relative imports
 try:
     from ..version import version
-except ModuleNotFoundError:
+except (ValueError, ModuleNotFoundError):
     version = '[VERSION-NOT-FOUND]'
 
 
@@ -55,7 +56,6 @@ class UART(object):
               baudrate = 115200
               timeout = 2000
         """
-
         # parse configuration file
         self.__config_file = config_file
         self.__config = ConfigParser()
@@ -65,8 +65,13 @@ class UART(object):
         self.__db_client = InfluxDBClient.from_config_file(config_file)
         self.__bucket = self._config_value('influx2', 'bucket')
 
-        self.__write_api = self._db_client.write_api(
-            write_options=SYNCHRONOUS
+        self.__callback = BatchingCallback()
+
+        self.__write_api = self.__db_client.write_api(
+            success_callback=self.__callback.success if debug else None,
+            error_callback=self.__callback.error,
+            retry_callback=self.__callback.retry,
+            # write_options=SYNCHRONOUS,
         )
 
         # uart serial port connection
@@ -87,8 +92,7 @@ class UART(object):
         self.__buffer_min_len = self.__pck_start_len + 1
         self.__sampling_rate = 16  # [Hz]
         self.__delta = pd.Timedelta(1/self.__sampling_rate, 's')
-        self.__hostname = socket.gethostname()
-        self.__measurement = 'multi_ear'
+        self.__measurement = socket.gethostname().lower().replace('-', '_')
 
         # init
         self.__buffer = b''
@@ -148,10 +152,6 @@ class UART(object):
         return self.__db_client
 
     @property
-    def _hostname(self):
-        return self.__hostname
-
-    @property
     def _measurement(self):
         return self.__measurement
 
@@ -207,8 +207,6 @@ class UART(object):
                 point = self._parse_payload(
                     i+header_len, payload_len, self.__time
                 )
-                if self.debug:
-                    print(point.to_line_protocol())
 
                 # append point to data points
                 self.__points.append(point)
@@ -222,34 +220,39 @@ class UART(object):
         self.__buffer = self.__buffer[i:]
 
     def _parse_payload(self, offset, length, local_time=None) -> Point:
-        """Convert payload to Level-1 data to counts.
+        """Convert payload from Level-1 data to counts.
         Returns
         -------
         point : :class:`Point`
             Influx Point object with all tags, fields for the given time step.
         """
-        # Init
+        # Get payload from buffer
         payload = self._buffer[offset:offset+length]
-        point = Point(self._measurement).tag('host', self._hostname)
 
-        # Get date, time, and cycle step from buffer
+        # Get date, time, and cycle step from payload
         y, m, d, H, M, S, step = np.frombuffer(payload, np.uint8, 7, 0)
 
-        # GNSS lock?
+        # GNSS clock?
         gnss = y != 0
         if gnss:
             time = pd.Timestamp(2000 + y, m, d, H, M, S) + step * self.__delta
-            point.time(time).tag('clock', 'GNSS')
+            clock = 'GNSS'
         else:
             time = local_time or pd.to_datetime('now')
-            point.time(time).tag("clock", "local")
+            clock = 'local'
+
+        # Create point
+        point = (Point(self._measurement)
+                 .time(time)
+                 .tag('clock', clock))
 
         # DLVR-F50D differential pressure (14-bit ADC)
-        # tmp = payload[7] | (payload[8] << 8)
-        # np.int16((tmp | 0xF000) if (tmp & 0x1000) else (tmp & 0x1FFF))
+        tmp = payload[7] | (payload[8] << 8)
+        tmp = np.int16((tmp | 0xF000) if (tmp & 0x1000) else tmp)
+        # tmp = np.int16((tmp | 0xF000) if (tmp & 0x1000) else (tmp & 0x1FFF))
         point.field(
             'DLVR',
-            np.int16(payload[7] | (payload[8] << 8))
+            tmp
         )
 
         # SP210
@@ -260,31 +263,31 @@ class UART(object):
 
         # LPS33HW barometric pressure (24-bit)
         point.field(
-            'LPS33',
+            'LPS33HW',
             np.uint32(payload[11] + (payload[12] << 8) + (payload[13] << 16))
         )
 
         # LIS3DH 3-axis accelerometer and gyroscope (3x 16-bit)
         point.field(
-            'LIS3_X',
+            'LIS3DH_X',
             np.int16(payload[14] | (payload[15] << 8))
         )
         point.field(
-            'LIS3_Y',
+            'LIS3DH_Y',
             np.int16(payload[16] | (payload[17] << 8))
         )
         point.field(
-            'LIS3_Z',
+            'LIS3DH_Z',
             np.int16(payload[18] | (payload[19] << 8))
         )
 
         if length == 26 or length == 50:
             point.field(
-                'SHT_T',
+                'SHT85_T',
                 np.uint16((payload[20] << 8) | payload[21])
             )
             point.field(
-                'SHT_H',
+                'SHT85_H',
                 np.uint16((payload[22] << 8) | payload[23])
             )
             point.field(
@@ -301,7 +304,7 @@ class UART(object):
         # DLVR counts_to_Pa = 0.01*250/6553  # 25/65530
         # SP210 counts_to_inH20 = 1/(0.9*32768)  # 10/(9*32768)
         # LPS33HW counts_to_hPa = 1 / 4096
-        # LIS3 counts_to_ms2 = 0.076
+        # LIS3DH counts_to_ms2 = 0.076
         # SHT8x ...
         # ICS counts_to_dB = 100/4096
 
@@ -395,6 +398,24 @@ class UART(object):
             self._read_lines()
             self._parse_buffer()
             self._write_points()
+
+
+class BatchingCallback(object):
+
+    def success(self, conf: (str, str, str), data: str):
+        """Successfully writen batch."""
+        print(f"Written batch: {conf}, data: {data}")
+
+    def error(self, conf: (str, str, str), data: str,
+              exception: InfluxDBError):
+        """Unsuccessfully writen batch."""
+        print(f"Cannot write batch: {conf}, data: {data} due: {exception}")
+
+    def retry(self, conf: (str, str, str), data: str,
+              exception: InfluxDBError):
+        """Retryable error."""
+        print("Retryable error occurs for batch:" +
+              f"{conf}, data: {data} retry: {exception}")
 
 
 def main():
