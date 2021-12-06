@@ -205,7 +205,7 @@ class UART(object):
 
                 # convert payload to point
                 point = self._parse_payload(
-                    i+header_len, payload_len, self._time
+                    i+header_len, payload_len, self.__time
                 )
                 if self.debug:
                     print(point.to_line_protocol())
