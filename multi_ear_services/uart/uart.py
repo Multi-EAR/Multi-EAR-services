@@ -109,6 +109,7 @@ class UART(object):
     def _bucket(self):
         return self.__bucket
 
+    @property
     def _buffer(self):
         """Return the raw buffer sequence
         """
@@ -170,7 +171,7 @@ class UART(object):
         """Returns True if the read buffer at the given start index matches the
         packet start sequence.
         """
-        return self.__buffer[i:i+self.__pck_start_len] == self.__pck_start
+        return self._buffer[i:i+self.__pck_start_len] == self.__pck_start
 
     def _parse_buffer(self):
         """Parse the read buffer for data points.
