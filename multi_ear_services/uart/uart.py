@@ -8,13 +8,19 @@ from serial import Serial
 from argparse import ArgumentParser
 from configparser import ConfigParser
 from influxdb_client import InfluxDBClient, Point
+import influxdb_client.client.util.date_utils as date_utils
 from influxdb_client.client.write_api import SYNCHRONOUS
+from influxdb_client.client.util.date_utils_pandas import PandasDateTimeHelper
 
 # Relative imports
 from ..version import version
 
 
 __all__ = ['UART']
+
+
+# Set PandasDate helper which supports nanoseconds.
+date_utils.date_helper = PandasDateTimeHelper()
 
 
 class UART(object):
