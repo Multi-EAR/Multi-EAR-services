@@ -69,7 +69,7 @@ class UART(object):
         )
 
         # uart serial port connection
-        self.__serial__ = Serial(
+        self.__serial = Serial(
             port=self._config_value('serial', 'port'),
             baudrate=int(self._config_value('serial', 'baudrate')),
             timeout=int(self._config_value('serial', 'timeout')) / 1000,  # [s]
