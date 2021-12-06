@@ -155,6 +155,10 @@ class UART(object):
         return self.__measurement
 
     @property
+    def _packet_header_length(self):
+        return self.__packet_header_len
+
+    @property
     def _packet_start(self):
         return self.__packet_start
 
