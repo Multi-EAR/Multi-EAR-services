@@ -306,8 +306,8 @@ class UART(object):
             )
 
         # Counts to unit conversions
-        # DLVR counts_to_Pa = 0.01*250/6553  # 25/65530
-        # SP210 counts_to_inH20 = 1/(0.9*32768)  # 10/(9*32768)
+        # DLVR counts_to_Pa = 0.01*250/6553
+        # SP210 counts_to_Pa = 249.08/(0.9*32768)
         # LPS33HW counts_to_hPa = 1 / 4096
         # LIS3DH counts_to_ms2 = 0.076
         # SHT8x ...

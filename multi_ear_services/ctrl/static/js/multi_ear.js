@@ -291,7 +291,7 @@ function loadDashboard() {
         },
         yAxis: {
             title: {
-                text: 'Absolute pressure [count]',
+                text: 'Absolute pressure [hPa]',
             },
         },
         title: {
@@ -309,7 +309,12 @@ function loadDashboard() {
             enablePolling: true,
             dataRefreshRate: 5,
             parsed: function (columns) {
-                console.log(columns)
+                columns[1] = columns[1].map(function (value, index) {
+                    return (index === 0) ? value : value * 249.08/ ( 0.9 * 32768 )
+                })
+                columns[2] = columns[2].map(function (value, index) {
+                    return (index === 0) ? value : value * 25 / 65530
+                })
             },
         },
         tooltip: {
@@ -320,11 +325,44 @@ function loadDashboard() {
         },
         yAxis: {
             title: {
-                text: 'Differential pressure [count]',
+                text: 'Differential pressure [Pa]',
             },
         },
         title: {
             text: 'Differential Pressure'
+        },
+    });
+
+    const chart_acc = Highcharts.chart('chart-acc', {
+        chart: {
+            type: 'line',
+            zoomType: 'x'
+        },
+        data: {
+            csvURL: '/api/dataselect/query?d=multi_ear&m=multi_ear&f=^LIS3DH&s=2m&_f=csv',
+            enablePolling: true,
+            dataRefreshRate: 5,
+            parsed: function (columns) {
+                for (let i = 1; i <= 3; i++) {
+                    columns[i] = columns[i].map(function (value, index) {
+                        return (index === 0) ? value : value * 0.076
+                    })
+                }
+            },
+        },
+        tooltip: {
+            valueDecimals: 0
+        },
+        xAxis: {
+            type: 'datetime'
+        },
+        yAxis: {
+            title: {
+                text: 'Acceleration [m s-2]',
+            },
+        },
+        title: {
+            text: 'Acceleration'
         },
     });
 
