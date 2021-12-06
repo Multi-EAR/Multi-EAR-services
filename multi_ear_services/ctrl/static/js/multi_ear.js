@@ -284,7 +284,7 @@ function loadDashboard() {
             },
         },
         tooltip: {
-            valueDecimals: 0
+            valueDecimals: 2
         },
         xAxis: {
             type: 'datetime'
@@ -318,7 +318,7 @@ function loadDashboard() {
             },
         },
         tooltip: {
-            valueDecimals: 0
+            valueDecimals: 2
         },
         xAxis: {
             type: 'datetime'
@@ -351,7 +351,7 @@ function loadDashboard() {
             },
         },
         tooltip: {
-            valueDecimals: 0
+            valueDecimals: 2
         },
         xAxis: {
             type: 'datetime'
