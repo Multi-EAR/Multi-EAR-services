@@ -1,5 +1,5 @@
 [Unit]
-Description=Multi-EAR sensorboard serial readout via UART to a local InfluxDB time series database
+Description=Multi-EAR sensorboard serial readout to a local Influx time series database
 After=multi-user.target
  
 [Service]

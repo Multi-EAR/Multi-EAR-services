@@ -83,9 +83,7 @@ def uart_readout(config_file='config.ini', debug=False, dry_run=False):
         return config[sec][key].strip('"')
 
     # influx database connection
-    _db_client = InfluxDBClient.from_config_file(config_file, debug=debug)
-    _write_api = _db_client.write_api(write_options=SYNCHRONOUS)
-
+    _db_client = InfluxDBClient.from_config_file(config_file, debug=debug) 
     bucket = config_value('influx2', 'bucket')
 
     print("InfluxDB health =", _db_client.health())
@@ -99,7 +97,7 @@ def uart_readout(config_file='config.ini', debug=False, dry_run=False):
     print("UART connection =", _uart_conn)
 
     # automatically close clients on exit
-    atexit.register(on_exit, _db_client, _write_api, _uart_conn)
+    atexit.register(on_exit, _db_client, _uart_conn)
 
     # init
     read_buffer = b""
@@ -110,11 +108,16 @@ def uart_readout(config_file='config.ini', debug=False, dry_run=False):
     # continuous serial readout while open
     print("Start UART readout")
     while _uart_conn.isOpen():
-        read_buffer, data_points = parse_read(
-            read_lines(_uart_conn, read_buffer), debug=debug
-        )
-        if not dry_run:
-            _write_api.write(bucket=bucket, record=data_points)
+
+        with _db_client.write_api(write_options=SYNCHRONOUS) as write_api:
+
+            read_buffer, data_points = parse_read(
+                read_lines(_uart_conn, read_buffer), debug=debug
+            )
+
+            if not dry_run:
+
+                _write_api.write(bucket=bucket, record=data_points)
 
 
 def parse_read(read_buffer, points=[], debug=False):
@@ -307,12 +310,12 @@ def main():
         help='Path to configuration file'
     )
     parser.add_argument(
-        '--dry-run', action='store_true',
+        '--dry-run', action='store_true', default=False,
         help='UART readout without storage in the Influx database'
     )
     parser.add_argument(
-        '--debug', action='store_true',
-        help='Make the operation more talkative'
+        '--debug', action='store_true', default=False
+        help='Make the operation a lot more talkative'
     )
 
     parser.add_argument(
