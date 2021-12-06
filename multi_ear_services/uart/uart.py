@@ -13,7 +13,10 @@ from influxdb_client.client.write_api import SYNCHRONOUS
 from influxdb_client.client.util.date_utils_pandas import PandasDateTimeHelper
 
 # Relative imports
-from multi_ear_services import __version__ as  version
+try:
+    from ..version import version
+except ModuleNotFoundError:
+    version = '[VERSION-NOT-FOUND]'
 
 
 __all__ = ['UART']
