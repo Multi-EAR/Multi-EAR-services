@@ -254,11 +254,10 @@ class UART(object):
 
         # DLVR-F50D differential pressure (14-bit ADC)
         tmp = payload[7] | (payload[8] << 8)
-        tmp = np.int16((tmp | 0xF000) if (tmp & 0x1000) else tmp)
-        # tmp = np.int16((tmp | 0xF000) if (tmp & 0x1000) else (tmp & 0x1FFF))
+        tmp = (tmp | 0xF000) if (tmp & 0x1000) else (tmp & 0x1FFF)
         point.field(
             'DLVR',
-            tmp
+            np.int16(tmp)
         )
 
         # SP210
