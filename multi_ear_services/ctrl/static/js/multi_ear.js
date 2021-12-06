@@ -276,9 +276,10 @@ function loadDashboard() {
         data: {
             csvURL: '/api/dataselect/query?d=multi_ear&m=multi_ear&f=LPS33HW&s=2m&_f=csv',
             enablePolling: true,
-            dataRefreshRate: 10,
+            dataRefreshRate: 5,
             parsed: function (columns) {
                 console.log(columns)
+                console.log(columns[1])
             },
         },
         tooltip: {
@@ -305,7 +306,7 @@ function loadDashboard() {
         data: {
             csvURL: '/api/dataselect/query?d=multi_ear&m=multi_ear&f=SP210,DLVR&s=2m&_f=csv',
             enablePolling: true,
-            dataRefreshRate: 10,
+            dataRefreshRate: 5,
         },
         tooltip: {
             valueDecimals: 0
@@ -331,7 +332,7 @@ function loadDashboard() {
         data: {
             csvURL: '/api/dataselect/query?d=telegraf&m=system&f=load*&s=30m&_f=csv',
             enablePolling: true,
-            dataRefreshRate: 10,
+            dataRefreshRate: 30,
         },
         tooltip: {
             valueDecimals: 2
@@ -358,7 +359,7 @@ function loadDashboard() {
         data: {
             csvURL: '/api/dataselect/query?d=telegraf&m=mem&f=used,buffered,cached,free&s=30m&_f=csv',
             enablePolling: true,
-            dataRefreshRate: 10,
+            dataRefreshRate: 30,
         },
         tooltip: {
             formatter: function() { return bytes(this.y, true); }
