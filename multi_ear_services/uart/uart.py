@@ -129,11 +129,11 @@ class UART(object):
         return np.frombuffer(self._buffer, dtype, count, offset, like=like)
 
     @property
-    def _config_file(self):
+    def config_file(self):
         return self.__config_file
 
     @property
-    def _config(self):
+    def config(self):
         return self.__config
 
     def _config_value(self, sec: str, key: str):
@@ -221,7 +221,7 @@ class UART(object):
 
         self.__buffer = self.__buffer[i:]
 
-    def parse_payload(self, offset, length, local_time=None) -> Point:
+    def _parse_payload(self, offset, length, local_time=None) -> Point:
         """Convert payload to Level-1 data to counts.
         Returns
         -------
