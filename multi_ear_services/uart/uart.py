@@ -48,13 +48,19 @@ class UART(object):
         """
 
         # parse configuration file
-        self.__config__ = ConfigParser()
-        self.__config__.read(config_file)
+        self.__config = ConfigParser()
+        self.__config.read(config_file)
 
         # influx database connection
-        self.__db__ = InfluxDBClient.from_config_file(config_file, debug=debug)
-        self.__bucket__ = self._config_value('influx2', 'bucket')
-        self.__write_api__ = self.__db__.write_api(write_options=SYNCHRONOUS)
+        self.__db_client = InfluxDBClient.from_config_file(
+            config_file,
+            debug=debug,
+        )
+        self.__bucket = self._config_value('influx2', 'bucket')
+
+        self.__write_api = self.__db_client.write_api(
+            write_options=SYNCHRONOUS
+        )
 
         # uart serial port connection
         self.__serial__ = Serial(
