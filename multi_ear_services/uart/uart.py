@@ -11,6 +11,7 @@ from argparse import ArgumentParser
 from configparser import ConfigParser
 from influxdb_client import InfluxDBClient, Point
 from influxdb_client.client.exceptions import InfluxDBError
+from influxdb_client.client.write_api import SYNCHRONOUS
 import influxdb_client.client.util.date_utils as date_utils
 from influxdb_client.client.util.date_utils_pandas import PandasDateTimeHelper
 
@@ -29,9 +30,12 @@ date_utils.date_helper = PandasDateTimeHelper()
 
 
 class UART(object):
+    _buffer = b''
+    _time = None
+    _points = []
 
     def __init__(self, config_file='config.ini', journald=False,
-                 debug=False, dry_run=False):
+                 debug=False, dry_run=False) -> None:
         """Sensorboard serial readout with data storage in a local influx
         database.
 
@@ -59,7 +63,7 @@ class UART(object):
               timeout = 2000
         """
         # logging
-        self.__log = logging.getLogger(__name__)
+        self._log = logging.getLogger(__name__)
 
         # instantiate the JournaldLogHandler to hook into systemd
         if journald:
@@ -67,138 +71,68 @@ class UART(object):
             journald_handler.setFormatter(logging.Formatter(
                 '[%(levelname)s] %(message)s'
             ))
-            self.__log.addHandler(journald_handler)
+            self._log.addHandler(journald_handler)
 
         # set log level
-        self.__log.setLevel(logging.DEBUG if debug else logging.INFO)
+        self._log.setLevel(logging.DEBUG if debug else logging.INFO)
 
         # parse configuration file
-        self.__config_file = config_file
-        self.__config = ConfigParser()
-        self.__config.read(config_file)
+        self._config_file = config_file
+        self._config = ConfigParser()
+        self._config.read(config_file)
 
-        # influx database connection
-        self.__db_client = InfluxDBClient.from_config_file(config_file)
-        self._log.info(f"Influx client = {repr(self.__db_client.health())}")
-        self.__bucket = self._config_value('influx2', 'bucket')
+        # influx options
+        self._bucket = self._config_value('influx2', 'bucket')
+        self._callback = BatchingCallback(self._log)
 
-        # influx database write api with callback to logger
-        self.__callback = BatchingCallback(self._log)
-        self.__write_api = self.__db_client.write_api(
-            success_callback=self.__callback.success,
-            error_callback=self.__callback.error,
-            retry_callback=self.__callback.retry,
-        )
-
-        # uart serial port connection
-        self.__serial = Serial(
+        # serial port connection
+        self._uart = Serial(
             port=self._config_value('serial', 'port'),
             baudrate=int(self._config_value('serial', 'baudrate')),
             timeout=int(self._config_value('serial', 'timeout')) / 1000,  # [s]
         )
-        self._log.info(f"Serial connection = {self.__serial}")
+        self._log.info(f"Serial connection = {self._uart}")
 
         # set options
-        self.__debug = debug or False
-        self.__dry_run = dry_run or False
+        self.debug = debug or False
+        self.dry_run = dry_run or False
 
         # configure
-        self.__pck_start = b'\x11\x99\x22\x88\x33\x73'
-        self.__pck_start_len = len(self.__pck_start)
-        self.__pck_header_len = 11
-        self.__buffer_min_len = self.__pck_start_len + 1
-        self.__sampling_rate = 16  # [Hz]
-        self.__delta = pd.Timedelta(1/self.__sampling_rate, 's')
-        self.__measurement = 'multi_ear'
-        self.__hostname = socket.gethostname()
-
-        # init
-        self.__buffer = b''
-        self.__time = None
-        self.__points = []
+        self._pck_start = b'\x11\x99\x22\x88\x33\x73'
+        self._pck_start_len = len(self._pck_start)
+        self._pck_header_len = 11
+        self._buffer_min_len = self._pck_start_len + 1
+        self._sampling_rate = 16  # [Hz]
+        self._delta = pd.Timedelta(1/self._sampling_rate, 's')
+        self._measurement = 'multi_ear'
+        self._hostname = socket.gethostname()
 
         # terminate at exit
         atexit.register(self.close)
 
     def close(self):
-        """Close clients.
-        """
         self._log.info("Shutdown clients")
-        self._db_client.close()
-        self._write_api.close()
-        self._serial.close()
+        self.__del__()
 
-    @property
-    def _bucket(self):
-        return self.__bucket
-
-    @property
-    def _buffer(self):
-        """Return the raw buffer sequence
-        """
-        return self.__buffer
-
-    @property
-    def _buffer_length(self):
-        return len(self.__buffer)
-
-    @property
-    def _buffer_min_length(self):
-        return self.__buffer_min_len
+    def __del__(self):
+        # self._db_client.close()
+        # self._write_api.close()
+        self._uart.close()
+        pass
 
     def _frombuffer(self, offset=0, count=1, dtype=np.int8, like=None):
         """Return a dtype sequence from the buffer
         """
         return np.frombuffer(self._buffer, dtype, count, offset, like=like)
 
-    @property
-    def config_file(self):
-        return self.__config_file
-
-    @property
-    def config(self):
-        return self.__config
-
     def _config_value(self, sec: str, key: str):
-        return self.__config[sec][key].strip('"')
-
-    @property
-    def _data_points(self):
-        return self.__points
-
-    @property
-    def _db_client(self):
-        return self.__db_client
-
-    @property
-    def _hostname(self):
-        return self.__hostname
-
-    @property
-    def _log(self):
-        return self.__log
-
-    @property
-    def _measurement(self):
-        return self.__measurement
-
-    @property
-    def _packet_header_length(self):
-        return self.__pck_header_len
-
-    @property
-    def _packet_start(self):
-        return self.__pck_start
-
-    @property
-    def _packet_start_length(self):
-        return self.__pck_start_len
+        return self._config[sec][key].strip('"')
 
     def _packet_starts(self, i):
         """Returns True if the read buffer at the given start index matches the
         packet start sequence.
         """
-        return self._buffer[i:i+self.__pck_start_len] == self.__pck_start
+        return self._buffer[i:i+self._pck_start_len] == self._pck_start
 
     def _parse_buffer(self):
         """Parse the read buffer for data points.
@@ -225,18 +159,18 @@ class UART(object):
                     break
 
                 # increase local time
-                self.__time += self.__delta
+                self._time += self._delta
 
                 # get payload length
                 payload_len = int(self._buffer[i+header_len-1])
 
                 # convert payload to point
                 point = self._parse_payload(
-                    i + header_len, payload_len, self.__time
+                    i + header_len, payload_len, self._time
                 )
 
                 # append point to data points
-                self.__points.append(point)
+                self._points.append(point)
 
                 # shift buffer to next packet
                 i += packet_len + 1
@@ -244,7 +178,7 @@ class UART(object):
             else:
                 i += 1
 
-        self.__buffer = self.__buffer[i:]
+        self._buffer = self._buffer[i:]
 
     def _parse_payload(self, offset, length, local_time=None) -> Point:
         """Convert payload from Level-1 data to counts.
@@ -262,7 +196,7 @@ class UART(object):
         # GNSS clock?
         gnss = y != 0
         if gnss:
-            time = pd.Timestamp(2000 + y, m, d, H, M, S) + step * self.__delta
+            time = pd.Timestamp(2000 + y, m, d, H, M, S) + step * self._delta
             clock = 'GNSS'
         else:
             time = local_time or pd.to_datetime('now')
@@ -359,55 +293,35 @@ class UART(object):
         """Read all available lines from the serial port
         and append to the read buffer.
         """
-        read = self._serial.readline()
+        read = self._uart.readline()
         sleep(.2)
-        in_waiting = self._serial.in_waiting
-        read += self._serial.readline(in_waiting)
+        in_waiting = self._uart.in_waiting
+        read += self._uart.readline(in_waiting)
 
-        self.__buffer += read
-
-    @property
-    def _points(self):
-        return self.__points
-
-    @property
-    def _serial(self):
-        return self.__serial
-
-    @property
-    def _write_api(self):
-        return self.__write_api
+        self._buffer += read
 
     def _write_points(self, clear=True):
         """Write points to Influx database
         """
         if not self.dry_run and len(self._points) > 0:
-            self._write_api.write(
-                bucket=self._bucket,
-                record=self._points,
-            )
+
+            with InfluxDBClient.from_config_file(
+                self._config_file, debug=self.debug,
+            ) as client:
+
+                with client.write_api(
+                    write_options=SYNCHRONOUS,
+                    success_callback=self._callback.success,
+                    error_callback=self._callback.error,
+                    retry_callback=self._callback.retry,
+                ) as write_api:
+
+                    write_api.write(
+                        bucket=self._bucket,
+                        record=self._points,
+                    )
         if clear:
-            self.__points = []
-
-    @property
-    def debug(self):
-        return self.__debug
-
-    @debug.setter
-    def debug(self, debug):
-        if not isinstance(debug, bool):
-            raise TypeError("debug should be a of type bool")
-        self.__debug = debug
-
-    @property
-    def dry_run(self):
-        return self.__dry_run
-
-    @dry_run.setter
-    def dry_run(self, dry_run):
-        if not isinstance(dry_run, bool):
-            raise TypeError("dry_run should be a of type bool")
-        self.__dry_run = dry_run
+            self._points = []
 
     def readout(self):
         """Contiously read UART serial data into a binary buffer, parse the
@@ -417,13 +331,13 @@ class UART(object):
         self._log.info("Start serial readout to influx database")
 
         # init
-        self.__buffer = b''
-        self.__points = []
+        self._buffer = b''
+        self._points = []
 
         # set local time as backup if GNSS fails
-        self.__time = pd.to_datetime("now")
+        self._time = pd.to_datetime("now")
 
-        while self._serial.isOpen():
+        while self._uart.isOpen():
             self._read_lines()
             self._parse_buffer()
             self._write_points()
