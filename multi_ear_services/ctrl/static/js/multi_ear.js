@@ -305,16 +305,17 @@ function loadDashboard() {
             zoomType: 'x'
         },
         data: {
-            csvURL: '/api/dataselect/query?d=multi_ear&m=multi_ear&f=SP210,DLVR&s=2m&_f=csv',
+            csvURL: '/api/dataselect/query?d=multi_ear&m=multi_ear&f=DLVR,SP210&s=2m&_f=csv',
             enablePolling: true,
             dataRefreshRate: 5,
             parsed: function (columns) {
                 columns[1] = columns[1].map(function (value, index) {
-                    return (index === 0) ? value : value * 249.08/ ( 0.9 * 32768 )
+                    return (index === 0) ? value : value * 250 / 655300
                 })
                 columns[2] = columns[2].map(function (value, index) {
-                    return (index === 0) ? value : value * 25 / 65530
+                    return (index === 0) ? value : value * 249.08 / ( 0.9 * 32768 )
                 })
+
             },
         },
         tooltip: {
@@ -356,7 +357,7 @@ function loadDashboard() {
         },
         yAxis: {
             title: {
-                text: 'SPL [dB]',
+                text: '?? [??]',
             },
         },
         title: {
@@ -382,14 +383,14 @@ function loadDashboard() {
             },
         },
         tooltip: {
-            valueDecimals: 2
+            valueDecimals: 4
         },
         xAxis: {
             type: 'datetime'
         },
         yAxis: {
             title: {
-                text: 'Acceleration [m s-2]',
+                text: 'Acceleration [mg]',
             },
         },
         title: {
