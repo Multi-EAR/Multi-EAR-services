@@ -383,7 +383,7 @@ function loadDashboard() {
             },
         },
         tooltip: {
-            valueDecimals: 4
+            valueDecimals: 2
         },
         xAxis: {
             type: 'datetime'
