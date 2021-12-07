@@ -232,7 +232,7 @@ class UART(object):
 
                 # convert payload to point
                 point = self._parse_payload(
-                    i+header_len, payload_len, self.__time
+                    i + header_len, payload_len, self.__time
                 )
 
                 # append point to data points
@@ -283,11 +283,13 @@ class UART(object):
         )
 
         # SP210
+        tmp = (payload[9] << 8) | payload[10]
+        tmp = (tmp | 0xF000) if (tmp & 0x1000) else (tmp & 0x1FFF)
         point.field(
             'SP210',
-            np.int16(payload[10] | (payload[9] << 8))
-            # np.int16((payload[9] << 8) + payload[10])
-            # np.frombuffer(payload, np.int16, 1, 9).item()
+            np.int16(tmp)
+            # np.int16((payload[9] << 8) | payload[10])
+            # np.int16(payload[9] | (payload[10] << 8))
         )
 
         # LPS33HW barometric pressure (24-bit)
@@ -469,7 +471,7 @@ def main():
     )
 
     parser.add_argument(
-        '-c', '--config_file', metavar='..', type=str, default='config.ini',
+        '-c', '--config', metavar='..', type=str, default='config.ini',
         help='Path to configuration file'
     )
     parser.add_argument(
@@ -492,7 +494,7 @@ def main():
 
     args = parser.parse_args()
 
-    uart = UART(args.config_file, args.journald, args.debug, args.dry_run)
+    uart = UART(args.config, args.journald, args.debug, args.dry_run)
     uart.readout()
 
 

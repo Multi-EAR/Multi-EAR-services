@@ -9,10 +9,10 @@ Group=tud
 WorkingDirectory=/home/tud/
 Environment="VIRTUAL_ENV=/home/tud/.py37"
 Environment="PATH=$VIRTUAL_ENV/bin:$PATH"
-ExecStart=/home/tud/.py37/bin/multi-ear-uart -c /home/tud/.py37/multi-ear-services/config.ini --journald
-#StandardOutput=syslog
-#StandardError=syslog
-#SyslogIdentifier=multi-ear-uart
+ExecStart=/home/tud/.py37/bin/multi-ear-uart --config /home/tud/.py37/multi-ear-services/config.ini --journald
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=multi-ear-uart
 Restart=always
 
 [Install]
