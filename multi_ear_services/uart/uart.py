@@ -1,6 +1,7 @@
 # Mandatory imports
 import atexit
 import logging
+import gc
 import numpy as np
 import pandas as pd
 import socket
@@ -27,6 +28,9 @@ __all__ = ['UART']
 
 # Set PandasDate helper which supports nanoseconds.
 date_utils.date_helper = PandasDateTimeHelper()
+
+# Force garbage collections
+gc.enable()
 
 
 class UART(object):
@@ -304,7 +308,13 @@ class UART(object):
 
         self._buffer += read
 
-    def _write_points(self, clear=True):
+    def _clear_points(self):
+        for point in self._points:
+            del point
+        gc.collect()
+        self._points = []
+
+    def _write_points(self):
         """Write points to Influx database
         """
         if not self.dry_run and len(self._points) > 0:
@@ -324,8 +334,7 @@ class UART(object):
                         bucket=self._bucket,
                         record=self._points,
                     )
-        if clear:
-            self._points = []
+        self._clear_points()
 
     def readout(self):
         """Contiously read UART serial data into a binary buffer, parse the
