@@ -383,20 +383,20 @@ function loadDashboard() {
             parsed: function (columns) {
                 for (let i = 1; i <= 3; i++) {
                     columns[i] = columns[i].map(function (value, index) {
-                        return (index === 0) ? value : value * 0.076
+                        return (index === 0) ? value : value * 0.076 * 9.80665 / 1000
                     })
                 }
             },
         },
         tooltip: {
-            valueDecimals: 2
+            valueDecimals: 5
         },
         xAxis: {
             type: 'datetime'
         },
         yAxis: {
             title: {
-                text: 'Acceleration [mg]',
+                text: 'Acceleration [m s-2]',
             },
         },
         title: {
