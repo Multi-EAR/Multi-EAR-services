@@ -30,8 +30,8 @@ date_utils.date_helper = PandasDateTimeHelper()
 
 class UART(object):
 
-    def __init__(self, config_file='config.ini',
-                 debug=False, dry_run=False, journald=False):
+    def __init__(self, config_file='config.ini', journald=False,
+                 debug=False, dry_run=False):
         """Sensorboard serial readout via UART with data storage in a local
         Influx database.
 
@@ -491,7 +491,7 @@ def main():
 
     args = parser.parse_args()
 
-    uart = UART(args.config_file, args.debug, args.dry_run)
+    uart = UART(args.config_file, args.journald, args.debug, args.dry_run)
     uart.readout()
 
 
