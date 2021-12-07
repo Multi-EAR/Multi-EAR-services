@@ -467,6 +467,7 @@ function stopChart(chart) {
 
     if (chart !== undefined) {
 
+        window.clearInterval(chart)
         chart.data.options['enablePolling'] = false
         chart.destroy()
         chart = undefined
