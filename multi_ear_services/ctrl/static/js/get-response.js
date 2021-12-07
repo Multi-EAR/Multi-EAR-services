@@ -1,12 +1,12 @@
 /*
  * Usage:
- * getJSON("https://jsonplaceholder.typicode.com/comments", { postId: 1}, 'GET'| 'POST')
+ * getResponse("https://jsonplaceholder.typicode.com/comments", { postId: 1}, 'GET'| 'POST')
  *  .then(data => {
  *    console.log(data);
  *  });
  */
 
-function getJSON(url, qs_params, qs_type) {
+function getResponse(url, qs_params, qs_type) {
 
     function buildQueryString(params) {
 

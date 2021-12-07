@@ -1,4 +1,6 @@
 /* global bootstrap: false */
+let debug = window.location.hostname == '127.0.0.1'
+let multiEAR = debug ? 'http://multi-ear-3001.local' : ''
 
 
 function sleep(ms) {
@@ -101,7 +103,7 @@ function append_wpa_supplicant(form) {
         var ssid = form.elements["inputSSID"].value
         var psk = form.elements["inputPSK"].value
 
-        getJSON("/_append_wpa_supplicant", { ssid: ssid, passphrase: psk, secret: secret }, 'POST')
+        getResponse("/_append_wpa_supplicant", { ssid: ssid, passphrase: psk, secret: secret }, 'POST')
         .then(resp => {
 
             if (resp.status !== 200) {
@@ -128,7 +130,7 @@ function autohotspot() {
 
         if (secret === null) return
 
-        getJSON("/_autohotspot", { secret: secret }, 'POST')
+        getResponse("/_autohotspot", { secret: secret }, 'POST')
         .then(resp => {
 
             if (resp.status !== 200) {
@@ -180,7 +182,7 @@ function statusUpdateLoop() {
 
 function statusUpdate() {
 
-    getJSON("/_systemd_status", { service: '*' })
+    getResponse("/_systemd_status", { service: '*' })
     .then(function(resp) {
 
         if (resp.status !== 200) return
@@ -266,15 +268,19 @@ function bytes(bytes, label) {
 }
 
 
+var chart_pabs, chart_pdif, chart_ics, chart_acc
+var chart_system_load, chart_memory_usage
+
+
 function loadDashboard() {
 
-    const chart_pabs = Highcharts.chart('chart-pabs', {
+    chart_pabs = Highcharts.chart('chart-pabs', {
         chart: {
             type: 'line',
             zoomType: 'x'
         },
         data: {
-            csvURL: '/api/dataselect/query?d=multi_ear&m=multi_ear&f=LPS33HW&s=2m&_f=csv',
+            csvURL: multiEAR + '/api/dataselect/query?d=multi_ear&m=multi_ear&f=LPS33HW&s=2m&_f=csv',
             enablePolling: true,
             dataRefreshRate: 5,
             parsed: function (columns) {
@@ -299,13 +305,13 @@ function loadDashboard() {
         },
     });
 
-    const chart_pdiff = Highcharts.chart('chart-pdiff', {
+    chart_pdif = Highcharts.chart('chart-pdif', {
         chart: {
             type: 'line',
             zoomType: 'x'
         },
         data: {
-            csvURL: '/api/dataselect/query?d=multi_ear&m=multi_ear&f=DLVR,SP210&s=2m&_f=csv',
+            csvURL: multiEAR + '/api/dataselect/query?d=multi_ear&m=multi_ear&f=DLVR,SP210&s=2m&_f=csv',
             enablePolling: true,
             dataRefreshRate: 5,
             parsed: function (columns) {
@@ -334,13 +340,13 @@ function loadDashboard() {
         },
     });
 
-    const chart_ics = Highcharts.chart('chart-ics', {
+    chart_ics = Highcharts.chart('chart-ics', {
         chart: {
             type: 'line',
             zoomType: 'x'
         },
         data: {
-            csvURL: '/api/dataselect/query?d=multi_ear&m=multi_ear&f=^ICS&s=2m&_f=csv',
+            csvURL: multiEAR + '/api/dataselect/query?d=multi_ear&m=multi_ear&f=^ICS&s=2m&_f=csv',
             enablePolling: true,
             dataRefreshRate: 5,
             parsed: function (columns) {
@@ -365,13 +371,13 @@ function loadDashboard() {
         },
     });
 
-    const chart_acc = Highcharts.chart('chart-acc', {
+    chart_acc = Highcharts.chart('chart-acc', {
         chart: {
             type: 'line',
             zoomType: 'x'
         },
         data: {
-            csvURL: '/api/dataselect/query?d=multi_ear&m=multi_ear&f=^LIS3DH&s=2m&_f=csv',
+            csvURL: multiEAR + '/api/dataselect/query?d=multi_ear&m=multi_ear&f=^LIS3DH&s=2m&_f=csv',
             enablePolling: true,
             dataRefreshRate: 5,
             parsed: function (columns) {
@@ -398,13 +404,13 @@ function loadDashboard() {
         },
     });
 
-    const chart_system_load = Highcharts.chart('chart-system-load', {
+    chart_system_load = Highcharts.chart('chart-system-load', {
         chart: {
             type: 'spline',
             zoomType: 'x'
         },
         data: {
-            csvURL: '/api/dataselect/query?d=telegraf&m=system&f=load*&s=30m&_f=csv',
+            csvURL: multiEAR + '/api/dataselect/query?d=telegraf&m=system&f=load*&s=30m&_f=csv',
             enablePolling: true,
             dataRefreshRate: 30,
         },
@@ -425,13 +431,13 @@ function loadDashboard() {
         },
     });
 
-    const chart_memory_usage = Highcharts.chart('chart-memory-usage', {
+    chart_memory_usage = Highcharts.chart('chart-memory-usage', {
         chart: {
             type: 'spline',
             zoomType: 'x'
         },
         data: {
-            csvURL: '/api/dataselect/query?d=telegraf&m=mem&f=used,buffered,cached,free&s=30m&_f=csv',
+            csvURL: multiEAR + '/api/dataselect/query?d=telegraf&m=mem&f=used,buffered,cached,free&s=30m&_f=csv',
             enablePolling: true,
             dataRefreshRate: 30,
         },
@@ -453,6 +459,33 @@ function loadDashboard() {
             text: 'Memory usage'
         },
     });
+
+}
+
+
+function stopChart(chart) {
+
+    if (chart !== undefined) {
+
+        chart.data.options['enablePolling'] = false
+        chart.destroy()
+        chart = undefined
+
+    }
+
+    return chart
+
+}
+
+
+function stopDashboard() {
+
+    chart_pabs = stopChart(chart_pabs)
+    chart_pdif = stopChart(chart_pdif)
+    chart_ics = stopChart(chart_ics)
+    chart_acc = stopChart(chart_acc)
+    chart_system_load = stopChart(chart_system_load)
+    chart_memory_usage = stopChart(chart_memory_usage)
 
 }
 
@@ -528,7 +561,7 @@ function loadContent(nav) {
     clearInterval(statusUpdater);
 
     // lazy load new content and trigger nav related functions
-    getJSON("/_tab/" + tab)
+    getResponse("/_tab/" + tab)
     .then(function(resp) {
 
         if (resp.status !== 200) { console.log(resp); return; }
@@ -536,6 +569,8 @@ function loadContent(nav) {
 
     })
     .finally(function() {
+
+        stopDashboard()
 
         switch (tab) {
 
