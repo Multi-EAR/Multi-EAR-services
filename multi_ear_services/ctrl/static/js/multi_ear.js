@@ -345,7 +345,7 @@ function loadDashboard() {
             parsed: function (columns) {
                 columns[1] = columns[1].map(function (value, index) {
                     return (index === 0) ? value : value * 100 / 4096
-                }
+                })
             },
         },
         tooltip: {
