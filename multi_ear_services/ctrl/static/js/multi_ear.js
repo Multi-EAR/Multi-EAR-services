@@ -333,6 +333,37 @@ function loadDashboard() {
         },
     });
 
+    const chart_ics = Highcharts.chart('chart-ics', {
+        chart: {
+            type: 'line',
+            zoomType: 'x'
+        },
+        data: {
+            csvURL: '/api/dataselect/query?d=multi_ear&m=multi_ear&f=^ICS&s=2m&_f=csv',
+            enablePolling: true,
+            dataRefreshRate: 5,
+            parsed: function (columns) {
+                columns[1] = columns[1].map(function (value, index) {
+                    return (index === 0) ? value : value * 100 / 4096
+                }
+            },
+        },
+        tooltip: {
+            valueDecimals: 1
+        },
+        xAxis: {
+            type: 'datetime'
+        },
+        yAxis: {
+            title: {
+                text: 'SPL [dB]',
+            },
+        },
+        title: {
+            text: 'Sound Pressure Level'
+        },
+    });
+
     const chart_acc = Highcharts.chart('chart-acc', {
         chart: {
             type: 'line',
