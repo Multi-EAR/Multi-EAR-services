@@ -79,6 +79,7 @@ class UART(object):
 
         # influx database connection
         self.__db_client = InfluxDBClient.from_config_file(config_file)
+        self._log.info(f"Influx client = {repr(self.__db_client.health())}")
         self.__bucket = self._config_value('influx2', 'bucket')
 
         # influx database write api with callback to logger
@@ -95,6 +96,7 @@ class UART(object):
             baudrate=int(self._config_value('serial', 'baudrate')),
             timeout=int(self._config_value('serial', 'timeout')) / 1000,  # [s]
         )
+        self._log.info(f"Serial connection = {self.__serial}")
 
         # set options
         self.__debug = debug or False
@@ -121,6 +123,7 @@ class UART(object):
     def close(self):
         """Close clients.
         """
+        self._log.info("Shutdown clients")
         self._db_client.close()
         self._write_api.close()
         self._serial.close()
@@ -412,6 +415,8 @@ class UART(object):
         payload and write measurements to the Influx time series database.
         """
 
+        self._log.info("Start serial readout to influx database")
+
         # init
         self.__buffer = b''
         self.__points = []
@@ -423,6 +428,8 @@ class UART(object):
             self._read_lines()
             self._parse_buffer()
             self._write_points()
+
+        self._log.info("Serial port closed")
 
 
 class BatchingCallback(object):
