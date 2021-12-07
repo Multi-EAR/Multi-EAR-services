@@ -32,8 +32,8 @@ class UART(object):
 
     def __init__(self, config_file='config.ini', journald=False,
                  debug=False, dry_run=False):
-        """Sensorboard serial readout via UART with data storage in a local
-        Influx database.
+        """Sensorboard serial readout with data storage in a local influx
+        database.
 
         Configure all parameters via configuration file. The configuration file
         has to contain the sections 'influx2' and 'serial'.
@@ -462,21 +462,21 @@ def main():
     # arguments
     parser = ArgumentParser(
         prog='multi-ear-uart',
-        description=('Sensorboard serial readout via UART with '
-                     'data storage in a local Influx database.'),
+        description=('Sensorboard serial readout with data storage'
+                     'in a local influx database.'),
     )
 
     parser.add_argument(
-        '-c', '--config', metavar='..', type=str, default='config.ini',
+        '-i', '--ini', metavar='..', type=str, default='config.ini',
         help='Path to configuration file'
     )
     parser.add_argument(
         '-j', '--journald', action='store_true', default=False,
-        help='Logging to systemd journal'
+        help='Log to systemd journal'
     )
     parser.add_argument(
         '--dry-run', action='store_true', default=False,
-        help='UART readout without storage in the Influx database'
+        help='Serial read without storage in the influx database'
     )
     parser.add_argument(
         '--debug', action='store_true', default=False,
@@ -485,12 +485,12 @@ def main():
 
     parser.add_argument(
         '--version', action='version', version=version,
-        help='Print xcorr version and exit'
+        help='Print the version and exit'
     )
 
     args = parser.parse_args()
 
-    uart = UART(args.config, args.journald, args.debug, args.dry_run)
+    uart = UART(args.ini, args.journald, args.debug, args.dry_run)
     uart.readout()
 
 
