@@ -255,7 +255,7 @@ class UART(object):
         point.field(
             'SP210',
             # np.int16((payload[9] << 8) | payload[10])
-            np.int16(payload[9] | (payload[10] << 8))
+            np.frombuffer(payload, np.int16, 1, 9)
         )
 
         # LPS33HW barometric pressure (24-bit)
