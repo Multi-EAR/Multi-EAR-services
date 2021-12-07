@@ -495,46 +495,60 @@ function do_configure_hostapd
 
 function influx_e
 {
-    verbose_msg "> $1" 1
-    influx -execute "$1" >> $LOG_FILE 2>&1
+    if [ $# -eq 1 ]; then
+        verbose_msg "> $1" 1
+        influx -execute "$1" >> $LOG_FILE 2>&1
+    else
+        verbose_msg "> $1 @ $2" 1
+        influx -execute "$1" -database "$2" >> $LOG_FILE 2>&1
+    fi
 }
 
 
 function do_configure_influxdb
 {
     verbose_msg ".. configure influxdb"
+
     # enable
     do_systemd_service_enable "influxdb.service"
+
     # link default settings
     verbose_msg "> enable default configuration" 1
     sudo ln -sf /etc/influxdb/default.conf /etc/influxdb/influxdb.conf >> $LOG_FILE 2>&1
+
     # restart with default settings
     do_systemd_service_restart "influxdb.service"
+
     # logging and output
     sudo mkdir -p /var/log/influxdb /var/lib/influxdb
     sudo chown -R influxdb:influxdb /var/log/influxdb /var/lib/influxdb
     sudo chmod 755 /var/log/influxdb /var/lib/influxdb
+
     #
-    # influx docs: https://docs.influxdata.com/influxdb/v1.8/
+    # influx query docs: https://docs.influxdata.com/influxdb/v1.8/
     #
+
+    # remove default internal database for logging
     influx_e "DROP DATABASE '_internal'"
-    # retention policies
-    local rp_m="onemonth" rp_m_specs="DURATION 30d REPLICATION 1 SHARD DURATION 5d"
-    local rp_y="oneyear"  rp_y_specs="DURATION 366d REPLICATION 1 SHARD DURATION 7d"
+
+    # create retention policies
+    local rp_m="one_month" rp_m_specs="DURATION 30d REPLICATION 1 SHARD DURATION 1d DEFAULT"
+    local rp_y="one_year"  rp_y_specs="DURATION 52w REPLICATION 1 SHARD DURATION 1d DEFAULT"
+
     # create database telegraf?
-    if ! influx -execute "show databases" | grep -q "telegraf";
+    if ! influx -execute "SHOW DATABASES" | grep -q "telegraf";
     then
         influx_e "CREATE DATABASE telegraf"
     fi
-    # influx_e "USE DATABASE 'telegraf'"
-    # influx_e "CREATE RETENTION POLICY $rp_m ON telegraf $rp_m_specs"
+    influx_e "CREATE RETENTION POLICY $rp_m ON telegraf $rp_m_specs"
+
     # create databases multi_ear?
-    if ! influx -execute "show databases" | grep -q "multi_ear";
+    if ! influx -execute "SHOW DATABASES" | grep -q "multi_ear";
     then
         influx_e "CREATE DATABASE multi_ear"
     fi
-    # influx_e "USE DATABASE 'multi_ear'"
-    # influx_e "CREATE RETENTION POLICY $rp_y ON multi_ear $rp_y_specs"
+    influx_e "CREATE RETENTION POLICY $rp_y ON multi_ear $rp_y_specs"
+
     # create full-privilege user
     if [ "$INFLUX_USERNAME" == "" ];
     then
@@ -552,11 +566,13 @@ function do_configure_influxdb
     fi
     influx_e "GRANT ALL PRIVILEGES ON multi_ear TO $INFLUX_USERNAME"
     influx_e "GRANT ALL PRIVILEGES ON telegraf TO $INFLUX_USERNAME"
+
     # create read-only user
     if ! influx -execute "show users" | grep -q "ear";
     then
         influx_e "CREATE USER ear WITH PASSWORD 'listener'"
     fi
+
     # revoke read-only user permissions
     influx_e "REVOKE ALL PRIVILEGES FROM ear"
     influx_e "GRANT READ ON multi_ear TO ear"
@@ -565,8 +581,10 @@ function do_configure_influxdb
     # enforce multi-ear settings (requires login from now on!)
     verbose_msg "> enable multi-ear configuration" 1
     sudo ln -sf /etc/influxdb/multi-ear.conf /etc/influxdb/influxdb.conf >> $LOG_FILE 2>&1
+
     # restart service
     do_systemd_service_restart "influxdb"
+
     # done
     verbose_done
 }
