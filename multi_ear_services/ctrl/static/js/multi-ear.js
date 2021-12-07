@@ -479,7 +479,7 @@ function stopChart(chart) {
 }
 
 
-function stopDashboard(tab) {
+function stopCharts(tab) {
 
     if (tab === "dashboard") return
 
@@ -563,9 +563,6 @@ function loadContent(nav) {
     // stop status progressbar interval
     clearInterval(statusUpdater);
 
-    // stop dashboard charts
-    stopDashboard(tab)
-
     // lazy load new content and trigger nav related functions
     getResponse("/_tab/" + tab)
     .then(function(resp) {
@@ -604,6 +601,9 @@ function loadContent(nav) {
         // activate tooltips
         var tooltips = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
         tooltips.forEach(function (tooltip) { new bootstrap.Tooltip(tooltip, { placement: 'bottom' }) })
+
+        // stop charts if not dashboard tab
+        stopCharts(tab)
 
     });
 
