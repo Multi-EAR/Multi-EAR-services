@@ -1,16 +1,17 @@
 # Mandatory imports
 import atexit
+import logging
 import numpy as np
 import pandas as pd
 import socket
-from time import sleep
 from serial import Serial
+from systemd.journal import JournaldLogHandler
+from time import sleep
 from argparse import ArgumentParser
 from configparser import ConfigParser
 from influxdb_client import InfluxDBClient, Point
 from influxdb_client.client.exceptions import InfluxDBError
 import influxdb_client.client.util.date_utils as date_utils
-from influxdb_client.client.write_api import SYNCHRONOUS
 from influxdb_client.client.util.date_utils_pandas import PandasDateTimeHelper
 
 # Relative imports
@@ -29,7 +30,8 @@ date_utils.date_helper = PandasDateTimeHelper()
 
 class UART(object):
 
-    def __init__(self, config_file='config.ini', debug=False, dry_run=False):
+    def __init__(self, config_file='config.ini',
+                 debug=False, dry_run=False, journald=False):
         """Sensorboard serial readout via UART with data storage in a local
         Influx database.
 
@@ -56,6 +58,20 @@ class UART(object):
               baudrate = 115200
               timeout = 2000
         """
+        # logging
+        self.__log = logging.getLogger(__name__)
+
+        # instantiate the JournaldLogHandler to hook into systemd
+        if journald:
+            journald_handler = JournaldLogHandler()
+            journald_handler.setFormatter(logging.Formatter(
+                '[%(levelname)s] %(message)s'
+            ))
+            self.__log.addHandler(journald_handler)
+
+        # set log level
+        self.__log.setLevel(logging.DEBUG if debug else logging.INFO)
+
         # parse configuration file
         self.__config_file = config_file
         self.__config = ConfigParser()
@@ -64,7 +80,14 @@ class UART(object):
         # influx database connection
         self.__db_client = InfluxDBClient.from_config_file(config_file)
         self.__bucket = self._config_value('influx2', 'bucket')
-        self.__callback = BatchingCallback()
+
+        # influx database write api with callback to logger
+        self.__callback = BatchingCallback(self._log)
+        self.__write_api = self.__db_client.write_api(
+            success_callback=self.__callback.success,
+            error_callback=self.__callback.error,
+            retry_callback=self.__callback.retry,
+        )
 
         # uart serial port connection
         self.__serial = Serial(
@@ -99,6 +122,7 @@ class UART(object):
         """Close clients.
         """
         self._db_client.close()
+        self._write_api.close()
         self._serial.close()
 
     @property
@@ -146,6 +170,10 @@ class UART(object):
     @property
     def _hostname(self):
         return self.__hostname
+
+    @property
+    def _log(self):
+        return self.__log
 
     @property
     def _measurement(self):
@@ -344,20 +372,18 @@ class UART(object):
     def _serial(self):
         return self.__serial
 
+    @property
+    def _write_api(self):
+        return self.__write_api
+
     def _write_points(self, clear=True):
         """Write points to Influx database
         """
         if not self.dry_run and len(self._points) > 0:
-
-            with self.__db_client.write_api(
-                success_callback=self.__callback.success if self.debug else None,
-                error_callback=self.__callback.error,
-                retry_callback=self.__callback.retry,
-            ) as write_api:
-                write_api.write(
-                    bucket=self._bucket,
-                    record=self._points,
-                )
+            self._write_api.write(
+                bucket=self._bucket,
+                record=self._points,
+            )
         if clear:
             self.__points = []
 
@@ -401,20 +427,27 @@ class UART(object):
 
 class BatchingCallback(object):
 
+    def __init__(self, logger):
+        self.log = logger
+
     def success(self, conf: (str, str, str), data: str):
         """Successfully writen batch."""
-        print(f"Written batch: {conf}, data: {data}")
+        self.log.debug(f"Written batch: {conf}, data:")
+        self.log.debug(f".. {d}" for d in data.split('\n'))
 
     def error(self, conf: (str, str, str), data: str,
               exception: InfluxDBError):
         """Unsuccessfully writen batch."""
-        print(f"Cannot write batch: {conf}, data: {data} due: {exception}")
+        self.log.error("Cannot write batch: "
+                       f"{conf}, due: {exception}, data:")
+        self.log.debug(f".. {d}" for d in data.split('\n'))
 
     def retry(self, conf: (str, str, str), data: str,
               exception: InfluxDBError):
         """Retryable error."""
-        print("Retryable error occurs for batch:" +
-              f"{conf}, data: {data} retry: {exception}")
+        self.log.error("Retryable error occurs for batch: "
+                       f"{conf}, retry: {exception}, data:")
+        self.log.debug(f".. {d}" for d in data.split('\n'))
 
 
 def main():
@@ -430,6 +463,10 @@ def main():
     parser.add_argument(
         '-c', '--config_file', metavar='..', type=str, default='config.ini',
         help='Path to configuration file'
+    )
+    parser.add_argument(
+        '-j', '--journald', action='store_true', default=False,
+        help='Logging to systemd journal'
     )
     parser.add_argument(
         '--dry-run', action='store_true', default=False,
