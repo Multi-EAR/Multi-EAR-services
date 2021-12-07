@@ -479,7 +479,9 @@ function stopChart(chart) {
 }
 
 
-function stopDashboard() {
+function stopDashboard(tab) {
+
+    if (tab === "dashboard") return
 
     chart_pabs = stopChart(chart_pabs)
     chart_pdif = stopChart(chart_pdif)
@@ -561,6 +563,9 @@ function loadContent(nav) {
     // stop status progressbar interval
     clearInterval(statusUpdater);
 
+    // stop dashboard charts
+    stopDashboard(tab)
+
     // lazy load new content and trigger nav related functions
     getResponse("/_tab/" + tab)
     .then(function(resp) {
@@ -570,8 +575,6 @@ function loadContent(nav) {
 
     })
     .finally(function() {
-
-        stopDashboard()
 
         switch (tab) {
 

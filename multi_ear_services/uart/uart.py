@@ -98,7 +98,6 @@ class UART(object):
     def close(self):
         """Close clients.
         """
-        self._write_api.close()
         self._db_client.close()
         self._serial.close()
 
@@ -255,7 +254,8 @@ class UART(object):
         # SP210
         point.field(
             'SP210',
-            np.int16((payload[9] << 8) | payload[10])
+            # np.int16((payload[9] << 8) | payload[10])
+            np.int16(payload[9] | (payload[10] << 8))
         )
 
         # LPS33HW barometric pressure (24-bit)
