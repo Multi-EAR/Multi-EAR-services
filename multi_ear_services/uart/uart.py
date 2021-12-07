@@ -85,9 +85,18 @@ class UART(object):
         self._config = ConfigParser()
         self._config.read(config_file)
 
-        # influx options
+        # influxdb options
         self._bucket = self._config_value('influx2', 'bucket')
         self._callback = BatchingCallback(self._logger)
+
+        # influxdb connection
+        self._db_client = InfluxDBClient.from_config_file(self._config_file)
+        self._write_api = self._db_client.write_api(
+            write_options=SYNCHRONOUS,
+            success_callback=self._callback.success,
+            error_callback=self._callback.error,
+            retry_callback=self._callback.retry,
+        )
 
         # serial port connection
         self._uart = Serial(
@@ -315,6 +324,16 @@ class UART(object):
         self._points = []
 
     def _write_points(self):
+        """Write points to Influx database
+        """
+        if not self.dry_run and len(self._points) > 0:
+            self._write_api.write(
+                bucket=self._bucket,
+                record=self._points,
+            )
+        self._clear_points()
+
+    def _write_points_2(self):
         """Write points to Influx database
         """
         if not self.dry_run and len(self._points) > 0:
