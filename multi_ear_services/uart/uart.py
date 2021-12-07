@@ -63,7 +63,7 @@ class UART(object):
               timeout = 2000
         """
         # logging
-        self._log = logging.getLogger(__name__)
+        self._logger = logging.getLogger(__name__)
 
         # instantiate the JournaldLogHandler to hook into systemd
         if journald:
@@ -71,10 +71,10 @@ class UART(object):
             journald_handler.setFormatter(logging.Formatter(
                 '[%(levelname)s] %(message)s'
             ))
-            self._log.addHandler(journald_handler)
+            self._logger.addHandler(journald_handler)
 
         # set log level
-        self._log.setLevel(logging.DEBUG if debug else logging.INFO)
+        self._logger.setLevel(logging.DEBUG if debug else logging.INFO)
 
         # parse configuration file
         self._config_file = config_file
@@ -83,7 +83,7 @@ class UART(object):
 
         # influx options
         self._bucket = self._config_value('influx2', 'bucket')
-        self._callback = BatchingCallback(self._log)
+        self._callback = BatchingCallback(self._logger)
 
         # serial port connection
         self._uart = Serial(
@@ -91,17 +91,17 @@ class UART(object):
             baudrate=int(self._config_value('serial', 'baudrate')),
             timeout=int(self._config_value('serial', 'timeout')) / 1000,  # [s]
         )
-        self._log.info(f"Serial connection = {self._uart}")
+        self._logger.info(f"Serial connection = {self._uart}")
 
         # set options
-        self.debug = debug or False
+        self._debug = debug or False
         self.dry_run = dry_run or False
 
         # configure
-        self._pck_start = b'\x11\x99\x22\x88\x33\x73'
-        self._pck_start_len = len(self._pck_start)
-        self._pck_header_len = 11
-        self._buffer_min_len = self._pck_start_len + 1
+        self._packet_start = b'\x11\x99\x22\x88\x33\x73'
+        self._packet_start_len = len(self._packet_start)
+        self._packet_header_len = 11
+        self._buffer_min_len = self._packet_start_len + 1
         self._sampling_rate = 16  # [Hz]
         self._delta = pd.Timedelta(1/self._sampling_rate, 's')
         self._measurement = 'multi_ear'
@@ -111,7 +111,7 @@ class UART(object):
         atexit.register(self.close)
 
     def close(self):
-        self._log.info("Shutdown clients")
+        self._logger.info("Shutdown clients")
         self.__del__()
 
     def __del__(self):
@@ -119,6 +119,10 @@ class UART(object):
         # self._write_api.close()
         self._uart.close()
         pass
+
+    @property
+    def _buffer_len(self):
+        return len(self._buffer)
 
     def _frombuffer(self, offset=0, count=1, dtype=np.int8, like=None):
         """Return a dtype sequence from the buffer
@@ -132,20 +136,20 @@ class UART(object):
         """Returns True if the read buffer at the given start index matches the
         packet start sequence.
         """
-        return self._buffer[i:i+self._pck_start_len] == self._pck_start
+        return self._buffer[i:i+self._packet_start_len] == self._packet_start
 
     def _parse_buffer(self):
         """Parse the read buffer for data points.
         """
 
         # init packet parsing
-        buffer_len = self._buffer_length
-        start_len = self._packet_start_length
-        header_len = self._packet_header_length
+        buffer_len = self._buffer_len
+        start_len = self._packet_start_len
+        header_len = self._packet_header_len
         i = 0
 
         # scan for packet start sequence
-        while i < buffer_len - self._buffer_min_length:
+        while i < buffer_len - self._buffer_min_len:
 
             # packet header match?
             if self._packet_starts(i):
@@ -306,7 +310,7 @@ class UART(object):
         if not self.dry_run and len(self._points) > 0:
 
             with InfluxDBClient.from_config_file(
-                self._config_file, debug=self.debug,
+                self._config_file, debug=self._debug,
             ) as client:
 
                 with client.write_api(
@@ -328,7 +332,7 @@ class UART(object):
         payload and write measurements to the Influx time series database.
         """
 
-        self._log.info("Start serial readout to influx database")
+        self._logger.info("Start serial readout to influx database")
 
         # init
         self._buffer = b''
@@ -342,7 +346,7 @@ class UART(object):
             self._parse_buffer()
             self._write_points()
 
-        self._log.info("Serial port closed")
+        self._logger.info("Serial port closed")
 
 
 class BatchingCallback(object):
