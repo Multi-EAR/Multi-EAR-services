@@ -10,11 +10,9 @@ from systemd.journal import JournaldLogHandler
 from time import sleep
 from argparse import ArgumentParser
 from configparser import ConfigParser
-from influxdb_client import InfluxDBClient, Point
+from influxdb_client import InfluxDBClient, Point, WriteOptions
 from influxdb_client.client.exceptions import InfluxDBError
 from influxdb_client.client.write_api import SYNCHRONOUS
-import influxdb_client.client.util.date_utils as date_utils
-from influxdb_client.client.util.date_utils_pandas import PandasDateTimeHelper
 
 # Relative imports
 try:
@@ -91,8 +89,17 @@ class UART(object):
 
         # influxdb connection
         self._db_client = InfluxDBClient.from_config_file(self._config_file)
+        self._write_opts = WriteOptions(
+            batch_size=500,
+            flush_interval=1_000,
+            jitter_interval=2_000,
+            retry_interval=5_000,
+            max_retries=5,
+            max_retry_delay=30_000,
+            exponential_base=2
+        )
         self._write_api = self._db_client.write_api(
-            write_options=SYNCHRONOUS,
+            write_options=self._write_opts,  # SYNCHRONOUS,
             success_callback=self._callback.success,
             error_callback=self._callback.error,
             retry_callback=self._callback.retry,
@@ -304,6 +311,8 @@ class UART(object):
                 payload[i] + (payload[i+1] << 8) + (payload[i+2] << 16)
             )
 
+        self._logger.debug(point.to_line_protocol())
+
         return point
 
     def _read_lines(self):
@@ -318,10 +327,8 @@ class UART(object):
         self._buffer += read
 
     def _clear_points(self):
-        for point in self._points:
-            del point
-        gc.collect()
         self._points = []
+        gc.collect()
 
     def _write_points(self):
         """Write points to Influx database
@@ -343,7 +350,7 @@ class UART(object):
             ) as client:
 
                 with client.write_api(
-                    write_options=SYNCHRONOUS,
+                    write_options=self._write_opts,  # SYNCHRONOUS,
                     success_callback=self._callback.success,
                     error_callback=self._callback.error,
                     retry_callback=self._callback.retry,
@@ -384,22 +391,19 @@ class BatchingCallback(object):
 
     def success(self, conf: (str, str, str), data: str):
         """Successfully writen batch."""
-        self.log.debug(f"Written batch: {conf}, data:")
-        self.log.debug(f".. {d}" for d in data.split('\n'))
+        self.log.debug(f"Written batch: {conf}, data: {data}")
 
     def error(self, conf: (str, str, str), data: str,
               exception: InfluxDBError):
         """Unsuccessfully writen batch."""
         self.log.error("Cannot write batch: "
-                       f"{conf}, due: {exception}, data:")
-        self.log.debug(f".. {d}" for d in data.split('\n'))
+                       f"{conf}, due: {exception}, data: {data}")
 
     def retry(self, conf: (str, str, str), data: str,
               exception: InfluxDBError):
         """Retryable error."""
         self.log.error("Retryable error occurs for batch: "
-                       f"{conf}, retry: {exception}, data:")
-        self.log.debug(f".. {d}" for d in data.split('\n'))
+                       f"{conf}, retry: {exception}, data: {data}")
 
 
 def main():
