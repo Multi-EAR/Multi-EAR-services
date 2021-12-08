@@ -1,6 +1,6 @@
 [Unit]
 Description=Multi-EAR sensorboard serial readout to a local Influx time series database
-After=multi-user.target
+WantedBy=multi-user.target
  
 [Service]
 Type=simple
@@ -9,7 +9,11 @@ Group=tud
 WorkingDirectory=/home/tud/
 Environment="VIRTUAL_ENV=/home/tud/.py37"
 Environment="PATH=$VIRTUAL_ENV/bin:$PATH"
-ExecStart=/home/tud/.py37/bin/multi-ear-uart --ini /home/tud/.py37/multi-ear-services/config.ini --journald
+EnvironmentFile=/home/tud/.multi_ear.env
+ExecStart=
+ExecStart=/home/tud/.py37/bin/multi-ear-uart \
+  --ini /home/tud/.py37/multi-ear-services/config.ini \
+  --journald
 StandardOutput=syslog
 StandardError=syslog
 SyslogIdentifier=multi-ear-uart

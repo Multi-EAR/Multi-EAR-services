@@ -237,6 +237,20 @@ function do_systemd_service_configtest
 }
 
 
+function do_systemd_environment_file
+{
+    cat > $HOME/.multi_ear.env << EOF
+MULTI_EAR_ID=$MULTI_EAR_ID
+MULTI_EAR_UUID=$MULTI_EAR_UUID
+MULTI_EAR_WIFI_SECRET=$MULTI_EAR_WIFI_SECRET
+INFLUX_USERNAME=$INFLUX_USERNAME
+INFLUX_PASSWORD=$INFLUX_PASSWORD
+GRAFANA_USERNAME=$GRAFANA_USERNAME
+GRAFANA_PASSWORD=$GRAFANA_PASSWORD
+EOF
+}
+
+
 #
 # Bashrc helpers
 #
@@ -658,6 +672,7 @@ function do_configure
     do_configure_influxdb
     do_configure_telegraf
     do_configure_grafana
+    do_systemd_environment_file
 }
 
 
