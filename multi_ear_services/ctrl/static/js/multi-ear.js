@@ -271,24 +271,63 @@ function bytes(bytes, label) {
 }
 
 
-let sensorData
-
-
 function fetchSensorData() {
 
-    fetch(dataselect + 'query?d=multi_ear&m=multi_ear&s=2m&_f=json')
+    fetch(dataselect + 'query?field=LPS33HW,DLVR,SP210,ICS,^LIS3D&start=3min&format=json')
         .then(res => res.ok && res.json())
         .then(data => {
-            sensorData = data
+            updateCharts(data)
         });
 
 }
 
 
-function loadDashboard() {
+function updateCharts(sensorData) {
 
-    //fetchSensorData();
-    //console.log(sensorData)
+    console.log(sensorData)
+    console.log(Highcharts.charts)
+
+    Highcharts.charts
+        .then( charts => {
+            console.log(charts) 
+        })
+
+    Highcharts.charts.forEach(chart => {
+
+        chart.renderTo
+            .then( element => {
+
+                console.log(element.id)
+
+                if (element.datasets.fields === undefined) return;
+
+                element.datasets.fields.split(',').forEach(field => {
+
+                    console.log(field)
+
+                })
+
+
+            })
+
+/*
+    chart.update({
+      series: [{
+        data: [
+          ['Nick', 15],
+          ['Ann', 25],
+          ['Joe', 22]
+        ]
+      }]
+    })
+*/
+
+  })
+
+}
+
+
+function loadDashboard() {
 
     Highcharts.chart('chart-pabs', {
         chart: {
@@ -296,9 +335,9 @@ function loadDashboard() {
             zoomType: 'x'
         },
         data: {
-            csvURL: dataselect + 'query?d=multi_ear&m=multi_ear&f=LPS33HW&s=2m&_f=csv',
+            csvURL: dataselect + 'query?d=multi_ear&m=multi_ear&f=LPS33HW&s=3m&_f=csv',
             enablePolling: true,
-            dataRefreshRate: 5,
+            dataRefreshRate: 10,
             parsed: function (columns) {
                 columns[1] = columns[1].map(function (value, index) {
                     return (index === 0) ? value : value/4096
@@ -327,9 +366,9 @@ function loadDashboard() {
             zoomType: 'x'
         },
         data: {
-            csvURL: dataselect + 'query?d=multi_ear&m=multi_ear&f=DLVR,SP210&s=2m&_f=csv',
+            csvURL: dataselect + 'query?d=multi_ear&m=multi_ear&f=DLVR,SP210&s=3m&_f=csv',
             enablePolling: true,
-            dataRefreshRate: 5,
+            dataRefreshRate: 10,
             parsed: function (columns) {
                 columns[1] = columns[1].map(function (value, index) {
                     return (index === 0) ? value : value * 250 / 655300
@@ -356,15 +395,15 @@ function loadDashboard() {
         },
     });
 
-    Highcharts.chart('chart-ics', {
+    Highcharts.chart('chart-spl', {
         chart: {
             type: 'line',
             zoomType: 'x'
         },
         data: {
-            csvURL: dataselect + 'query?d=multi_ear&m=multi_ear&f=^ICS&s=2m&_f=csv',
+            csvURL: dataselect + 'query?d=multi_ear&m=multi_ear&f=^ICS&s=3m&_f=csv',
             enablePolling: true,
-            dataRefreshRate: 5,
+            dataRefreshRate: 10,
             parsed: function (columns) {
                 columns[1] = columns[1].map(function (value, index) {
                     return (index === 0) ? value : value * 100 / 4096
@@ -393,9 +432,9 @@ function loadDashboard() {
             zoomType: 'x'
         },
         data: {
-            csvURL: dataselect + 'query?d=multi_ear&m=multi_ear&f=^LIS3DH&s=2m&_f=csv',
+            csvURL: dataselect + 'query?d=multi_ear&m=multi_ear&f=^LIS3DH&s=3m&_f=csv',
             enablePolling: true,
-            dataRefreshRate: 5,
+            dataRefreshRate: 10,
             parsed: function (columns) {
                 for (let i = 1; i <= 3; i++) {
                     columns[i] = columns[i].map(function (value, index) {
