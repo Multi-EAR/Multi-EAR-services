@@ -339,7 +339,10 @@ class DataSelect(object):
             ' rowKey:["_time"],'
             ' columnKey: ["_measurement", "_field"],'
             ' valueColumn: "_value")'
-            ' |> drop(columns: ["_start", "_stop", "host", "clock"])'
+            ' )'
+            ' |> drop('
+            ' columns: ["_start", "_stop", "clock", "host", "uuid", "version"]'
+            ' )'
         ).format(
             self.bucket,
             self.starttime.asm8,

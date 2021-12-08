@@ -1,6 +1,6 @@
 /* global bootstrap: false */
 let debug = window.location.hostname == '127.0.0.1'
-let multiEAR = debug ? 'http://multi-ear-3001.local' : ''
+let dataselect = (debug ? 'http://multi-ear-3001.local' : '') + '/api/dataselect/'
 
 
 function sleep(ms) {
@@ -96,28 +96,29 @@ function wifiSecret() {
 
 function append_wpa_supplicant(form) {
 
-    wifiSecret().then(secret => {
+    wifiSecret()
+        .then(secret => {
 
-        if (secret === null) return
+            if (secret === null) return
 
-        var ssid = form.elements["inputSSID"].value
-        var psk = form.elements["inputPSK"].value
+            var ssid = form.elements["inputSSID"].value
+            var psk = form.elements["inputPSK"].value
 
-        getResponse("/_append_wpa_supplicant", { ssid: ssid, passphrase: psk, secret: secret }, 'POST')
-        .then(resp => {
+            getResponse("/_append_wpa_supplicant", { ssid: ssid, passphrase: psk, secret: secret }, 'POST')
+                .then(resp => {
 
-            if (resp.status !== 200) {
+                    if (resp.status !== 200) {
 
-                alert("Error: " + resp.responseText)
+                        alert("Error: " + resp.responseText)
 
-            } else {
+                    } else {
     
-                alert("\"" + ssid + "\" added to the list of known wireless networks.")
-                resetWifiForm(form)
+                        alert("\"" + ssid + "\" added to the list of known wireless networks.")
+                        resetWifiForm(form)
 
-            }
+                    }
 
-        });
+               });
 
     });
 
@@ -126,26 +127,27 @@ function append_wpa_supplicant(form) {
 
 function autohotspot() {
 
-    wifiSecret().then(secret => {
+    wifiSecret()
+        .then(secret => {
 
-        if (secret === null) return
+            if (secret === null) return
 
-        getResponse("/_autohotspot", { secret: secret }, 'POST')
-        .then(resp => {
+            getResponse("/_autohotspot", { secret: secret }, 'POST')
+            .then(resp => {
 
-            if (resp.status !== 200) {
+                if (resp.status !== 200) {
 
-                alert("Error: " + resp.responseText)
+                    alert("Error: " + resp.responseText)
 
-            } else {
+                } else {
 
-                alert("Wi-Fi autohotspot script triggered.\n\nConnection to the device could be lost.")
+                    alert("Wi-Fi autohotspot script triggered.\n\nConnection to the device could be lost.")
 
-            }
+                }
+
+            });
 
         });
-
-    });
 
 }
 
@@ -183,70 +185,71 @@ function statusUpdateLoop() {
 function statusUpdate() {
 
     getResponse("/_systemd_status", { service: '*' })
-    .then(function(resp) {
+        .then(function(resp) {
 
-        if (resp.status !== 200) return
+            if (resp.status !== 200) return
 
-        var data = JSON.parse(resp.responseText)
+            var data = JSON.parse(resp.responseText)
 
-        for (const [service, response] of Object.entries(data)) {
+            for (const [service, response] of Object.entries(data)) {
 
-            var id = '#' + service.replace('.', '-')
-            var obj_status = document.querySelector(id + '-status')
-            var obj_response = document.querySelector(id + '-response > .accordion-body')
+                var id = '#' + service.replace('.', '-')
+                var obj_status = document.querySelector(id + '-status')
+                var obj_response = document.querySelector(id + '-response > .accordion-body')
 
-            if (response.returncode === null) continue
+                if (response.returncode === null) continue
 
-            if (response.returncode === 4) {
+                if (response.returncode === 4) {
 
-                obj_response.innerHTML = response.stderr
-                obj_status.innerHTML = 'not found'
+                    obj_response.innerHTML = response.stderr
+                    obj_status.innerHTML = 'not found'
 
-                if (!obj_status.classList.contains('bg-secondary')) {
+                    if (!obj_status.classList.contains('bg-secondary')) {
 
-                    obj_status.classList.remove('bg-success', 'bg-warning', 'bg-danger')
-                    obj_status.classList.add('bg-secondary')
+                        obj_status.classList.remove('bg-success', 'bg-warning', 'bg-danger')
+                        obj_status.classList.add('bg-secondary')
+
+                    }
+
+                    continue;
+
                 }
 
-                continue;
+                obj_response.innerHTML = response.stdout
+                obj_status.innerHTML = response.status
+
+                if (response.returncode === 0) {
+
+                    if (!obj_status.classList.contains('bg-success')) {
+
+                        obj_status.classList.remove('bg-secondary', 'bg-warning', 'bg-danger')
+                        obj_status.classList.add('bg-success')
+
+                    }
+
+                } else if (response.status.includes('activating') || response.status.includes('inactive')) {
+
+                    if (!obj_status.classList.contains('bg-warning')) {
+
+                        obj_status.classList.remove('bg-secondary', 'bg-success', 'bg-danger')
+                        obj_status.classList.add('bg-warning')
+
+                    }
+
+                } else {
+
+                    if (!obj_status.classList.contains('bg-danger')) {
+
+                        obj_status.classList.remove('bg-secondary', 'bg-success', 'bg-warning')
+                        obj_status.classList.add('bg-danger')
+
+                    }
+
+                }
 
             }
 
-            obj_response.innerHTML = response.stdout
-            obj_status.innerHTML = response.status
-
-           if (response.returncode === 0) {
-
-                if (!obj_status.classList.contains('bg-success')) {
-
-                    obj_status.classList.remove('bg-secondary', 'bg-warning', 'bg-danger')
-                    obj_status.classList.add('bg-success')
-
-                }
-
-            } else if (response.status.includes('activating') || response.status.includes('inactive')) {
-
-                if (!obj_status.classList.contains('bg-warning')) {
-
-                    obj_status.classList.remove('bg-secondary', 'bg-success', 'bg-danger')
-                    obj_status.classList.add('bg-warning')
-
-                }
-
-            } else {
-
-                if (!obj_status.classList.contains('bg-danger')) {
-
-                    obj_status.classList.remove('bg-secondary', 'bg-success', 'bg-warning')
-                    obj_status.classList.add('bg-danger')
-
-                }
-
-            }
-
-        }
-
-    })
+        })
 
 }
 
@@ -268,19 +271,32 @@ function bytes(bytes, label) {
 }
 
 
-var chart_pabs, chart_pdif, chart_ics, chart_acc
-var chart_system_load, chart_memory_usage
+let sensorData
+
+
+function fetchSensorData() {
+
+    fetch(dataselect + 'query?d=multi_ear&m=multi_ear&f=LPS33HW,DLVR,SP210,ICS,^LIS3D,&s=2m&_f=json')
+        .then(res => res.ok && res.json())
+        .then(data => {
+            sensorData = data
+        });
+
+}
 
 
 function loadDashboard() {
 
-    chart_pabs = Highcharts.chart('chart-pabs', {
+    //fetchSensorData();
+    //console.log(sensorData)
+
+    Highcharts.chart('chart-pabs', {
         chart: {
             type: 'line',
             zoomType: 'x'
         },
         data: {
-            csvURL: multiEAR + '/api/dataselect/query?d=multi_ear&m=multi_ear&f=LPS33HW&s=2m&_f=csv',
+            csvURL: dataselect + 'query?d=multi_ear&m=multi_ear&f=LPS33HW&s=2m&_f=csv',
             enablePolling: true,
             dataRefreshRate: 5,
             parsed: function (columns) {
@@ -305,13 +321,13 @@ function loadDashboard() {
         },
     });
 
-    chart_pdif = Highcharts.chart('chart-pdif', {
+    Highcharts.chart('chart-pdif', {
         chart: {
             type: 'line',
             zoomType: 'x'
         },
         data: {
-            csvURL: multiEAR + '/api/dataselect/query?d=multi_ear&m=multi_ear&f=DLVR,SP210&s=2m&_f=csv',
+            csvURL: dataselect + 'query?d=multi_ear&m=multi_ear&f=DLVR,SP210&s=2m&_f=csv',
             enablePolling: true,
             dataRefreshRate: 5,
             parsed: function (columns) {
@@ -340,13 +356,13 @@ function loadDashboard() {
         },
     });
 
-    chart_ics = Highcharts.chart('chart-ics', {
+    Highcharts.chart('chart-ics', {
         chart: {
             type: 'line',
             zoomType: 'x'
         },
         data: {
-            csvURL: multiEAR + '/api/dataselect/query?d=multi_ear&m=multi_ear&f=^ICS&s=2m&_f=csv',
+            csvURL: dataselect + 'query?d=multi_ear&m=multi_ear&f=^ICS&s=2m&_f=csv',
             enablePolling: true,
             dataRefreshRate: 5,
             parsed: function (columns) {
@@ -371,13 +387,13 @@ function loadDashboard() {
         },
     });
 
-    chart_acc = Highcharts.chart('chart-acc', {
+    Highcharts.chart('chart-acc', {
         chart: {
             type: 'line',
             zoomType: 'x'
         },
         data: {
-            csvURL: multiEAR + '/api/dataselect/query?d=multi_ear&m=multi_ear&f=^LIS3DH&s=2m&_f=csv',
+            csvURL: dataselect + 'query?d=multi_ear&m=multi_ear&f=^LIS3DH&s=2m&_f=csv',
             enablePolling: true,
             dataRefreshRate: 5,
             parsed: function (columns) {
@@ -404,13 +420,13 @@ function loadDashboard() {
         },
     });
 
-    chart_system_load = Highcharts.chart('chart-system-load', {
+    Highcharts.chart('chart-system-load', {
         chart: {
             type: 'spline',
             zoomType: 'x'
         },
         data: {
-            csvURL: multiEAR + '/api/dataselect/query?d=telegraf&m=system&f=load*&s=30m&_f=csv',
+            csvURL: dataselect + 'query?d=telegraf&m=system&f=load*&s=30m&_f=csv',
             enablePolling: true,
             dataRefreshRate: 30,
         },
@@ -431,13 +447,13 @@ function loadDashboard() {
         },
     });
 
-    chart_memory_usage = Highcharts.chart('chart-memory-usage', {
+    Highcharts.chart('chart-memory-usage', {
         chart: {
             type: 'spline',
             zoomType: 'x'
         },
         data: {
-            csvURL: multiEAR + '/api/dataselect/query?d=telegraf&m=mem&f=used,buffered,cached,free&s=30m&_f=csv',
+            csvURL: dataselect + 'query?d=telegraf&m=mem&f=used,buffered,cached,free&s=30m&_f=csv',
             enablePolling: true,
             dataRefreshRate: 30,
         },
@@ -463,32 +479,18 @@ function loadDashboard() {
 }
 
 
-function stopChart(chart) {
-
-    if (chart !== undefined) {
-
-        window.clearInterval(chart)
-        chart.data.options['enablePolling'] = false
-        chart.destroy()
-        chart = undefined
-
-    }
-
-    return chart
-
-}
-
-
 function stopCharts(tab) {
 
     if (tab === "dashboard") return
 
-    chart_pabs = stopChart(chart_pabs)
-    chart_pdif = stopChart(chart_pdif)
-    chart_ics = stopChart(chart_ics)
-    chart_acc = stopChart(chart_acc)
-    chart_system_load = stopChart(chart_system_load)
-    chart_memory_usage = stopChart(chart_memory_usage)
+    Highcharts.charts.forEach(chart => {
+
+        if (chart === undefined) return
+
+        window.clearInterval(chart)
+        chart.destroy()
+
+    })
 
 }
 
@@ -565,47 +567,47 @@ function loadContent(nav) {
 
     // lazy load new content and trigger nav related functions
     getResponse("/_tab/" + tab)
-    .then(function(resp) {
+        .then(function(resp) {
 
-        if (resp.status !== 200) { console.log(resp); return; }
-        content.innerHTML = JSON.parse(resp.responseText).html
+            if (resp.status !== 200) { console.log(resp); return; }
+            content.innerHTML = JSON.parse(resp.responseText).html
 
-    })
-    .finally(function() {
+        })
+        .finally(function() {
 
-        switch (tab) {
+            switch (tab) {
 
-            case "pcb":
-                loadPCB()
-                break;
+                case "pcb":
+                    loadPCB()
+                    break;
 
-            case "dashboard":
-                loadDashboard()
-                break;
+                case "dashboard":
+                    loadDashboard()
+                    break;
 
-            case "wifi":
-                showPasswordToggle()
-                validateWifiForm()
-                break;
+                case "wifi":
+                    showPasswordToggle()
+                    validateWifiForm()
+                    break;
 
-            case "status":
-                statusUpdate()
-                statusUpdateLoop()
-                break;
+                case "status":
+                   statusUpdate()
+                    statusUpdateLoop()
+                    break;
 
-            default:
-                // do nothing
+                default:
+                    // do nothing
 
-        }
+            }
 
-        // activate tooltips
-        var tooltips = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-        tooltips.forEach(function (tooltip) { new bootstrap.Tooltip(tooltip, { placement: 'bottom' }) })
+            // activate tooltips
+            var tooltips = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            tooltips.forEach(function (tooltip) { new bootstrap.Tooltip(tooltip, { placement: 'bottom' }) })
 
-        // stop charts if not dashboard tab
-        stopCharts(tab)
+            // stop charts if not dashboard tab
+            stopCharts(tab)
 
-    });
+        });
 
 }
 

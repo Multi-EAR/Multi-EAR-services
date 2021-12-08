@@ -1,30 +1,26 @@
 # Mandatory imports
 import atexit
-import gc
 import logging
+import gc
 import numpy as np
-import os
 import pandas as pd
-import requests
 import socket
-import sys
 from serial import Serial
+from systemd.journal import JournaldLogHandler
 from time import sleep
 from argparse import ArgumentParser
 from configparser import ConfigParser
-from influxdb_client import Point
+from influxdb_client import InfluxDBClient, Point, WriteOptions
+from influxdb_client.client.exceptions import InfluxDBError
+# from influxdb_client.client.write_api import SYNCHRONOUS
 import influxdb_client.client.util.date_utils as date_utils
 from influxdb_client.client.util.date_utils_pandas import PandasDateTimeHelper
-try:
-    from systemd.journal import JournaldLogHandler
-except (ValueError, ModuleNotFoundError):
-    systemd = False
 
 # Relative imports
 try:
     from ..version import version
 except (ValueError, ModuleNotFoundError):
-    version = 'VERSION-NOT-FOUND'
+    version = '[VERSION-NOT-FOUND]'
 
 
 __all__ = ['UART']
@@ -39,9 +35,8 @@ gc.enable()
 
 class UART(object):
     _buffer = b''
-    _points = []
-    _uart = None
     _time = None
+    _points = []
 
     def __init__(self, config_file='config.ini', journald=False,
                  debug=False, dry_run=False) -> None:
@@ -56,109 +51,95 @@ class UART(object):
               url=http://localhost:8086
               org=my-org
               token=my-token
+              timeout=6000
+              connection_pool_maxsize=25
+              auth_basic=false
+              profilers=query,operator
+              proxy=http:proxy.domain.org:8080
               bucket=database/retention_policy
+            [tags]
+              id = 132-987-655
+              customer = California Miner
+              data_center = ${env.data_center}
             [serial]
               port = /dev/ttyAMA0
               baudrate = 115200
               timeout = 2000
         """
-
-        # set options
-        self.dry_run = dry_run or False
-
-        # set logger
+        # logging
         self._logger = logging.getLogger(__name__)
 
-        # log to systemd or stdout
-        if systemd and journald:
-            journaldHandler = JournaldLogHandler()
-            journaldHandler.setFormatter(logging.Formatter(
+        # instantiate the JournaldLogHandler to hook into systemd
+        if journald:
+            journald_handler = JournaldLogHandler()
+            journald_handler.setFormatter(logging.Formatter(
                 '[%(levelname)s] %(message)s'
             ))
-            self._logger.addHandler(journaldHandler)
-        else:
-            streamHandler = logging.StreamHandler(sys.stdout)
-            streamHandler.setFormatter(logging.Formatter(
-                '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-            ))
-            self._logger.addHandler(streamHandler)
+            self._logger.addHandler(journald_handler)
 
         # set log level
         self._logger.setLevel(logging.DEBUG if debug else logging.INFO)
 
         # parse configuration file
         self._config_file = config_file
-        self._config = ConfigParser(os.environ)
-        if os.path.exists(config_file):
-            self._config.read(config_file)
+        self._config = ConfigParser()
+        self._config.read(config_file)
 
-        # connect to serial port
+        # influxdb options
+        self._bucket = self._config_value('influx2', 'bucket')
+        self._callback = BatchingCallback(self._logger)
+
+        # influxdb connection
+        self._db_client = InfluxDBClient.from_config_file(self._config_file)
+        self._write_opts = WriteOptions(
+            batch_size=500,
+            flush_interval=1_000,
+            jitter_interval=2_000,
+            retry_interval=5_000,
+            max_retries=5,
+            max_retry_delay=30_000,
+            exponential_base=2
+        )
+        self._write_api = self._db_client.write_api(
+            write_options=self._write_opts,  # SYNCHRONOUS,
+            success_callback=self._callback.success,
+            error_callback=self._callback.error,
+            retry_callback=self._callback.retry,
+        )
+
+        # serial port connection
         self._uart = Serial(
-            port=self._config_get(
-                'serial', 'port', fallback="/dev/ttyAMA0"
-            ),
-            baudrate=self._config.getint(
-                'serial', 'baudrate', fallback=115200
-            ),
-            timeout=self._config.getint(
-                'serial', 'timeout', fallback=2000
-            ) / 1000,  # [s]
+            port=self._config_value('serial', 'port'),
+            baudrate=int(self._config_value('serial', 'baudrate')),
+            timeout=int(self._config_value('serial', 'timeout')) / 1000,  # [s]
         )
         self._logger.info(f"Serial connection = {self._uart}")
 
-        # set influxdb api write url
-        url = self._config_get(
-            'influx2', 'url', fallback='http://127.0.0.1:8086'
-        )
-        bucket = self._config_get(
-            'influx2', 'bucket', fallback='multi_ear/'
-        )
-        self._url = f"{url}/api/v2/write?bucket={bucket}&precision=ns"
-        self._logger.debug(f"InfluxDB API url = {self._url}")
+        # set options
+        self._debug = debug or False
+        self.dry_run = dry_run or False
 
-        # set influxdb api write headers
-        try:
-            token = self._config_get('influx2', 'token')
-            self._headers = {'Authorization': f"Token {token}"}
-        except KeyError:
-            self._headers = {}
-        self._logger.debug(f"InfluxDB API headers = {self._headers}")
-
-        # influxdb api write batch size
-        self._batch_size = self._config.getint(
-            'influx2', 'batch_size', fallback=500
-        )
-
-        # set influxdb api write line parameters
-        self._measurement = self._config_get(
-            'influx2', 'measurement', fallback='multi_ear'
-        )
-        self._host = self._config_get(
-            'tags', 'host', fallback=socket.gethostname()
-        )
-        self._uuid = self._config_get(
-            'tags', 'uuid', fallback='__unknown__'
-        )
-        self._version = version.replace('VERSION-NOT-FOUND', '__unknown__')
-
-        # sensorboard configuration
+        # configure
         self._packet_start = b'\x11\x99\x22\x88\x33\x73'
         self._packet_start_len = len(self._packet_start)
         self._packet_header_len = 11
         self._buffer_min_len = self._packet_start_len + 1
         self._sampling_rate = 16  # [Hz]
         self._delta = pd.Timedelta(1/self._sampling_rate, 's')
+        self._measurement = 'multi_ear'
+        self._hostname = socket.gethostname()
 
         # terminate at exit
         atexit.register(self.close)
 
     def close(self):
-        self._logger.info("Close serial port")
+        self._logger.info("Shutdown clients")
         self.__del__()
 
     def __del__(self):
-        if self._uart is not None:
-            self._uart.close()
+        self._db_client.close()
+        self._write_api.close()
+        self._uart.close()
         pass
 
     @property
@@ -170,8 +151,8 @@ class UART(object):
         """
         return np.frombuffer(self._buffer, dtype, count, offset, like=like)
 
-    def _config_get(self, *args, **kwargs):
-        return self._config.get(*args, **kwargs).strip('"')
+    def _config_value(self, sec: str, key: str):
+        return self._config[sec][key].strip('"')
 
     def _packet_starts(self, i):
         """Returns True if the read buffer at the given start index matches the
@@ -251,9 +232,7 @@ class UART(object):
         point = (Point(self._measurement)
                  .time(time)
                  .tag('clock', clock)
-                 .tag('host', self._host)
-                 .tag('uuid', self._uuid)
-                 .tag('version', self._version))
+                 .tag('host', self._hostname))
 
         # DLVR-F50D differential pressure (14-bit ADC)
         tmp = payload[7] | (payload[8] << 8)
@@ -334,10 +313,7 @@ class UART(object):
                 payload[i] + (payload[i+1] << 8) + (payload[i+2] << 16)
             )
 
-        # serialize
-        point = point.to_line_protocol()
-
-        self._logger.debug(f"Read point: {point}")
+        self._logger.debug(point.to_line_protocol())
 
         return point
 
@@ -359,23 +335,33 @@ class UART(object):
     def _write_points(self):
         """Write points to Influx database
         """
+        if not self.dry_run and len(self._points) > 0:
+            self._write_api.write(
+                bucket=self._bucket,
+                record=self._points,
+            )
+        self._clear_points()
 
-        if len(self._points) < self._batch_size:
-            return
-
+    def _write_points_2(self):
+        """Write points to Influx database
+        """
         if not self.dry_run and len(self._points) > 0:
 
-            r = requests.post(
-                self._url,
-                headers=self._headers,
-                data='\n'.join(self._points),
-            )
-            self._logger.debug(
-                f"Write batch to influxdb api: response = {r.status_code}"
-            )
-            if r.status_code not in (requests.codes.ok, 204):
-                self._logger.error(r.text)
+            with InfluxDBClient.from_config_file(
+                self._config_file, debug=self._debug,
+            ) as client:
 
+                with client.write_api(
+                    write_options=self._write_opts,  # SYNCHRONOUS,
+                    success_callback=self._callback.success,
+                    error_callback=self._callback.error,
+                    retry_callback=self._callback.retry,
+                ) as write_api:
+
+                    write_api.write(
+                        bucket=self._bucket,
+                        record=self._points,
+                    )
         self._clear_points()
 
     def readout(self):
@@ -398,6 +384,28 @@ class UART(object):
             self._write_points()
 
         self._logger.info("Serial port closed")
+
+
+class BatchingCallback(object):
+
+    def __init__(self, logger):
+        self.log = logger
+
+    def success(self, conf: (str, str, str), data: str):
+        """Successfully writen batch."""
+        self.log.debug(f"Written batch: {conf}, data: {data}")
+
+    def error(self, conf: (str, str, str), data: str,
+              exception: InfluxDBError):
+        """Unsuccessfully writen batch."""
+        self.log.error("Cannot write batch: "
+                       f"{conf}, due: {exception}, data: {data}")
+
+    def retry(self, conf: (str, str, str), data: str,
+              exception: InfluxDBError):
+        """Retryable error."""
+        self.log.error("Retryable error occurs for batch: "
+                       f"{conf}, retry: {exception}, data: {data}")
 
 
 def main():
