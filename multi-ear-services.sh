@@ -237,7 +237,7 @@ function do_systemd_service_configtest
 }
 
 
-function do_systemd_environment_file
+function do_systemd_env
 {
     cat > $HOME/.multi_ear.env << EOF
 MULTI_EAR_ID=$MULTI_EAR_ID
@@ -672,7 +672,7 @@ function do_configure
     do_configure_influxdb
     do_configure_telegraf
     do_configure_grafana
-    do_systemd_environment_file
+    do_systemd_env
 }
 
 
