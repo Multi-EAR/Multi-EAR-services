@@ -18,7 +18,7 @@ from influxdb_client.client.util.date_utils_pandas import PandasDateTimeHelper
 try:
     from systemd.journal import JournaldLogHandler
 except (ValueError, ModuleNotFoundError):
-    systemd = False
+    JournaldLogHandler = False
 
 # Relative imports
 try:
@@ -70,7 +70,7 @@ class UART(object):
         self._logger = logging.getLogger(__name__)
 
         # log to systemd or stdout
-        if systemd and journald:
+        if JournaldLogHandler and journald:
             journaldHandler = JournaldLogHandler()
             journaldHandler.setFormatter(logging.Formatter(
                 '[%(levelname)s] %(message)s'
