@@ -338,7 +338,7 @@ class DataSelect(object):
             ' |> pivot('
             ' rowKey:["_time"],'
             ' columnKey: ["_measurement", "_field"],'
-            ' valueColumn: "_value")'
+            ' valueColumn: "_value"'
             ' )'
             ' |> drop('
             ' columns: ["_start", "_stop", "clock", "host", "uuid", "version"]'
