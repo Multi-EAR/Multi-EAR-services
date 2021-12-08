@@ -12,7 +12,9 @@ from argparse import ArgumentParser
 from configparser import ConfigParser
 from influxdb_client import InfluxDBClient, Point, WriteOptions
 from influxdb_client.client.exceptions import InfluxDBError
-from influxdb_client.client.write_api import SYNCHRONOUS
+# from influxdb_client.client.write_api import SYNCHRONOUS
+import influxdb_client.client.util.date_utils as date_utils
+from influxdb_client.client.util.date_utils_pandas import PandasDateTimeHelper
 
 # Relative imports
 try:
@@ -135,8 +137,8 @@ class UART(object):
         self.__del__()
 
     def __del__(self):
-        # self._db_client.close()
-        # self._write_api.close()
+        self._db_client.close()
+        self._write_api.close()
         self._uart.close()
         pass
 
