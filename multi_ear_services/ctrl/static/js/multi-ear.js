@@ -276,7 +276,7 @@ let sensorData
 
 function fetchSensorData() {
 
-    fetch(dataselect + 'query?d=multi_ear&m=multi_ear&f=LPS33HW,DLVR,SP210,ICS,^LIS3D,&s=2m&_f=json')
+    fetch(dataselect + 'query?d=multi_ear&m=multi_ear&s=2m&_f=json')
         .then(res => res.ok && res.json())
         .then(data => {
             sensorData = data
