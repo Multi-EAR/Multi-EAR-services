@@ -2,9 +2,11 @@
 <div class="row">
 
   <p class="pt-4 lead">
-    The Multi-EAR features an <code>autohotspot</code> script such that it can always be reached via Wi-Fi. 
-    The Multi-EAR connects to configured wireless networks in range and self-hosts a network if all are unavailable.<br>
-    The <code>autohotspot</code> script is executed on boot, when a network is added and by clicking the button.
+    The Multi-EAR features <code>autohotspot</code> functionality such that it can always be reached via Wi-Fi. 
+    And knowing the IP address is obsolete.  
+    Instead, connect to a device by the hostname <code>http://multi-ear-3003.local</code>, for example. 
+    The Multi-EAR attempts to connect to configured wireless networks in range and self-hosts a network if none are available.<br>
+    The <code>autohotspot</code> script is executed on boot, after adding a network and by the button.
   </p>
   <p class="text-center text-md-start mb-md-0">
     <button class="btn btn-outline-dark" onclick="autohotspot();" type="">Start autohotspot</button>
