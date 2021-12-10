@@ -427,7 +427,8 @@ class UART(object):
     def _write_success(self, conf: (str, str, str), data: str):
         """Successfully writen batch."""
         self._logger.info(
-            f"Written batch: {conf}, last timestamp {data[-19:]}"
+            f"Written batch: {conf}, "
+            f"last time record {pd.Timestamp(int(data[-19:]))}"
         )
         self._logger.debug(
             f"Written batch: {conf}, data: {data}"
