@@ -178,6 +178,11 @@ class UART(object):
            token=self._influx2_url,
            timeout=self._influx2_timeout,
            auth_basic=self._influx2_auth_basic,
+           default_tags=dict(
+               host=self._host,
+               uuid=self._uuid,
+               version=self._version,
+           ),
         )
         self._logger.info(f"Influxdb connection = {self._db_client.ping()}")
 
@@ -302,12 +307,15 @@ class UART(object):
         # self._logger.info(f'{clock} time: {time}')
 
         # Create point
+        point = Point(self._measurement).time(time).tag('clock', clock)
+        """
         point = (Point(self._measurement)
                  .time(time)
                  .tag('clock', clock)
                  .tag('host', self._host)
                  .tag('uuid', self._uuid)
                  .tag('version', self._version))
+        """
 
         # DLVR-F50D differential pressure (14-bit ADC)
         tmp = payload[7] | (payload[8] << 8)
@@ -424,11 +432,19 @@ class UART(object):
     def _write_points_batch(self, points):
         """Write points to Influx database in batch mode
         """
+        self._logger.info(
+            f"Write synchronous: {len(points)} lines, "
+            f"last timestamp {pd.Timestamp(int(points[-1].to_line_protocol()[-19:]))}"
+        )
         self._write_api.write(bucket=self._influx2_bucket, record=points)
 
     def _write_points_synchronous(self, points):
         """Write points to Influx database in synchronous mode
         """
+        self._logger.info(
+            f"Write synchronous: {len(points)} lines, "
+            f"last timestamp {pd.Timestamp(int(points[-1].to_line_protocol()[-19:]))}"
+        )
         with self._db_client.write_api(
             write_options=SYNCHRONOUS,
             success_callback=self._write_success,
