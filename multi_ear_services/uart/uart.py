@@ -182,7 +182,7 @@ class UART(object):
         self._logger.info(f"Influxdb connection = {self._db.ping()}")
 
         self._write_options = WriteOptions(
-            batch_size=self._batch_size,
+            batch_size=self._batch_size*2,
             flush_interval=1_000,
             jitter_interval=2_000,
             retry_interval=5_000,
