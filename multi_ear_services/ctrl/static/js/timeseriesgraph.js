@@ -19,10 +19,13 @@ const TimeseriesGraph = function(element, size) {
 
   // Settings
   this.canvas.width = size;
-  this.canvas.height = 80;
+  this.canvas.height = 100;
   this.width = 2;
   this.color = "#2f7ed8";
+  this.gradient = this.__createGradient();
+
   this.enableGridLines = true;
+  this.enableGradient = true;
 
   // Ringbuffer that stores the data of size N
   this.ringbuffer = new RingBuffer(size);
@@ -103,6 +106,23 @@ TimeseriesGraph.prototype.__drawGridLines = function() {
 
 }
 
+TimeseriesGraph.prototype.__createGradient = function() {
+
+  /*
+   * Function TimeseriesGraph.__createGradient
+   * Creates a 3-color gradient for the line
+   */
+
+  let gradient = this.context.createLinearGradient(0, 0, 0, this.canvas.height);
+
+  gradient.addColorStop("0.1", "red");
+  gradient.addColorStop("0.5" , "white");
+  gradient.addColorStop("0.9", "blue");
+
+  return gradient;
+
+}
+
 TimeseriesGraph.prototype.__draw = function() {
 
   /*
@@ -117,8 +137,13 @@ TimeseriesGraph.prototype.__draw = function() {
     this.__drawGridLines();
   }
 
-  this.context.strokeStyle = this.color;
   this.context.lineWidth = this.width;
+
+  if(this.enableGradient) {
+    this.context.strokeStyle = this.gradient;
+  } else {
+    this.context.strokeStyle = this.color;
+  }
 
   // Draw curve
   this.context.beginPath();
@@ -179,12 +204,23 @@ RingBuffer.prototype.plot = function(height, context) {
 
   // Go over the ringbuffer in the correct order
   for(let i = this.index; i < this.data.length; i++) {
-    context.lineTo(index++, 0.5 * height - this.__getHeightPixel(height, this.data[i]));
+    this.__drawSample(context, height, index++, i);
   }
 
   for(let i = 0; i < this.index; i++) {
-    context.lineTo(index++, 0.5 * height - this.__getHeightPixel(height, this.data[i]));
+    this.__drawSample(context, height, index++, i);
   }
+
+}
+
+RingBuffer.prototype.__drawSample = function(context, height, x, i) {
+
+  /*
+   * Function RingBuffer.__drawSample
+   * Draws a single sample to the canvas by moving the line to the appropriate position
+   */
+
+  context.lineTo(x, 0.5 * height - this.__getHeightPixel(height, this.data[i]));
 
 }
 
