@@ -154,7 +154,7 @@ class UART(object):
         self._batch_size = config.getint(
             'influx2', 'batch_size', fallback=self._batch_size
         )
-        self._write_mode = config.getint(
+        self._write_mode = config.getstr(
             'influx2', 'write_mode', fallback=self._write_mode
         )
         self._measurement = config.getstr(
