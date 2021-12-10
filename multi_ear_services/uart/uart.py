@@ -184,7 +184,7 @@ class UART(object):
         self._write_api = self._db_client.write_api(
             write_options=WriteOptions(
                 batch_size=self._batch_size,
-                flush_interval=1_000,
+                flush_interval=10_000,
                 jitter_interval=2_000,
                 retry_interval=5_000,
                 max_retries=5,
@@ -373,7 +373,7 @@ class UART(object):
         # ICS counts_to_dB = 100/4096
 
         # GNSS
-        if gnss and length > 26:
+        if gnss and length >= 46:
             i = length - 24
             point.field(
                 'GNSS_LAT',
@@ -412,19 +412,13 @@ class UART(object):
     def _write_points(self, method='batch'):
         """Write points to Influx database and clear
         """
-
         if len(self._points) == 0:
-
             return
 
         if not self.dry_run:
-
             if method == 'batch':
-
                 self._write_points_batch()
-
             else:
-
                 self._write_points_synchronous()
 
         self._clear_points()
