@@ -179,11 +179,11 @@ RingBuffer.prototype.plot = function(height, context) {
 
   // Go over the ringbuffer in the correct order
   for(let i = this.index; i < this.data.length; i++) {
-    context.lineTo(index++, 40 - this.__getHeightPixel(height, this.data[i]));
+    context.lineTo(index++, 0.5 * height - this.__getHeightPixel(height, this.data[i]));
   }
 
   for(let i = 0; i < this.index; i++) {
-    context.lineTo(index++, 40 - this.__getHeightPixel(height, this.data[i]));
+    context.lineTo(index++, 0.5 * height - this.__getHeightPixel(height, this.data[i]));
   }
 
 }
@@ -195,7 +195,7 @@ RingBuffer.prototype.__getFirstHeightPixel = function(height) {
    * Returns the pixel height of the first sample in the ringbuffer
    */
 
-  return 40 - this.__getHeightPixel(height, this.data[this.index]);
+  return 0.5 * height - this.__getHeightPixel(height, this.data[this.index]);
 
 }
 
