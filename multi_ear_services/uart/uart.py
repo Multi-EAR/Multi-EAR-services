@@ -100,6 +100,7 @@ class UART(object):
         self._influx2_auth_basic = False
         self._influx2_bucket = 'multi_ear/'
         self._batch_size = 250
+        self._write_mode = 'batch'
         self._measurement = 'multi_ear'
         self._host = socket.gethostname()
         self._uuid = 'null'
@@ -152,6 +153,9 @@ class UART(object):
         )
         self._batch_size = config.getint(
             'influx2', 'batch_size', fallback=self._batch_size
+        )
+        self._write_mode = config.getint(
+            'influx2', 'write_mode', fallback=self._write_mode
         )
         self._measurement = config.getstr(
             'influx2', 'measurement', fallback=self._measurement
@@ -415,14 +419,13 @@ class UART(object):
         self._points = []
         # gc.collect()
 
-    def _write_points(self, method='batch'):
+    def _write_points(self):
         """Write points to Influx database and clear
         """
         if len(self._points) < self._batch_size:
             return
-
         if not self.dry_run:
-            if method == 'batch':
+            if self._write_mode == 'batch':
                 self._write_points_batch(self._points)
             else:
                 self._write_points_synchronous(self._points)
@@ -431,18 +434,18 @@ class UART(object):
     def _write_points_batch(self, points):
         """Write points to Influx database in batch mode
         """
+        last = pd.Timestamp(int(points[-1].to_line_protocol()[-19:]))
         self._logger.info(
-            f"Write batch: {len(points)} lines, "
-            f"last timestamp {pd.Timestamp(int(points[-1].to_line_protocol()[-19:]))}"
+            f"Write batch: {len(points)} lines, last timestamp {last}"
         )
         self._write_api.write(bucket=self._influx2_bucket, record=points)
 
     def _write_points_synchronous(self, points):
         """Write points to Influx database in synchronous mode
         """
+        last = pd.Timestamp(int(points[-1].to_line_protocol()[-19:]))
         self._logger.info(
-            f"Write synchronous: {len(points)} lines, "
-            f"last timestamp {pd.Timestamp(int(points[-1].to_line_protocol()[-19:]))}"
+            f"Write synchronous: {len(points)} lines, last timestamp {last}"
         )
         with self._db_client.write_api(
             write_options=SYNCHRONOUS,
