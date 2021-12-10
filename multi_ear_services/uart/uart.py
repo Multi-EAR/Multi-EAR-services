@@ -5,17 +5,18 @@ import logging
 import numpy as np
 import os
 import pandas as pd
-import requests
 import socket
 import sys
-from serial import Serial
-from time import sleep
 from argparse import ArgumentParser
 from configparser import ConfigParser
-from influxdb_client import Point
+from influxdb_client import InfluxDBClient, Point
+from influxdb_client.client.write_api import WriteOptions
+from influxdb_client.client.exceptions import InfluxDBError
 import influxdb_client.client.util.date_utils as date_utils
 from influxdb_client.client.util.date_utils_pandas import PandasDateTimeHelper
+from serial import Serial
 from systemd.journal import JournaldLogHandler
+from time import sleep
 
 # Relative imports
 try:
@@ -50,14 +51,18 @@ class UART(object):
 
         config.ini example::
             [influx2]
-              url=http://localhost:8086
-              org=my-org
-              token=my-token
-              bucket=database/retention_policy
+              url = http://localhost:8086
+              org = -
+              token = my-token
+              bucket = multi_ear
+              measurement = multi_ear
+              batch_size = 250
             [serial]
               port = /dev/ttyAMA0
               baudrate = 115200
               timeout = 2000
+            [tags]
+               uuid = %(MULTI_EAR_UUID)s
         """
 
         # set options
@@ -84,62 +89,21 @@ class UART(object):
         # set log level
         self._logger.setLevel(logging.DEBUG if debug else logging.INFO)
 
-        # parse configuration file
-        self._config_file = config_file
-        self._config = ConfigParser(os.environ)
-        if os.path.exists(config_file):
-            self._config.read(config_file)
-
-        # connect to serial port
-        self._uart = Serial(
-            port=self._config_get(
-                'serial', 'port', fallback="/dev/ttyAMA0"
-            ),
-            baudrate=self._config.getint(
-                'serial', 'baudrate', fallback=115200
-            ),
-            timeout=self._config.getint(
-                'serial', 'timeout', fallback=2000
-            ) / 1000,  # [s]
-        )
-        self._logger.info(f"Serial connection = {self._uart}")
-
-        # set influxdb api write url
-        url = self._config_get(
-            'influx2', 'url', fallback='http://127.0.0.1:8086'
-        )
-        bucket = self._config_get(
-            'influx2', 'bucket', fallback='multi_ear/'
-        )
-        self._url = f"{url}/api/v2/write?bucket={bucket}&precision=ns"
-        self._logger.debug(f"InfluxDB API url = {self._url}")
-
-        # set influxdb api write headers
-        try:
-            token = self._config_get('influx2', 'token')
-            self._headers = {'Authorization': f"Token {token}"}
-        except Exception:
-            self._headers = {}
-        self._logger.debug(f"InfluxDB API headers = {self._headers}")
-
-        # influxdb api write batch size
-        self._batch_size = self._config.getint(
-            'influx2', 'batch_size', fallback=500
-        )
-
-        # set influxdb api write line parameters
-        self._measurement = self._config_get(
-            'influx2', 'measurement', fallback='multi_ear'
-        )
-        self._host = self._config_get(
-            'tags', 'host', fallback=socket.gethostname()
-        )
-        self._uuid = self._config_get(
-            'tags', 'uuid', fallback='__unknown__'
-        )
-        self._version = version.replace('VERSION-NOT-FOUND', '__unknown__')
-
-        # sensorboard configuration
+        # configuration defaults
+        self._serial_port = '/dev/ttyAMA0'
+        self._serial_baudrate = 115_200
+        self._serial_timeout = 2_000
+        self._influx2_url = 'http://127.0.0.1:8086'
+        self._influx2_org = '-'
+        self._influx2_token = ':'
+        self._influx2_timeout = 10_000
+        self._influx2_auth_basic = False
+        self._influx2_bucket = 'multi_ear/'
+        self._batch_size = 250
+        self._measurement = 'multi_ear'
+        self._host = socket.gethostname()
+        self._uuid = 'null'
+        self._version = version.replace('VERSION-NOT-FOUND', 'null')
         self._packet_start = b'\x11\x99\x22\x88\x33\x73'
         self._packet_start_len = len(self._packet_start)
         self._packet_header_len = 11
@@ -147,16 +111,98 @@ class UART(object):
         self._sampling_rate = 16  # [Hz]
         self._delta = pd.Timedelta(1/self._sampling_rate, 's')
 
+        # parse configuration file
+        if not os.path.exists(config_file):
+            raise FileNotFoundError(config_file)
+
+        config = ConfigParser(os.environ)
+        config.read(config_file)
+
+        def config_getstr(*args, **kwargs):
+            value = config.get(*args, **kwargs)
+            return value.strip('"') if value is not None else None
+        config.getstr = config_getstr
+
+        self._serial_port = config.getstr(
+            'serial', 'port', fallback=self._serial_port
+        )
+        self._serial_baudrate = config.getint(
+            'serial', 'baudrate', fallback=self._serial_baudrate
+        )
+        self._serial_timeout = config.getint(
+            'serial', 'timeout', fallback=self._serial_timeout
+        )
+        self._influx2_url = config.getstr(
+            'influx2', 'url', fallback=self._influx2_url
+        )
+        self._influx2_org = config.getstr(
+            'influx2', 'org', fallback=self._influx2_org
+        )
+        self._influx2_token = config.getstr(
+            'influx2', 'token', fallback=self._influx2_token
+        )
+        self._influx2_timeout = config.getint(
+            'influx2', 'timeout', fallback=self._influx2_timeout
+        )
+        self._influx2_auth_basic = config.getboolean(
+            'influx2', 'auth_basic', fallback=self._influx2_auth_basic
+        )
+        self._influx2_bucket = config.getstr(
+            'influx2', 'bucket', fallback=self._influx2_bucket
+        )
+        self._batch_size = config.getint(
+            'influx2', 'batch_size', fallback=self._batch_size
+        )
+        self._measurement = config.getstr(
+            'influx2', 'measurement', fallback=self._measurement
+        )
+        self._host = config.getstr(
+            'tags', 'host', fallback=self._host
+        )
+        self._uuid = config.getstr(
+            'tags', 'uuid', fallback=self._uuid
+        )
+
+        # connect to serial port
+        self._uart = Serial(
+            port=self._serial_port,
+            baudrate=self._serial_baudrate,
+            timeout=self._serial_timeout / 1000,  # [s]
+        )
+        self._logger.info(f"Serial connection = {self._uart}")
+
+        # connect to influxdb
+        self._db = InfluxDBClient(
+           url=self._influx2_url,
+           org=self._influx2_org,
+           token=self._influx2_url,
+           timeout=self._influx2_timeout,
+           auth_basic=self._influx2_auth_basic,
+        )
+        self._logger.info(f"Influxdb connection = {self._db.ping()}")
+
+        self._write_options = WriteOptions(
+            batch_size=self._batch_size,
+            flush_interval=1_000,
+            jitter_interval=2_000,
+            retry_interval=5_000,
+            max_retries=5,
+            max_retry_delay=30_000,
+            exponential_base=2
+        )
+
         # terminate at exit
         atexit.register(self.close)
 
     def close(self):
-        self._logger.info("Close serial port")
+        self._logger.info("Close serial port and influxdb client")
         self.__del__()
 
     def __del__(self):
         if self._uart is not None:
             self._uart.close()
+        if self._db is not None:
+            self._db.close()
         pass
 
     @property
@@ -167,9 +213,6 @@ class UART(object):
         """Return a dtype sequence from the buffer
         """
         return np.frombuffer(self._buffer, dtype, count, offset, like=like)
-
-    def _config_get(self, *args, **kwargs):
-        return self._config.get(*args, **kwargs).strip('"')
 
     def _packet_starts(self, i):
         """Returns True if the read buffer at the given start index matches the
@@ -183,7 +226,6 @@ class UART(object):
 
         # init packet parsing
         buffer_len = self._buffer_len
-        start_len = self._packet_start_len
         header_len = self._packet_header_len
         i = 0
 
@@ -194,12 +236,18 @@ class UART(object):
             if self._packet_starts(i):
 
                 # get packet length
-                packet_len = start_len + int(self._buffer[i+start_len])
+                packet_len = (self._packet_start_len +
+                              int(self._buffer[i+self._packet_start_len]))
 
                 # check buffer length
                 if i + packet_len > buffer_len:
                     i += 1
                     break
+
+                # hard debug
+                # self._logger.info(
+                #     np.frombuffer(self._buffer, np.uint8, packet_len, i)
+                # )
 
                 # increase local time
                 self._time += self._delta
@@ -335,10 +383,7 @@ class UART(object):
                 payload[i] + (payload[i+1] << 8) + (payload[i+2] << 16)
             )
 
-        # serialize
-        point = point.to_line_protocol()
-
-        self._logger.debug(f"Read point: {point}")
+        self._logger.debug(f"Read point: {point.to_line_protocol()}")
 
         return point
 
@@ -366,18 +411,43 @@ class UART(object):
 
         if not self.dry_run and len(self._points) > 0:
 
-            r = requests.post(
-                self._url,
-                headers=self._headers,
-                data='\n'.join(self._points),
-            )
-            self._logger.debug(
-                f"Write batch to influxdb api: response = {r.status_code}"
-            )
-            if r.status_code not in (requests.codes.ok, 204):
-                self._logger.error(r.text)
+            with self._db.write_api(
+                write_options=self._write_options,
+                success_callback=self._write_success,
+                error_callback=self._write_error,
+                retry_callback=self._write_retry,
+            ) as writer:
+                writer.write(
+                    bucket=self._influx2_bucket,
+                    record=self._points
+                )
 
         self._clear_points()
+
+    def _write_success(self, conf: (str, str, str), data: str):
+        """Successfully writen batch."""
+        self._logger.info(
+            f"Written batch: {conf}, last timestamp {data[-19:]}"
+        )
+        self._logger.debug(
+            f"Written batch: {conf}, data: {data}"
+        )
+
+    def _write_error(self, conf: (str, str, str), data: str,
+                     exception: InfluxDBError):
+        """Unsuccessfully writen batch."""
+        self._logger.error(
+            "Cannot write batch: "
+            f"{conf}, data: {data} due: {exception}"
+        )
+
+    def _write_retry(self, conf: (str, str, str), data: str,
+                     exception: InfluxDBError):
+        """Retryable error."""
+        self._logger.error(
+            "Retryable error occurs for batch: "
+            f"{conf}, data: {data} retry: {exception}"
+        )
 
     def readout(self):
         """Contiously read UART serial data into a binary buffer, parse the
