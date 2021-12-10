@@ -10,7 +10,7 @@ import sys
 from argparse import ArgumentParser
 from configparser import ConfigParser
 from influxdb_client import InfluxDBClient, Point
-from influxdb_client.client.write_api import WriteOptions
+from influxdb_client.client.write_api import WriteOptions, SYNCHRONOUS
 from influxdb_client.client.exceptions import InfluxDBError
 import influxdb_client.client.util.date_utils as date_utils
 from influxdb_client.client.util.date_utils_pandas import PandasDateTimeHelper
@@ -172,23 +172,28 @@ class UART(object):
         self._logger.info(f"Serial connection = {self._uart}")
 
         # connect to influxdb
-        self._db = InfluxDBClient(
+        self._db_client = InfluxDBClient(
            url=self._influx2_url,
            org=self._influx2_org,
            token=self._influx2_url,
            timeout=self._influx2_timeout,
            auth_basic=self._influx2_auth_basic,
         )
-        self._logger.info(f"Influxdb connection = {self._db.ping()}")
+        self._logger.info(f"Influxdb connection = {self._db_client.ping()}")
 
-        self._write_options = WriteOptions(
-            batch_size=self._batch_size*2,
-            flush_interval=1_000,
-            jitter_interval=2_000,
-            retry_interval=5_000,
-            max_retries=5,
-            max_retry_delay=30_000,
-            exponential_base=2
+        self._write_api = self._db_client.write_api(
+            write_options=WriteOptions(
+                batch_size=self._batch_size,
+                flush_interval=1_000,
+                jitter_interval=2_000,
+                retry_interval=5_000,
+                max_retries=5,
+                max_retry_delay=30_000,
+                exponential_base=2,
+            ),
+            success_callback=self._write_success,
+            error_callback=self._write_error,
+            retry_callback=self._write_retry,
         )
 
         # terminate at exit
@@ -201,8 +206,10 @@ class UART(object):
     def __del__(self):
         if self._uart is not None:
             self._uart.close()
-        if self._db is not None:
-            self._db.close()
+        if self._db_client is not None:
+            self._db_client.close()
+        if self._write_api is not None:
+            self._write_api.close()
         pass
 
     @property
@@ -402,33 +409,47 @@ class UART(object):
         self._points = []
         gc.collect()
 
-    def _write_points(self):
-        """Write points to Influx database
+    def _write_points(self, method='batch'):
+        """Write points to Influx database and clear
         """
 
-        if len(self._points) < self._batch_size:
+        if len(self._points) == 0:
+
             return
 
-        if not self.dry_run and len(self._points) > 0:
+        if not self.dry_run:
 
-            with self._db.write_api(
-                write_options=self._write_options,
-                success_callback=self._write_success,
-                error_callback=self._write_error,
-                retry_callback=self._write_retry,
-            ) as writer:
-                writer.write(
-                    bucket=self._influx2_bucket,
-                    record=self._points
-                )
+            if method == 'batch':
+
+                self._write_points_batch()
+
+            else:
+
+                self._write_points_synchronous()
 
         self._clear_points()
+
+    def _write_points_batch(self):
+        """Write points to Influx database in batch mode
+        """
+        self._write_api.write(bucket=self._influx2_bucket, record=self._points)
+
+    def _write_points_synchronous(self):
+        """Write points to Influx database in synchronous mode
+        """
+        with self._db_client.write_api(
+            write_options=SYNCHRONOUS,
+            success_callback=self._write_success,
+            error_callback=self._write_error,
+            retry_callback=self._write_retry,
+        ) as writer:
+            writer.write(bucket=self._influx2_bucket, record=self._points)
 
     def _write_success(self, conf: (str, str, str), data: str):
         """Successfully writen batch."""
         self._logger.info(
             f"Written batch: {conf}, "
-            f"last time record {pd.Timestamp(int(data[-19:]))}"
+            f"last timestamp {pd.Timestamp(int(data[-19:]))}"
         )
         self._logger.debug(
             f"Written batch: {conf}, data: {data}"
