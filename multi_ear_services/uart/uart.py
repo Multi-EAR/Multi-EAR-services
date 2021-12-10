@@ -188,8 +188,8 @@ class UART(object):
 
         self._write_api = self._db_client.write_api(
             write_options=WriteOptions(
-                batch_size=self._batch_size,
-                flush_interval=10_000,
+                batch_size=self._batch_size*2,
+                flush_interval=5_000,
                 jitter_interval=2_000,
                 retry_interval=5_000,
                 max_retries=5,
@@ -418,7 +418,7 @@ class UART(object):
     def _write_points(self, method='batch'):
         """Write points to Influx database and clear
         """
-        if len(self._points) == 0:
+        if len(self._points) < self._batch_size:
             return
 
         if not self.dry_run:
@@ -426,14 +426,13 @@ class UART(object):
                 self._write_points_batch(self._points)
             else:
                 self._write_points_synchronous(self._points)
-
         self._clear_points()
 
     def _write_points_batch(self, points):
         """Write points to Influx database in batch mode
         """
         self._logger.info(
-            f"Write synchronous: {len(points)} lines, "
+            f"Write batch: {len(points)} lines, "
             f"last timestamp {pd.Timestamp(int(points[-1].to_line_protocol()[-19:]))}"
         )
         self._write_api.write(bucket=self._influx2_bucket, record=points)
