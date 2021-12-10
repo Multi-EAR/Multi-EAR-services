@@ -41,7 +41,7 @@ class UART(object):
     _time = None
 
     def __init__(self, config_file='config.ini', journald=False,
-                 debug=False, dry_run=False) -> None:
+                 debug=False, dry_run=False, local_clock=False) -> None:
         """Sensorboard serial readout with data storage in a local influx
         database.
 
@@ -62,6 +62,7 @@ class UART(object):
 
         # set options
         self.dry_run = dry_run or False
+        self.local_clock = local_clock or False
 
         # set logger
         self._logger = logging.getLogger(__name__)
@@ -117,7 +118,7 @@ class UART(object):
         try:
             token = self._config_get('influx2', 'token')
             self._headers = {'Authorization': f"Token {token}"}
-        except KeyError:
+        except Exception:
             self._headers = {}
         self._logger.debug(f"InfluxDB API headers = {self._headers}")
 
@@ -231,18 +232,21 @@ class UART(object):
         """
         # Get payload from buffer
         payload = self._buffer[offset:offset+length]
+        # self._logger.info(np.frombuffer(payload, np.uint8))
 
         # Get date, time, and cycle step from payload
         y, m, d, H, M, S, step = np.frombuffer(payload, np.uint8, 7, 0)
+        # self._logger.info(f'payload time: {y} {m} {d} {H} {M} {S} {step}')
 
         # GNSS clock?
-        gnss = y != 0
+        gnss = False if self.local_clock else y != 0
         if gnss:
             time = pd.Timestamp(2000 + y, m, d, H, M, S) + step * self._delta
             clock = 'GNSS'
         else:
             time = local_time or pd.to_datetime('now')
             clock = 'local'
+        # self._logger.info(f'{clock} time: {time}')
 
         # Create point
         point = (Point(self._measurement)
@@ -420,6 +424,10 @@ def main():
         help='Serial read without storage in the influx database'
     )
     parser.add_argument(
+        '--local-clock', action='store_true', default=False,
+        help='Disable GNSS time (if available) and use the local time only.'
+    )
+    parser.add_argument(
         '--debug', action='store_true', default=False,
         help='Make the operation a lot more talkative'
     )
@@ -431,7 +439,13 @@ def main():
 
     args = parser.parse_args()
 
-    uart = UART(args.ini, args.journald, args.debug, args.dry_run)
+    uart = UART(
+        config_file=args.ini,
+        journald=args.journald,
+        debug=args.debug,
+        dry_run=args.dry_run,
+        local_clock=args.local_clock
+    )
     uart.readout()
 
 
