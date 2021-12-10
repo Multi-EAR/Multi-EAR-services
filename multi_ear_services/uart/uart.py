@@ -263,9 +263,7 @@ class UART(object):
                 payload_len = int(self._buffer[i+header_len-1])
 
                 # convert payload to point
-                point = self._parse_payload(
-                    i + header_len, payload_len, self._time
-                )
+                point = self._parse_payload(i + header_len, payload_len)
 
                 # append point to data points
                 self._points.append(point)
@@ -278,7 +276,7 @@ class UART(object):
 
         self._buffer = self._buffer[i:]
 
-    def _parse_payload(self, offset, length, local_time=None) -> Point:
+    def _parse_payload(self, offset, length) -> Point:
         """Convert payload from Level-1 data to counts.
         Returns
         -------
@@ -299,7 +297,7 @@ class UART(object):
             time = pd.Timestamp(2000 + y, m, d, H, M, S) + step * self._delta
             clock = 'GNSS'
         else:
-            time = local_time or pd.to_datetime('now')
+            time = self._time
             clock = 'local'
         # self._logger.info(f'{clock} time: {time}')
 
@@ -407,7 +405,7 @@ class UART(object):
 
     def _clear_points(self):
         self._points = []
-        gc.collect()
+        # gc.collect()
 
     def _write_points(self, method='batch'):
         """Write points to Influx database and clear
@@ -417,18 +415,18 @@ class UART(object):
 
         if not self.dry_run:
             if method == 'batch':
-                self._write_points_batch()
+                self._write_points_batch(self._points)
             else:
-                self._write_points_synchronous()
+                self._write_points_synchronous(self._points)
 
         self._clear_points()
 
-    def _write_points_batch(self):
+    def _write_points_batch(self, points):
         """Write points to Influx database in batch mode
         """
-        self._write_api.write(bucket=self._influx2_bucket, record=self._points)
+        self._write_api.write(bucket=self._influx2_bucket, record=points)
 
-    def _write_points_synchronous(self):
+    def _write_points_synchronous(self, points):
         """Write points to Influx database in synchronous mode
         """
         with self._db_client.write_api(
@@ -437,7 +435,7 @@ class UART(object):
             error_callback=self._write_error,
             retry_callback=self._write_retry,
         ) as writer:
-            writer.write(bucket=self._influx2_bucket, record=self._points)
+            writer.write(bucket=self._influx2_bucket, record=points)
 
     def _write_success(self, conf: (str, str, str), data: str):
         """Successfully writen batch."""
