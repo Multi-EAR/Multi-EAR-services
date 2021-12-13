@@ -274,195 +274,78 @@ function bytes(bytes, label) {
 function fetchSensorData() {
 
     fetch(dataselect + 'query?field=LPS33HW,DLVR,SP210,ICS,^LIS3D&start=3min&format=json')
-        .then(res => res.ok && res.json())
-        .then(data => {
-            updateCharts(data)
-        });
+        .then(res => res.status == 200 && res.json())
+        .then(data => data && updateCharts(data))
 
 }
 
 
-function updateCharts(sensorData) {
+async function updateChart(chart, sensorData) {
 
-    console.log(sensorData)
-    console.log(Highcharts.charts)
+    let canvas = await chart.renderTo
 
-    Highcharts.charts
-        .then( charts => {
-            console.log(charts) 
+    if (canvas.getAttribute('data-source') !== 'multi_ear') return
+
+    let addSeries = chart.series.length == 0
+    let dataNames = canvas.getAttribute('data-series').split(',')
+    let dataScalar = canvas.getAttribute('data-scalar').split(',')
+    let dataSeries = []
+
+    dataNames.forEach( function(name, index) {
+
+        let sensitivity = eval(dataScalar[index])
+        let columnIndex = sensorData.columns.indexOf(name)
+
+        if (columnIndex === -1) return
+
+        let data = sensorData.data.map( function (row, rowIndex) {
+            return [sensorData.index[rowIndex], row[columnIndex]*sensitivity]
         })
 
-    Highcharts.charts.forEach(chart => {
+        series = {name: name, data: data}
+        addSeries ? chart.addSeries(series) : dataSeries.push(series)
 
-        chart.renderTo
-            .then( element => {
-
-                console.log(element.id)
-
-                if (element.datasets.fields === undefined) return;
-
-                element.datasets.fields.split(',').forEach(field => {
-
-                    console.log(field)
-
-                })
-
-
-            })
-
-/*
-    chart.update({
-      series: [{
-        data: [
-          ['Nick', 15],
-          ['Ann', 25],
-          ['Joe', 22]
-        ]
-      }]
     })
-*/
 
-  })
+    if (!addSeries) chart.update({series: dataSeries})
+    chart.redraw()
+    chart.hideLoading()
 
+}
+
+
+async function updateCharts(sensorData) {
+    Highcharts.charts.forEach(chart => updateChart(chart, sensorData))
 }
 
 
 function loadDashboard() {
 
-    Highcharts.chart('chart-pabs', {
-        chart: {
-            type: 'line',
-            zoomType: 'x'
-        },
-        data: {
-            csvURL: dataselect + 'query?d=multi_ear&m=multi_ear&f=LPS33HW&s=3m&_f=csv',
-            enablePolling: true,
-            dataRefreshRate: 10,
-            parsed: function (columns) {
-                columns[1] = columns[1].map(function (value, index) {
-                    return (index === 0) ? value : value/4096
-                })
-            },
-        },
-        tooltip: {
-            valueDecimals: 2
-        },
-        xAxis: {
-            type: 'datetime'
-        },
-        yAxis: {
-            title: {
-                text: 'Absolute pressure [hPa]',
-            },
-        },
-        title: {
-            text: 'Absolute Pressure'
-        },
-    });
+    // initialize charts
+    let charts = [].slice.call(document.querySelectorAll('[data-source="multi_ear"]'))
 
-    Highcharts.chart('chart-pdif', {
-        chart: {
-            type: 'line',
-            zoomType: 'x'
-        },
-        data: {
-            csvURL: dataselect + 'query?d=multi_ear&m=multi_ear&f=DLVR,SP210&s=3m&_f=csv',
-            enablePolling: true,
-            dataRefreshRate: 10,
-            parsed: function (columns) {
-                columns[1] = columns[1].map(function (value, index) {
-                    return (index === 0) ? value : value * 250 / 655300
-                })
-                columns[2] = columns[2].map(function (value, index) {
-                    return (index === 0) ? value : value * 249.08 / ( 0.9 * 32768 )
-                })
+    charts.forEach(chart => {
 
-            },
-        },
-        tooltip: {
-            valueDecimals: 2
-        },
-        xAxis: {
-            type: 'datetime'
-        },
-        yAxis: {
-            title: {
-                text: 'Differential pressure [Pa]',
-            },
-        },
-        title: {
-            text: 'Differential Pressure'
-        },
-    });
+        Highcharts.chart({
+            chart: { renderTo: chart.id, type: 'line', zoomType: 'x', backgroundColor: 'rgba(0,0,0,0)' },
+            credits: { enabled: false },
+            tooltip: { valueDecimals: 2 },
+            xAxis: { type: 'datetime' },
+            yAxis: { title: { text: chart.getAttribute('data-ylabel') } },
+            title: { text: chart.getAttribute('data-title') },
+        }).showLoading();
 
-    Highcharts.chart('chart-spl', {
-        chart: {
-            type: 'line',
-            zoomType: 'x'
-        },
-        data: {
-            csvURL: dataselect + 'query?d=multi_ear&m=multi_ear&f=^ICS&s=3m&_f=csv',
-            enablePolling: true,
-            dataRefreshRate: 10,
-            parsed: function (columns) {
-                columns[1] = columns[1].map(function (value, index) {
-                    return (index === 0) ? value : value * 100 / 4096
-                })
-            },
-        },
-        tooltip: {
-            valueDecimals: 1
-        },
-        xAxis: {
-            type: 'datetime'
-        },
-        yAxis: {
-            title: {
-                text: '?? [??]',
-            },
-        },
-        title: {
-            text: 'Sound Pressure Level'
-        },
-    });
+    })
 
-    Highcharts.chart('chart-acc', {
-        chart: {
-            type: 'line',
-            zoomType: 'x'
-        },
-        data: {
-            csvURL: dataselect + 'query?d=multi_ear&m=multi_ear&f=^LIS3DH&s=3m&_f=csv',
-            enablePolling: true,
-            dataRefreshRate: 10,
-            parsed: function (columns) {
-                for (let i = 1; i <= 3; i++) {
-                    columns[i] = columns[i].map(function (value, index) {
-                        return (index === 0) ? value : value * 0.076 * 9.80665 / 1000
-                    })
-                }
-            },
-        },
-        tooltip: {
-            valueDecimals: 5
-        },
-        xAxis: {
-            type: 'datetime'
-        },
-        yAxis: {
-            title: {
-                text: 'Acceleration [m s-2]',
-            },
-        },
-        title: {
-            text: 'Acceleration'
-        },
-    });
+    // Fetch all sensordata of last 3 minutes and update charts
+    fetchSensorData()
 
+    // Telegraf system-load chart
     Highcharts.chart('chart-system-load', {
         chart: {
             type: 'spline',
-            zoomType: 'x'
+            zoomType: 'x',
+            backgroundColor: 'rgba(0,0,0,0)',
         },
         data: {
             csvURL: dataselect + 'query?d=telegraf&m=system&f=load*&s=30m&_f=csv',
@@ -470,7 +353,7 @@ function loadDashboard() {
             dataRefreshRate: 30,
         },
         tooltip: {
-            valueDecimals: 2
+            valueDecimals: 3
         },
         xAxis: {
             type: 'datetime'
@@ -484,12 +367,17 @@ function loadDashboard() {
         title: {
             text: 'System load'
         },
+        credits: { 
+            enabled: false
+        },
     });
 
+    // Telegraf memory-usage chart
     Highcharts.chart('chart-memory-usage', {
         chart: {
             type: 'spline',
-            zoomType: 'x'
+            zoomType: 'x',
+            backgroundColor: 'rgba(0,0,0,0)',
         },
         data: {
             csvURL: dataselect + 'query?d=telegraf&m=mem&f=used,buffered,cached,free&s=30m&_f=csv',
@@ -512,6 +400,9 @@ function loadDashboard() {
         },
         title: {
             text: 'Memory usage'
+        },
+        credits: { 
+            enabled: false
         },
     });
 

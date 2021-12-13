@@ -380,7 +380,7 @@ class UART(object):
         # LPS33HW counts_to_hPa = 1 / 4096
         # LIS3DH counts_to_ms2 = 0.076
         # SHT8x ...
-        # ICS counts_to_dB = 100/4096
+        # ICS counts_to_dBV = 100/4096
 
         # GNSS
         if gnss and length >= 46:

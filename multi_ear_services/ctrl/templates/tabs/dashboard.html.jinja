@@ -1,8 +1,70 @@
 <h1 class="h2 pt-3 pb-2 mb-3 border-bottom">Dashboard</h1>
 
-<div id="chart-pabs" class="py-3" data-fields="multi_ear_LPS33HW"></div>
-<div id="chart-pdif" class="py-3" data-fields="multi_ear_DLVR,multi_ear_SP210"></div>
-<div id="chart-spl" class="py-3" data-fields="multi_ear_ICS"></div>
-<div id="chart-acc" class="py-3" data-fields="multi_ear_LIS3DH_X,multi_ear_LIS3DH_Y,multi_ear_LIS3DH_Z"></div>
-<div id="chart-system-load" class="py-3" data-fields="system_load1,system_load5,system_load15"></div>
-<div id="chart-memory-usage" class="py-3" data-fields="mem_buffered,mem_cached,mem_free,mem_used"></div>
+<div id="chart-p"
+     class="py-3"
+     data-source="multi_ear"
+     data-series="multi_ear_LPS33HW"
+     data-scalar="1/4096"
+     data-title="Absolute Pressure"
+     data-ylabel="Pressure [Pa]">
+</div>
+
+<div id="chart-dp"
+     class="py-3"
+     data-source="multi_ear"
+     data-series="multi_ear_DLVR,multi_ear_SP210"
+     data-scalar="0.01*250/6553,249.08/(0.9*32768)"
+     data-title="Differential Pressure"
+     data-ylabel="Pressure [Pa]">
+</div>
+
+<div id="chart-i"
+     class="py-3"
+     data-source="multi_ear"
+     data-series="multi_ear_ICS"
+     data-scalar="100/4096"
+     data-title="Sound Pressure Level"
+     data-ylabel="SPL [dbV]">
+</div>
+
+<div id="chart-az"
+     class="py-3"
+     data-source="multi_ear"
+     data-series="multi_ear_LIS3DH_Z"
+     data-scalar="0.076*9.80665/1000"
+     data-title="Acceleration z-direction"
+     data-ylabel="acceleration [m s-2]">
+</div>
+
+<div id="chart-ax"
+     class="py-3"
+     data-source="multi_ear"
+     data-series="multi_ear_LIS3DH_X"
+     data-scalar="0.076*9.80665/1000"
+     data-title="Acceleration x-direction"
+     data-ylabel="acceleration [m s-2]">
+</div>
+
+<div id="chart-ay"
+     class="py-3"
+     data-source="multi_ear"
+     data-series="multi_ear_LIS3DH_Y"
+     data-scalar="0.076*9.80665/1000"
+     data-title="Acceleration y-direction"
+     data-ylabel="acceleration [m s-2]">
+</div>
+
+<div id="chart-system-load"
+     class="py-3"
+     data-source="telegraf"
+     data-series="system_load1,system_load5,system_load15"
+     data-title="System Usage"
+     data-ylabel="System Load">
+</div>
+<div id="chart-memory-usage"
+     class="py-3"
+     data-source="telegraf"
+     data-series="mem_buffered,mem_cached,mem_free,mem_used"
+     data-title="Memory Usage"
+     data-ylabel="Memory Usage">
+</div>
