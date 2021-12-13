@@ -526,9 +526,13 @@ function do_configure_influxdb
     # enable
     do_systemd_service_enable "influxdb.service"
 
-    # link default settings
-    verbose_msg "> enable default configuration" 1
-    sudo ln -sf /etc/influxdb/default.conf /etc/influxdb/influxdb.conf >> $LOG_FILE 2>&1
+    ## link default settings
+    # verbose_msg "> enable default configuration" 1
+    # sudo ln -sf /etc/influxdb/default.conf /etc/influxdb/influxdb.conf >> $LOG_FILE 2>&1
+
+    # enforce multi-ear settings (requires login from now on!)
+    verbose_msg "> enable multi-ear configuration" 1
+    sudo ln -sf /etc/influxdb/multi-ear.conf /etc/influxdb/influxdb.conf >> $LOG_FILE 2>&1
 
     # restart with default settings
     do_systemd_service_restart "influxdb.service"
@@ -591,13 +595,6 @@ function do_configure_influxdb
     influx_e "REVOKE ALL PRIVILEGES FROM ear"
     influx_e "GRANT READ ON multi_ear TO ear"
     influx_e "GRANT READ ON telegraf TO ear"
-
-    # enforce multi-ear settings (requires login from now on!)
-    verbose_msg "> enable multi-ear configuration" 1
-    sudo ln -sf /etc/influxdb/multi-ear.conf /etc/influxdb/influxdb.conf >> $LOG_FILE 2>&1
-
-    # restart service
-    do_systemd_service_restart "influxdb"
 
     # done
     verbose_done
