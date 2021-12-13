@@ -56,7 +56,7 @@ class UART(object):
               token = my-token
               bucket = multi_ear
               measurement = multi_ear
-              batch_size = 250
+              batch_size = 120
             [serial]
               port = /dev/ttyAMA0
               baudrate = 115200
@@ -99,7 +99,7 @@ class UART(object):
         self._influx2_timeout = 10_000
         self._influx2_auth_basic = False
         self._influx2_bucket = 'multi_ear/'
-        self._batch_size = 250
+        self._batch_size = 120
         self._write_mode = 'batch'
         self._measurement = 'multi_ear'
         self._host = socket.gethostname()
@@ -193,7 +193,7 @@ class UART(object):
         self._write_api = self._db_client.write_api(
             write_options=WriteOptions(
                 batch_size=self._batch_size*2,
-                flush_interval=5_000,
+                flush_interval=1_000,
                 jitter_interval=2_000,
                 retry_interval=5_000,
                 max_retries=5,
