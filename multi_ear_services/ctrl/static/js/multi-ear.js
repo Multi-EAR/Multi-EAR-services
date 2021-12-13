@@ -1,6 +1,12 @@
 /* global bootstrap: false */
 let debug = window.location.hostname == '127.0.0.1'
 let dataselect = (debug ? 'http://multi-ear-3001.local' : '') + '/api/dataselect/'
+let statusUpdater = null;
+let sensorDataUpdater = null;
+
+Highcharts.setOptions({
+    global: { useUTC: false }  // Controll via toggle?
+})
 
 
 function sleep(ms) {
@@ -273,6 +279,8 @@ function bytes(bytes, label) {
 
 function fetchSensorData() {
 
+    console.log('Fetch sensordata')
+
     fetch(dataselect + 'query?field=LPS33HW,DLVR,SP210,ICS,^LIS3D&start=3min&format=json')
         .then(res => res.status == 200 && res.json())
         .then(data => data && updateCharts(data))
@@ -315,7 +323,21 @@ async function updateChart(chart, sensorData) {
 
 
 async function updateCharts(sensorData) {
+    console.log('Update sensordata charts')
     Highcharts.charts.forEach(chart => updateChart(chart, sensorData))
+}
+
+
+function startSensorDataUpdater() {
+    console.log('Start sensordata interval update')
+    window.clearInterval(sensorDataUpdater);
+    sensorDataUpdater = setInterval(fetchSensorData, 15000);  // ms, every 15s
+}
+
+
+function stopSensorDataUpdater() {
+    console.log('Stop sensordata interval update')
+    window.clearInterval(sensorDataUpdater);
 }
 
 
@@ -338,7 +360,14 @@ function loadDashboard() {
     })
 
     // Fetch all sensordata of last 3 minutes and update charts
-    fetchSensorData()
+    startSensorDataUpdater()
+
+    var toggle = document.getElementById('sensorDataUpdater')
+
+    toggle.addEventListener('click', function (event) {
+        toggle.checked ? startSensorDataUpdater() : stopSensorDataUpdater()
+    })
+
 
     // Telegraf system-load chart
     Highcharts.chart('chart-system-load', {
@@ -412,6 +441,8 @@ function loadDashboard() {
 function stopCharts(tab) {
 
     if (tab === "dashboard") return
+
+    stopSensorDataUpdater()
 
     Highcharts.charts.forEach(chart => {
 
@@ -493,7 +524,7 @@ function loadContent(nav) {
     content.innerHTML = ''
 
     // stop status progressbar interval
-    clearInterval(statusUpdater);
+    window.clearInterval(statusUpdater);
 
     // lazy load new content and trigger nav related functions
     getResponse("/_tab/" + tab)
@@ -541,9 +572,6 @@ function loadContent(nav) {
 
 }
 
-
-// globals
-let statusUpdater = null;
 
 (function () {
 

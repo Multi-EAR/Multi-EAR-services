@@ -99,7 +99,7 @@ class UART(object):
         self._influx2_timeout = 10_000
         self._influx2_auth_basic = False
         self._influx2_bucket = 'multi_ear/'
-        self._batch_size = 120
+        self._batch_size = 80
         self._write_mode = 'batch'
         self._measurement = 'multi_ear'
         self._host = socket.gethostname()
@@ -494,6 +494,7 @@ class UART(object):
 
         # set local time as backup if GNSS fails
         self._time = pd.to_datetime("now")
+        self._logger.info(f"Local reference time if GNSS fails: {self._time}")
 
         while self._uart.isOpen():
             self._read_lines()
