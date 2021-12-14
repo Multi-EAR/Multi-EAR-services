@@ -259,7 +259,6 @@ class UART(object):
 
                 # check buffer length
                 if i + packet_len > buffer_len:
-                    i += 1
                     break
 
                 # hard debug
