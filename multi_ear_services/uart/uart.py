@@ -57,7 +57,8 @@ class UART(object):
               token = my-token
               bucket = multi_ear
               measurement = multi_ear
-              batch_size = 120
+              batch_size = 80
+              write_mode = batch
             [serial]
               port = /dev/ttyAMA0
               baudrate = 115200
@@ -276,7 +277,7 @@ class UART(object):
                 self._points.append(point)
 
                 # shift buffer to next packet
-                i += packet_len + 1
+                i += packet_len# + 1
 
             else:
                 i += 1
@@ -430,7 +431,6 @@ class UART(object):
 
     def _clear_points(self):
         self._points = []
-        # gc.collect()
 
     def _write_points(self):
         """Write points to Influx database and clear
