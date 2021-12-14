@@ -1,7 +1,7 @@
 [Unit]
 Description=Multi-EAR sensorboard serial readout to a local Influx time series database
 WantedBy=multi-user.target
-Wants=influxd.service
+After=influxd.service
  
 [Service]
 Type=simple
