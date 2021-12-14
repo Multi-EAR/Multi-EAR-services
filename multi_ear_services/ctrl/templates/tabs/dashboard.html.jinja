@@ -7,69 +7,87 @@
 
 <div class="form-check form-switch">
   <input class="form-check-input" type="checkbox" role="switch" id="useUTC" checked>
-  <label class="form-check-label" for="useUTC">UTC - Coordinated Universal Time - time and date</label>
+  <label class="form-check-label" for="useUTC">Coordinated Universal Time (UTC)</label>
 </div>
 
-<div id="chart-p"
-     class="py-3"
-     data-source="multi_ear"
-     data-series="multi_ear_LPS33HW"
-     data-scalar="1/4096"
-     data-title="Barometric Pressure"
-     data-ylabel="Barometric Pressure [hPa]">
-</div>
-<div id="chart-dp"
-     class="py-3"
-     data-source="multi_ear"
-     data-series="multi_ear_DLVR,multi_ear_SP210"
-     data-scalar="0.01*250/6553,249.08/(0.9*32768)"
-     data-title="Differential Pressure"
-     data-ylabel="Differential Pressure [Pa]">
-</div>
-<div id="chart-spl"
-     class="py-3"
-     data-source="multi_ear"
-     data-series="multi_ear_ICS"
-     data-scalar="100/4096"
-     data-title="Sound Pressure Level"
-     data-ylabel="SPL [dbV]">
-</div>
-<div id="chart-acc-z"
-     class="py-3"
-     data-source="multi_ear"
-     data-series="multi_ear_LIS3DH_Z"
-     data-scalar="0.076*9.80665/1000"
-     data-title="Acceleration in Z-direction"
-     data-ylabel="Z-direction acceleration [m s-2]">
-</div>
-<div id="chart-acc-x"
-     class="py-3"
-     data-source="multi_ear"
-     data-series="multi_ear_LIS3DH_X"
-     data-scalar="0.076*9.80665/1000"
-     data-title="Acceleration in X-direction"
-     data-ylabel="X-direction acceleration [m s-2]">
-</div>
-<div id="chart-acc-y"
-     class="py-3"
-     data-source="multi_ear"
-     data-series="multi_ear_LIS3DH_Y"
-     data-scalar="0.076*9.80665/1000"
-     data-title="Acceleration in Y-direction"
-     data-ylabel="Y-direction acceleration [m s-2]">
-</div>
+<figure class="my-3">
+  <div id="chart-p"
+       class="py-3"
+       data-source="multi_ear"
+       data-series="LPS33HW"
+       data-scalar="1/4096"
+       data-offset="0"
+       data-title="Barometric Pressure"
+       data-ylabel="Barometric Pressure [hPa]">
+  </div>
+  <div id="chart-dp"
+       class="py-3"
+       data-source="multi_ear"
+       data-series="DLVR,SP210"
+       data-scalar="0.01*250/6553,249.08/(0.9*32768)"
+       data-offset="0,0"
+       data-title="Differential Pressure"
+       data-ylabel="Differential Pressure [Pa]">
+  </div>
+  <div id="chart-spl"
+       class="py-3"
+       data-source="multi_ear"
+       data-series="ICS"
+       data-scalar="100/4096"
+       data-offset="0"
+       data-title="Sound Pressure Level"
+       data-ylabel="SPL [dbV]">
+  </div>
+  <div id="chart-acc-z"
+       class="py-3"
+       data-source="multi_ear"
+       data-series="LIS3DH_Z"
+       data-scalar="0.076*9.80665/1000"
+       data-offset="0"
+       data-title="Acceleration in Z-direction"
+       data-ylabel="Z-direction acceleration [m s-2]">
+  </div>
+  <div id="chart-acc-x"
+       class="py-3"
+       data-source="multi_ear"
+       data-series="LIS3DH_X"
+       data-scalar="0.076*9.80665/1000"
+       data-offset="0"
+       data-title="Acceleration in X-direction"
+       data-ylabel="X-direction acceleration [m s-2]">
+  </div>
+  <div id="chart-acc-y"
+       class="py-3"
+       data-source="multi_ear"
+       data-series="LIS3DH_Y"
+       data-scalar="0.076*9.80665/1000"
+       data-offset="0"
+       data-title="Acceleration in Y-direction"
+       data-ylabel="Y-direction acceleration [m s-2]">
+  </div>
+  <div id="chart-t"
+       class="py-3"
+       data-source="multi_ear"
+       data-series="SHT85_T"
+       data-scalar="175/(2**16-1)"
+       data-offset="-45"
+       data-title="Temperature"
+       data-ylabel="T [°C]">
+  </div>
+  <div id="chart-rh"
+       class="py-3"
+       data-source="multi_ear"
+       data-series="SHT85_H"
+       data-scalar="100/(2**16-1)"
+       data-offset="0"
+       data-title="Relative Humidity"
+       data-ylabel="RH [%]">
+  </div>
+</figure>
 
-<div id="chart-system-load"
-     class="py-3"
-     data-source="telegraf"
-     data-series="system_load1,system_load5,system_load15"
-     data-title="System Usage"
-     data-ylabel="System Load">
-</div>
-<div id="chart-memory-usage"
-     class="py-3"
-     data-source="telegraf"
-     data-series="mem_buffered,mem_cached,mem_free,mem_used"
-     data-title="Memory Usage"
-     data-ylabel="Memory Usage">
-</div>
+<figure class="my-3">
+  <div id="chart-system-load" class="py-3">
+  </div>
+  <div id="chart-memory-usage" class="py-3">
+  </div>
+</figure>

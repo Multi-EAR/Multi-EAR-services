@@ -281,7 +281,7 @@ function fetchSensorData() {
 
     console.log('Fetch sensordata')
 
-    fetch(dataselect + 'query?field=LPS33HW,DLVR,SP210,ICS,^LIS3D&start=3min&format=json')
+    fetch(dataselect + 'query?field=^&start=120s&format=json')
         .then(res => res.status == 200 && res.json())
         .then(data => data && updateCharts(data))
 
@@ -297,17 +297,19 @@ async function updateChart(chart, sensorData) {
     let addSeries = chart.series.length == 0
     let dataNames = canvas.getAttribute('data-series').split(',')
     let dataScalar = canvas.getAttribute('data-scalar').split(',')
+    let dataOffset = canvas.getAttribute('data-offset').split(',')
     let dataSeries = []
 
     dataNames.forEach( function(name, index) {
 
-        let sensitivity = eval(dataScalar[index])
-        let columnIndex = sensorData.columns.indexOf(name)
+        let scalar = eval(dataScalar[index])
+        let offset = eval(dataOffset[index])
+        let columnIndex = sensorData.columns.indexOf('multi_ear_' + name)
 
         if (columnIndex === -1) return
 
         let data = sensorData.data.map( function (row, rowIndex) {
-            return [sensorData.index[rowIndex], row[columnIndex]*sensitivity]
+            return [sensorData.index[rowIndex], offset + scalar * row[columnIndex]]
         })
 
         series = {name: name, data: data}
@@ -323,26 +325,57 @@ async function updateChart(chart, sensorData) {
 
 
 async function updateCharts(sensorData) {
+
     console.log('Update sensordata charts')
     Highcharts.charts.forEach(chart => updateChart(chart, sensorData))
+
 }
 
 
 function startSensorDataUpdater() {
+
     console.log('Start sensordata interval update')
     window.clearInterval(sensorDataUpdater);
     sensorDataUpdater = setInterval(fetchSensorData, 15000);  // ms, every 15s
 
     var utcToggle = document.getElementById('useUTC')
     utcToggle.disabled = false
+
 }
 
 
 function stopSensorDataUpdater() {
+
     console.log('Stop sensordata interval update')
     window.clearInterval(sensorDataUpdater);
+
 }
 
+
+/**
+ * Synchronize zooming through the setExtremes event handler.
+ */
+function syncChartExtremes(e) {
+    var thisChart = this.chart;
+
+    if (e.trigger !== 'syncChartExtremes') { // Prevent feedback loop
+        Highcharts.each(Highcharts.charts, function (chart) {
+            if (chart !== thisChart) {
+                if (chart.xAxis[0].setExtremes) { // It is null while updating
+                    chart.xAxis[0].setExtremes(
+                        e.min,
+                        e.max,
+                        undefined,
+                        false,
+                        { trigger: 'syncChartExtremes' }
+                    );
+                }
+            }
+        });
+    }
+}
+
+// https://www.highcharts.com/demo/synchronized-charts
 
 function loadDashboard() {
 
@@ -352,10 +385,17 @@ function loadDashboard() {
     charts.forEach(chart => {
 
         Highcharts.chart({
-            chart: { renderTo: chart.id, type: 'line', zoomType: 'x', backgroundColor: 'rgba(0,0,0,0)' },
+            chart: { renderTo: chart.id, type: 'line', zoomType: 'x', backgroundColor: 'none' },
             credits: { enabled: false },
-            tooltip: { valueDecimals: 2 },
-            xAxis: { type: 'datetime' },
+            tooltip: {
+                //borderWidth: 0,
+                //backgroundColor: 'none',
+                //pointFormat: '{point.y}',
+                headerFormat: '',
+                shadow: false,
+                valueDecimals: 2
+            },
+            xAxis: { type: 'datetime', events: { setExtremes: syncChartExtremes } },
             yAxis: { title: { text: chart.getAttribute('data-ylabel') } },
             title: { text: chart.getAttribute('data-title') },
         }).showLoading();
@@ -378,14 +418,12 @@ function loadDashboard() {
         })
     })
 
-
-
     // Telegraf system-load chart
     Highcharts.chart('chart-system-load', {
         chart: {
             type: 'spline',
             zoomType: 'x',
-            backgroundColor: 'rgba(0,0,0,0)',
+            backgroundColor: 'none',
         },
         data: {
             csvURL: dataselect + 'query?d=telegraf&m=system&f=load*&s=30m&_f=csv',
@@ -418,7 +456,7 @@ function loadDashboard() {
         chart: {
             type: 'spline',
             zoomType: 'x',
-            backgroundColor: 'rgba(0,0,0,0)',
+            backgroundColor: 'none',
         },
         data: {
             csvURL: dataselect + 'query?d=telegraf&m=mem&f=used,buffered,cached,free&s=30m&_f=csv',
