@@ -7,6 +7,7 @@ import os
 import pandas as pd
 import socket
 import sys
+import time
 from argparse import ArgumentParser
 from configparser import ConfigParser
 from influxdb_client import InfluxDBClient, Point
@@ -16,7 +17,6 @@ import influxdb_client.client.util.date_utils as date_utils
 from influxdb_client.client.util.date_utils_pandas import PandasDateTimeHelper
 from serial import Serial
 from systemd.journal import JournaldLogHandler
-from time import sleep
 
 # Relative imports
 try:
@@ -194,15 +194,15 @@ class UART(object):
 
         self._write_api = self._db_client.write_api(
             write_options=WriteOptions(
-                batch_size=self._batch_size*2,
-                flush_interval=1_000,
-                jitter_interval=2_000,
-                retry_interval=5_000,
+                batch_size=500,
+                flush_interval=500,
+                jitter_interval=1_000,
+                retry_interval=2_000,
                 max_retries=5,
-                max_retry_delay=30_000,
+                max_retry_delay=10_000,
                 exponential_base=2,
             ),
-            success_callback=self._write_success,
+            success_callback=self._write_success if debug else None,
             error_callback=self._write_error,
             retry_callback=self._write_retry,
         )
@@ -238,7 +238,7 @@ class UART(object):
         """
         return self._buffer[i:i+self._packet_start_len] == self._packet_start
 
-    def _parse_buffer(self):
+    def _decode(self):
         """Parse the read buffer for data points.
         """
 
@@ -270,20 +270,20 @@ class UART(object):
                 payload_len = int(self._buffer[i+header_len-1])
 
                 # convert payload to point
-                point = self._parse_payload(i + header_len, payload_len)
+                point = self._decode_payload(i + header_len, payload_len)
 
                 # append point to data points
                 self._points.append(point)
 
                 # shift buffer to next packet
-                i += packet_len
+                i += packet_len + 1
 
             else:
                 i += 1
 
         self._buffer = self._buffer[i:]
 
-    def _parse_payload(self, offset, length) -> Point:
+    def _decode_payload(self, offset, length) -> Point:
         """Convert payload from Level-1 data to counts.
         Returns
         -------
@@ -316,15 +316,15 @@ class UART(object):
         # GNSS clock?
         gnss = False if self.local_clock else y != 0
         if gnss:
-            time = pd.Timestamp(2000 + y, m, d, H, M, S) + step * self._delta
+            timestamp = pd.Timestamp(2000 + y, m, d, H, M, S) + step * self._delta
             clock = 'GNSS'
         else:
-            time = self._time
+            timestamp = self._time
             clock = 'local'
         # self._logger.info(f'{clock} time: {time}')
 
         # Create point
-        point = Point(self._measurement).time(time).tag('clock', clock)
+        point = Point(self._measurement).time(timestamp).tag('clock', clock)
         """
         point = (Point(self._measurement)
                  .time(time)
@@ -417,64 +417,42 @@ class UART(object):
 
         return point
 
-    def _serial_read(self):
-        """Read all available lines from the serial port
+    def _receive(self):
+        """Read all available bytes from the serial port
         and append to the read buffer.
         """
-        read = self._uart.readline()
-        sleep(.2)
-        in_waiting = self._uart.in_waiting
-        read += self._uart.readline(in_waiting)
+        read = self._uart.read(10_000)
+        # time.sleep(.2)
+        # in_waiting = self._uart.in_waiting
+        # read += self._uart.readline(in_waiting)
 
         self._buffer += read
 
     def _clear_points(self):
         self._points = []
 
-    def _write_points(self):
+    def _write(self):
         """Write points to Influx database and clear
         """
         if len(self._points) < self._batch_size:
             return
-        if not self.dry_run:
-            if self._write_mode == 'batch':
-                self._write_points_batch(self._points)
-            else:
-                self._write_points_synchronous(self._points)
+        self._write_batch(self._points)
         self._clear_points()
 
-    def _write_points_batch(self, points):
+    def _write_batch(self, points):
         """Write points to Influx database in batch mode
         """
-        last = pd.Timestamp(int(points[-1].to_line_protocol()[-19:]))
-        self._logger.info(
-            f"Write batch: {len(points)} lines, last timestamp {last}"
+        self._logger.debug(
+            f"Write batch: {len(points)} lines, "
+            f"last timestamp {points[-1].to_line_protocol()[-19:]}"
         )
         self._write_api.write(bucket=self._influx2_bucket, record=points)
-
-    def _write_points_synchronous(self, points):
-        """Write points to Influx database in synchronous mode
-        """
-        last = pd.Timestamp(int(points[-1].to_line_protocol()[-19:]))
-        self._logger.info(
-            f"Write synchronous: {len(points)} lines, last timestamp {last}"
-        )
-        with self._db_client.write_api(
-            write_options=SYNCHRONOUS,
-            success_callback=self._write_success,
-            error_callback=self._write_error,
-            retry_callback=self._write_retry,
-        ) as writer:
-            writer.write(bucket=self._influx2_bucket, record=points)
 
     def _write_success(self, conf: (str, str, str), data: str):
         """Successfully writen batch."""
         self._logger.info(
             f"Written batch: {conf}, "
-            f"last timestamp {pd.Timestamp(int(data[-19:]))}"
-        )
-        self._logger.debug(
-            f"Written batch: {conf}, data: {data}"
+            f"last timestamp {int(data[-19:])}"
         )
 
     def _write_error(self, conf: (str, str, str), data: str,
@@ -508,10 +486,13 @@ class UART(object):
         self._time = pd.to_datetime("now", utc=True).round(self._delta)
         self._logger.info(f"Local reference time if GNSS fails: {self._time}")
 
-        while self._uart.isOpen():
-            self._serial_read()
-            self._parse_buffer()
-            self._write_points()
+        # Clear serial output buffer
+        self._uart.reset_output_buffer()
+
+        while True:
+            self._receive()
+            self._decode()
+            self._write()
 
         self._logger.info("Serial port closed")
 
