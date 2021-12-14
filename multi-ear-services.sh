@@ -550,22 +550,21 @@ function do_configure_influxdb
     influx_e "DROP DATABASE '_internal'"
 
     # create retention policies
-    local rp_m="one_month" rp_m_specs="DURATION 30d REPLICATION 1 SHARD DURATION 6h DEFAULT"
-    # local rp_y="one_year"  rp_y_specs="DURATION 52w REPLICATION 1 SHARD DURATION 1d DEFAULT"
+    local rp_1m="one_month" rp_1m_specs="DURATION 30d REPLICATION 1 SHARD DURATION 6h DEFAULT"
 
     # create database telegraf?
     if ! influx -execute "SHOW DATABASES" | grep -q "telegraf";
     then
         influx_e "CREATE DATABASE telegraf"
     fi
-    influx_e "CREATE RETENTION POLICY $rp_m ON telegraf $rp_m_specs"
+    influx_e "CREATE RETENTION POLICY $rp_1m ON telegraf $rp_1m_specs"
 
     # create databases multi_ear?
     if ! influx -execute "SHOW DATABASES" | grep -q "multi_ear";
     then
         influx_e "CREATE DATABASE multi_ear"
     fi
-    influx_e "CREATE RETENTION POLICY $rp_m ON multi_ear $rp_m_specs"
+    influx_e "CREATE RETENTION POLICY $rp_1m ON multi_ear $rp_1m_specs"
 
     # create full-privilege user
     if [ "$INFLUX_USERNAME" == "" ];
