@@ -40,6 +40,7 @@ class UART(object):
     _points = []
     _uart = None
     _time = None
+    _step = None
 
     def __init__(self, config_file='config.ini', journald=False,
                  debug=False, dry_run=False, local_clock=False) -> None:
@@ -265,9 +266,6 @@ class UART(object):
                 #     np.frombuffer(self._buffer, np.uint8, packet_len, i)
                 # )
 
-                # increase local time
-                self._time += self._delta
-
                 # get payload length
                 payload_len = int(self._buffer[i+header_len-1])
 
@@ -294,11 +292,26 @@ class UART(object):
         """
         # Get payload from buffer
         payload = self._buffer[offset:offset+length]
-        # self._logger.info(np.frombuffer(payload, np.uint8))
+        # self._logger.info(f"payload #{length}: "
+        #                   f"{np.frombuffer(payload, np.uint8)}")
 
         # Get date, time, and cycle step from payload
         y, m, d, H, M, S, step = np.frombuffer(payload, np.uint8, 7, 0)
         # self._logger.info(f'payload time: {y} {m} {d} {H} {M} {S} {step}')
+
+        # Verify step increment
+        if self._step is not None:
+            dstep = int(step) - self._step
+            if not (dstep == 1 or self._sampling_rate - dstep == 1):
+                self._logger.warning("Skipped {dstep-1} step(s)!")
+        else:
+            dstep = 1
+
+        # store current step
+        self._step = int(step)
+
+        # increase local time with cycle steps
+        self._time += self._delta * dstep
 
         # GNSS clock?
         gnss = False if self.local_clock else y != 0
@@ -404,7 +417,7 @@ class UART(object):
 
         return point
 
-    def _read_lines(self):
+    def _serial_read(self):
         """Read all available lines from the serial port
         and append to the read buffer.
         """
@@ -493,11 +506,11 @@ class UART(object):
         self._points = []
 
         # set local time as backup if GNSS fails
-        self._time = pd.to_datetime("now")
+        self._time = pd.to_datetime("now", utc=True).round(self._delta)
         self._logger.info(f"Local reference time if GNSS fails: {self._time}")
 
         while self._uart.isOpen():
-            self._read_lines()
+            self._serial_read()
             self._parse_buffer()
             self._write_points()
 
