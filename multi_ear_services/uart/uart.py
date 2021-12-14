@@ -276,7 +276,7 @@ class UART(object):
                 self._points.append(point)
 
                 # shift buffer to next packet
-                i += packet_len# + 1
+                i += packet_len
 
             else:
                 i += 1
