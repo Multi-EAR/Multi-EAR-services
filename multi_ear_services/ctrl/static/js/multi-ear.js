@@ -5,7 +5,7 @@ let statusUpdater = null;
 let sensorDataUpdater = null;
 
 Highcharts.setOptions({
-    global: { useUTC: false }  // Controll via toggle?
+    global: { useUTC: true }
 })
 
 
@@ -332,6 +332,9 @@ function startSensorDataUpdater() {
     console.log('Start sensordata interval update')
     window.clearInterval(sensorDataUpdater);
     sensorDataUpdater = setInterval(fetchSensorData, 15000);  // ms, every 15s
+
+    var utcToggle = document.getElementById('useUTC')
+    utcToggle.disabled = false
 }
 
 
@@ -362,11 +365,19 @@ function loadDashboard() {
     // Fetch all sensordata of last 3 minutes and update charts
     startSensorDataUpdater()
 
-    var toggle = document.getElementById('sensorDataUpdater')
-
-    toggle.addEventListener('click', function (event) {
-        toggle.checked ? startSensorDataUpdater() : stopSensorDataUpdater()
+    // Enable toggles
+    var updateToggle = document.getElementById('sensorDataUpdate')
+    updateToggle.addEventListener('click', function (event) {
+        updateToggle.checked ? startSensorDataUpdater() : stopSensorDataUpdater()
     })
+
+    var utcToggle = document.getElementById('useUTC')
+    utcToggle.addEventListener('click', function (event) {
+        Highcharts.charts.forEach(chart => {
+            chart.update({time: {useUTC: utcToggle.checked}})
+        })
+    })
+
 
 
     // Telegraf system-load chart
@@ -378,8 +389,9 @@ function loadDashboard() {
         },
         data: {
             csvURL: dataselect + 'query?d=telegraf&m=system&f=load*&s=30m&_f=csv',
-            enablePolling: true,
             dataRefreshRate: 30,
+            enablePolling: true,
+            parseDate: Date.parse,
         },
         tooltip: {
             valueDecimals: 3
@@ -410,8 +422,9 @@ function loadDashboard() {
         },
         data: {
             csvURL: dataselect + 'query?d=telegraf&m=mem&f=used,buffered,cached,free&s=30m&_f=csv',
-            enablePolling: true,
             dataRefreshRate: 30,
+            enablePolling: true,
+            parseDate: Date.parse,
         },
         tooltip: {
             formatter: function() { return bytes(this.y, true); }
