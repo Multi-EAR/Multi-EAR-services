@@ -301,8 +301,8 @@ class UART(object):
 
         # Verify step increment
         if self._step is not None:
-            dstep = int(step) - self._step
-            if not (dstep == 1 or self._sampling_rate - dstep == 1):
+            dstep = (int(step) - self._step) % self._sampling_rate
+            if dstep != 1:
                 self._logger.warning(f"Skipped {dstep-1} step(s)!")
         else:
             dstep = 1
