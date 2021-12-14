@@ -303,7 +303,7 @@ class UART(object):
         if self._step is not None:
             dstep = int(step) - self._step
             if not (dstep == 1 or self._sampling_rate - dstep == 1):
-                self._logger.warning("Skipped {dstep-1} step(s)!")
+                self._logger.warning(f"Skipped {dstep-1} step(s)!")
         else:
             dstep = 1
 
