@@ -7,7 +7,6 @@ import os
 import pandas as pd
 import socket
 import sys
-import time
 from argparse import ArgumentParser
 from configparser import ConfigParser
 from influxdb_client import InfluxDBClient, Point
@@ -36,9 +35,11 @@ gc.enable()
 
 
 class UART(object):
-    _buffer = b''
+    _buffer = b'' 
     _points = []
     _uart = None
+    _db_client = None
+    _write_api = None
     _time = None
     _step = None
 
@@ -57,7 +58,7 @@ class UART(object):
               token = my-token
               bucket = multi_ear
               measurement = multi_ear
-              batch_size = 80
+              batch_size = 32
               write_mode = batch
             [serial]
               port = /dev/ttyAMA0
@@ -101,7 +102,7 @@ class UART(object):
         self._influx2_timeout = 10_000
         self._influx2_auth_basic = False
         self._influx2_bucket = 'multi_ear/'
-        self._batch_size = 80
+        self._batch_size = 32
         self._write_mode = 'batch'
         self._measurement = 'multi_ear'
         self._host = socket.gethostname()
@@ -174,6 +175,8 @@ class UART(object):
             port=self._serial_port,
             baudrate=self._serial_baudrate,
             timeout=self._serial_timeout / 1000,  # [s]
+            rtscts=True,
+            exclusive=True,
         )
         self._logger.info(f"Serial connection = {self._uart}")
 
@@ -193,15 +196,6 @@ class UART(object):
         self._logger.info(f"Influxdb connection = {self._db_client.ping()}")
 
         self._write_api = self._db_client.write_api(
-            write_options=WriteOptions(
-                batch_size=500,
-                flush_interval=500,
-                jitter_interval=1_000,
-                retry_interval=2_000,
-                max_retries=5,
-                max_retry_delay=10_000,
-                exponential_base=2,
-            ),
             success_callback=self._write_success if debug else None,
             error_callback=self._write_error,
             retry_callback=self._write_retry,
@@ -276,10 +270,10 @@ class UART(object):
                 self._points.append(point)
 
                 # shift buffer to next packet
-                i += packet_len + 1
+                i += packet_len
 
-            else:
-                i += 1
+            # skip byte
+            i += 1
 
         self._buffer = self._buffer[i:]
 
@@ -303,7 +297,7 @@ class UART(object):
         if self._step is not None:
             dstep = (int(step) - self._step) % self._sampling_rate
             if dstep != 1:
-                self._logger.warning(f"Skipped {dstep-1} step(s)!")
+                self._logger.warning(f"Step increment yields {dstep}")
         else:
             dstep = 1
 
@@ -413,7 +407,7 @@ class UART(object):
                 payload[i] + (payload[i+1] << 8) + (payload[i+2] << 16)
             )
 
-        self._logger.debug(f"Read point: {point.to_line_protocol()}")
+        # self._logger.debug(f"Read point: {point.to_line_protocol()}")
 
         return point
 
@@ -421,12 +415,13 @@ class UART(object):
         """Read all available bytes from the serial port
         and append to the read buffer.
         """
-        read = self._uart.read(10_000)
-        # time.sleep(.2)
-        # in_waiting = self._uart.in_waiting
-        # read += self._uart.readline(in_waiting)
-
-        self._buffer += read
+        # https://github.com/pyserial/pyserial/issues/216#issuecomment-369414522
+        while True:
+            size = max(1, min(2048, self._uart.in_waiting))
+            received = self._uart.read(size)
+            self._buffer += received
+            if b'\n' in received:
+                return
 
     def _clear_points(self):
         self._points = []
@@ -442,18 +437,12 @@ class UART(object):
     def _write_batch(self, points):
         """Write points to Influx database in batch mode
         """
-        self._logger.debug(
-            f"Write batch: {len(points)} lines, "
-            f"last timestamp {points[-1].to_line_protocol()[-19:]}"
-        )
+        self._logger.debug(f"Write {len(points)} lines")
         self._write_api.write(bucket=self._influx2_bucket, record=points)
 
     def _write_success(self, conf: (str, str, str), data: str):
         """Successfully writen batch."""
-        self._logger.info(
-            f"Written batch: {conf}, "
-            f"last timestamp {int(data[-19:])}"
-        )
+        self._logger.debug("Written batch")
 
     def _write_error(self, conf: (str, str, str), data: str,
                      exception: InfluxDBError):
