@@ -1,20 +1,20 @@
 # Mandatory imports
 import atexit
-import gc
 import logging
 import numpy as np
 import os
 import pandas as pd
-import socket
 import sys
+import threading
+from queue import Queue
 from argparse import ArgumentParser
 from configparser import ConfigParser
 from influxdb_client import InfluxDBClient, Point
-from influxdb_client.client.write_api import WriteOptions, SYNCHRONOUS
 from influxdb_client.client.exceptions import InfluxDBError
 import influxdb_client.client.util.date_utils as date_utils
 from influxdb_client.client.util.date_utils_pandas import PandasDateTimeHelper
 from serial import Serial
+from socket import gethostname
 from systemd.journal import JournaldLogHandler
 
 # Relative imports
@@ -30,13 +30,10 @@ __all__ = ['UART']
 # Set PandasDate helper which supports nanoseconds.
 date_utils.date_helper = PandasDateTimeHelper()
 
-# Force garbage collections
-gc.enable()
-
 
 class UART(object):
-    _buffer = b'' 
-    _points = []
+    _buffer = b''  # buffer[:size] = memoryview(buffer)[-size:]
+    _payloads = []
     _uart = None
     _db_client = None
     _write_api = None
@@ -59,7 +56,6 @@ class UART(object):
               bucket = multi_ear
               measurement = multi_ear
               batch_size = 32
-              write_mode = batch
             [serial]
               port = /dev/ttyAMA0
               baudrate = 115200
@@ -73,7 +69,7 @@ class UART(object):
         self.local_clock = local_clock or False
 
         # set logger
-        self._logger = logging.getLogger(__name__)
+        self._logger = logging.getLogger('multi-ear-uart')
 
         # log to systemd or stdout
         if journald:
@@ -93,25 +89,10 @@ class UART(object):
         self._logger.setLevel(logging.DEBUG if debug else logging.INFO)
 
         # configuration defaults
-        self._serial_port = '/dev/ttyAMA0'
-        self._serial_baudrate = 115_200
-        self._serial_timeout = 2_000
-        self._influx2_url = 'http://127.0.0.1:8086'
-        self._influx2_org = '-'
-        self._influx2_token = ':'
-        self._influx2_timeout = 10_000
-        self._influx2_auth_basic = False
-        self._influx2_bucket = 'multi_ear/'
-        self._batch_size = 32
-        self._write_mode = 'batch'
-        self._measurement = 'multi_ear'
-        self._host = socket.gethostname()
-        self._uuid = 'null'
-        self._version = version.replace('VERSION-NOT-FOUND', 'null')
         self._packet_start = b'\x11\x99\x22\x88\x33\x73'
         self._packet_start_len = len(self._packet_start)
         self._packet_header_len = 11
-        self._buffer_min_len = self._packet_start_len + 1
+        self._buffer_min_len = 34
         self._sampling_rate = 16  # [Hz]
         self._delta = pd.Timedelta(1/self._sampling_rate, 's')
 
@@ -127,54 +108,17 @@ class UART(object):
             return value.strip('"') if value is not None else None
         config.getstr = config_getstr
 
-        self._serial_port = config.getstr(
-            'serial', 'port', fallback=self._serial_port
-        )
-        self._serial_baudrate = config.getint(
-            'serial', 'baudrate', fallback=self._serial_baudrate
-        )
-        self._serial_timeout = config.getint(
-            'serial', 'timeout', fallback=self._serial_timeout
-        )
-        self._influx2_url = config.getstr(
-            'influx2', 'url', fallback=self._influx2_url
-        )
-        self._influx2_org = config.getstr(
-            'influx2', 'org', fallback=self._influx2_org
-        )
-        self._influx2_token = config.getstr(
-            'influx2', 'token', fallback=self._influx2_token
-        )
-        self._influx2_timeout = config.getint(
-            'influx2', 'timeout', fallback=self._influx2_timeout
-        )
-        self._influx2_auth_basic = config.getboolean(
-            'influx2', 'auth_basic', fallback=self._influx2_auth_basic
-        )
-        self._influx2_bucket = config.getstr(
-            'influx2', 'bucket', fallback=self._influx2_bucket
-        )
-        self._batch_size = config.getint(
-            'influx2', 'batch_size', fallback=self._batch_size
-        )
-        self._write_mode = config.getstr(
-            'influx2', 'write_mode', fallback=self._write_mode
-        )
-        self._measurement = config.getstr(
-            'influx2', 'measurement', fallback=self._measurement
-        )
-        self._host = config.getstr(
-            'tags', 'host', fallback=self._host
-        )
-        self._uuid = config.getstr(
-            'tags', 'uuid', fallback=self._uuid
-        )
-
         # connect to serial port
         self._uart = Serial(
-            port=self._serial_port,
-            baudrate=self._serial_baudrate,
-            timeout=self._serial_timeout / 1000,  # [s]
+            port=config.getstr(
+                'serial', 'port', fallback='/dev/ttyAMA0'
+            ),
+            baudrate=config.getint(
+                'serial', 'baudrate', fallback=115_200
+            ),
+            timeout=config.getint(
+                'serial', 'timeout', fallback=2_000
+            )/1000,
             rtscts=True,
             exclusive=True,
         )
@@ -182,15 +126,25 @@ class UART(object):
 
         # connect to influxdb
         self._db_client = InfluxDBClient(
-           url=self._influx2_url,
-           org=self._influx2_org,
-           token=self._influx2_url,
-           timeout=self._influx2_timeout,
-           auth_basic=self._influx2_auth_basic,
+           url=config.getstr(
+               'influx2', 'url', fallback='http://127.0.0.1:8086'
+           ),
+           org=config.getstr(
+               'influx2', 'org', fallback='-'
+           ),
+           token=config.getstr(
+               'influx2', 'token', fallback=':'
+           ),
+           timeout=config.getint(
+               'influx2', 'timeout', fallback=10_000
+           ),
+           auth_basic=config.getboolean(
+               'influx2', 'auth_basic', fallback=False
+           ),
            default_tags=dict(
-               host=self._host,
-               uuid=self._uuid,
-               version=self._version,
+               host=config.getstr('tags', 'host', fallback=gethostname()),
+               uuid=config.getstr('tags', 'uuid', fallback='null'),
+               version=version.replace('VERSION-NOT-FOUND', 'null'),
            ),
         )
         self._logger.info(f"Influxdb connection = {self._db_client.ping()}")
@@ -200,6 +154,22 @@ class UART(object):
             error_callback=self._write_error,
             retry_callback=self._write_retry,
         )
+
+        self._bucket = config.getstr(
+            'influx2', 'bucket', fallback='multi_ear/'
+        )
+        self._batch_size = config.getint(
+            'influx2', 'batch_size', fallback=self._sampling_rate
+        )
+        self._measurement = config.getstr(
+            'influx2', 'measurement', fallback='multi_ear'
+        )
+
+        # init threads pool and lock
+        self._pool = Queue()
+        self._lock = threading.Lock()
+        for i in range(2):
+            threading.Thread(target=self._threader, daemon=True).start()
 
         # terminate at exit
         atexit.register(self.close)
@@ -217,39 +187,37 @@ class UART(object):
             self._write_api.close()
         pass
 
-    @property
-    def _buffer_len(self):
-        return len(self._buffer)
-
     def _frombuffer(self, offset=0, count=1, dtype=np.int8, like=None):
         """Return a dtype sequence from the buffer
         """
         return np.frombuffer(self._buffer, dtype, count, offset, like=like)
 
+    def _packet_len(self, i):
+        """Return the packet len
+        """
+        j = i + self._packet_start_len
+        return self._packet_start_len + int(self._buffer[j])
+
     def _packet_starts(self, i):
         """Returns True if the read buffer at the given start index matches the
         packet start sequence.
         """
-        return self._buffer[i:i+self._packet_start_len] == self._packet_start
+        start = memoryview(self._buffer)[i:i+self._packet_start_len]
+        return start == self._packet_start
 
-    def _decode(self):
-        """Parse the read buffer for data points.
+    def _extract(self):
+        """Extract payloads from the read buffer.
         """
-
-        # init packet parsing
-        buffer_len = self._buffer_len
-        header_len = self._packet_header_len
+        buffer_len = len(self._buffer)
         i = 0
-
-        # scan for packet start sequence
+        payloads = []
         while i < buffer_len - self._buffer_min_len:
 
             # packet header match?
             if self._packet_starts(i):
 
                 # get packet length
-                packet_len = (self._packet_start_len +
-                              int(self._buffer[i+self._packet_start_len]))
+                packet_len = self._packet_len(i)
 
                 # check buffer length
                 if i + packet_len > buffer_len:
@@ -260,14 +228,12 @@ class UART(object):
                 #     np.frombuffer(self._buffer, np.uint8, packet_len, i)
                 # )
 
-                # get payload length
-                payload_len = int(self._buffer[i+header_len-1])
+                # get payload
+                length = int(self._buffer[i+self._packet_header_len-1])
+                offset = i + self._packet_header_len
 
-                # convert payload to point
-                point = self._decode_payload(i + header_len, payload_len)
-
-                # append point to data points
-                self._points.append(point)
+                # append payload to list
+                payloads.append(self._buffer[offset:offset+length])
 
                 # shift buffer to next packet
                 i += packet_len
@@ -275,17 +241,42 @@ class UART(object):
             # skip byte
             i += 1
 
-        self._buffer = self._buffer[i:]
+        with self._lock:
+            self._buffer = self._buffer[i:]
+            self._payloads += payloads
 
-    def _decode_payload(self, offset, length) -> Point:
+    def _decode_and_write(self):
+        """Decode points from payloads and write to the database.
+        """
+        if len(self._payloads) < self._batch_size:
+            return
+        self._pool.put(self._payloads)
+        with self._lock:
+            self._payloads = []
+
+    def _threader(self):
+        """Thread to decode points from payloads and write to the database.
+        """
+        while True:
+            payloads = self._pool.get()
+            points = self._decode(payloads)
+            self._write(points)
+            self._pool.task_done()
+
+    def _decode(self, payloads) -> list:
+        """Decode points from payloads.
+        """
+        return [self._decode_point_from_payload(p) for p in payloads]
+
+    def _decode_point_from_payload(self, payload) -> Point:
         """Convert payload from Level-1 data to counts.
         Returns
         -------
         point : :class:`Point`
             Influx Point object with all tags, fields for the given time step.
         """
-        # Get payload from buffer
-        payload = self._buffer[offset:offset+length]
+
+        length = len(payload)
         # self._logger.info(f"payload #{length}: "
         #                   f"{np.frombuffer(payload, np.uint8)}")
 
@@ -301,16 +292,15 @@ class UART(object):
         else:
             dstep = 1
 
-        # store current step
-        self._step = int(step)
-
-        # increase local time with cycle steps
-        self._time += self._delta * dstep
+        # store current step and set local time
+        with self._lock:
+            self._step = int(step)
+            self._time += self._delta * dstep
 
         # GNSS clock?
         gnss = False if self.local_clock else y != 0
         if gnss:
-            timestamp = pd.Timestamp(2000 + y, m, d, H, M, S) + step * self._delta
+            timestamp = pd.Timestamp(2000+y, m, d, H, M, S) + step*self._delta
             clock = 'GNSS'
         else:
             timestamp = self._time
@@ -319,14 +309,6 @@ class UART(object):
 
         # Create point
         point = Point(self._measurement).time(timestamp).tag('clock', clock)
-        """
-        point = (Point(self._measurement)
-                 .time(time)
-                 .tag('clock', clock)
-                 .tag('host', self._host)
-                 .tag('uuid', self._uuid)
-                 .tag('version', self._version))
-        """
 
         # DLVR-F50D differential pressure (14-bit ADC)
         tmp = payload[7] | (payload[8] << 8)
@@ -382,12 +364,14 @@ class UART(object):
             )
 
         # Counts to unit conversions
-        # DLVR counts_to_Pa = 0.01*250/6553
-        # SP210 counts_to_Pa = 249.08/(0.9*32768)
-        # LPS33HW counts_to_hPa = 1 / 4096
-        # LIS3DH counts_to_ms2 = 0.076
-        # SHT8x ...
-        # ICS counts_to_dBV = 100/4096
+        # DLVR       [Pa] : counts * 0.01*250/6553
+        # SP210      [Pa] : counts * 250/(0.9*32768)
+        # LPS33HW   [hPa] : count / 4096
+        # LIS3DH     [mg] : counts * 0.076
+        # LIS3DH   [ms-2] : counts * 0.076*9.80665/1000
+        # SHT8x_T    [°C] : counts * 175/(2**16-1) - 45
+        # SHT8x_H     [%] : counts * 100/(2**16-1)
+        # ICS       [dBV] : counts * 100/4096
 
         # GNSS
         if gnss and length >= 46:
@@ -423,22 +407,11 @@ class UART(object):
             if b'\n' in received:
                 return
 
-    def _clear_points(self):
-        self._points = []
-
-    def _write(self):
-        """Write points to Influx database and clear
-        """
-        if len(self._points) < self._batch_size:
-            return
-        self._write_batch(self._points)
-        self._clear_points()
-
-    def _write_batch(self, points):
+    def _write(self, points):
         """Write points to Influx database in batch mode
         """
-        self._logger.debug(f"Write {len(points)} lines")
-        self._write_api.write(bucket=self._influx2_bucket, record=points)
+        # self._logger.info(f"Write {len(points)} lines")
+        self._write_api.write(bucket=self._bucket, record=points)
 
     def _write_success(self, conf: (str, str, str), data: str):
         """Successfully writen batch."""
@@ -469,19 +442,19 @@ class UART(object):
 
         # init
         self._buffer = b''
-        self._points = []
+        self._payloads = []
 
         # set local time as backup if GNSS fails
         self._time = pd.to_datetime("now", utc=True).round(self._delta)
         self._logger.info(f"Local reference time if GNSS fails: {self._time}")
 
-        # Clear serial output buffer
+        # clear serial output buffer
         self._uart.reset_output_buffer()
 
         while True:
             self._receive()
-            self._decode()
-            self._write()
+            self._extract()
+            self._decode_and_write()
 
         self._logger.info("Serial port closed")
 

@@ -1,6 +1,6 @@
 /* global bootstrap: false */
 let debug = window.location.hostname == '127.0.0.1'
-let dataselect = (debug ? 'http://multi-ear-3001.local' : '') + '/api/dataselect/'
+let dataselect = (debug ? 'http://multi-ear-3003.local' : '') + '/api/dataselect/'
 let statusUpdater = null;
 let sensorDataUpdater = null;
 
@@ -384,20 +384,20 @@ function loadDashboard() {
 
     charts.forEach(chart => {
 
+        let title = chart.getAttribute('data-title')
+        let units = chart.getAttribute('data-units')
+
         Highcharts.chart({
             chart: { renderTo: chart.id, type: 'line', zoomType: 'x', backgroundColor: 'none' },
             credits: { enabled: false },
             tooltip: {
-                //borderWidth: 0,
-                //backgroundColor: 'none',
-                //pointFormat: '{point.y}',
-                headerFormat: '',
+                pointFormat: '{point.y} ' + units,
                 shadow: false,
-                valueDecimals: 2
+                //valueDecimals: 2
             },
             xAxis: { type: 'datetime', events: { setExtremes: syncChartExtremes } },
-            yAxis: { title: { text: chart.getAttribute('data-ylabel') } },
-            title: { text: chart.getAttribute('data-title') },
+            yAxis: { title: { text: `${title} [${units}]` } },
+            title: { text: title },
         }).showLoading();
 
     })
