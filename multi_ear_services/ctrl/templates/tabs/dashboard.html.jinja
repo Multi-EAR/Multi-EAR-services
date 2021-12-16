@@ -1,10 +1,64 @@
-<h1 class="h2 pt-3 pb-2 mb-3 border-bottom">Dashboard</h1>
+<h1 class="h2 pt-3 pb-2 mb-3 border-bottom">Sensor data and resources</h1>
+
+
+<p class="pt-4 lead">Request data via the dataselect-API</p>
+<div class="accordion accordion-flush" id="api">
+  <div class="accordion-item bg-none">
+    <h2 class="accordion-header">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#dataselect" aria-expanded="false" aria-controls="dataselect">
+        <div class"row row-cols-2">
+          <span class="badge bg-secondary">GET</span> <span class="badge bg-secondary">POST</span> <code>/api/dataselect/query</code>
+        </div>
+      </button>
+    </h2>
+    <div id="dataselect" class="accordion-collapse collapse" aria-labelledby="multi-ear-ctrl-service-response">
+      <div class="accordion-body">
+
+        <h5>Parameters</h5>
+        <div class="row py-2 border-bottom">
+          <div class="col-sm-3">Name</div>
+          <div class="col-sm-9">Description</div>
+        </div>
+        <div class="row py-2">
+          <div class="col-sm-3"><h5 class="card-title mb-0">starttime</h5><i class="card-text small">string</i></div>
+          <div class="col-sm-9">Start time specified as UTC timestamp in ISO 8601 (format YYYY-MM-DDThh:mm:ss) 
+          or as a timedelta string relative to the end time (default: <code>120s</code>)</div>
+        </div>
+        <div class="row py-2">
+          <div class="col-sm-3"><h5 class="card-title mb-0">endtime</h5><i class="card-text small">string</i></div>
+          <div class="col-sm-9">End time specified as UTC timestamp in ISO 8601 (format YYYY-MM-DDThh:mm:ss). 
+            If <code>None</code> the current time is used (default: <code>None</code>)</div>
+        </div>
+        <div class="row py-2">
+          <div class="col-sm-3"><h5 class="card-title mb-0">field</h5><i class="card-text small">string</i></div>
+          <div class="col-sm-9">Sensor name(s), accepts regex (default: <code>^</code>)</div>
+        </div>
+        <div class="row py-2">
+          <div class="col-sm-3"><h5 class="card-title mb-0">format</h5><i class="card-text small">string</i></div>
+          <div class="col-sm-9">Set the data format code (<code>json</code> or <code>csv</code>) 
+            (default: <code>json</code>)</div>
+        </div>
+        <div class="row py-2 border-bottom">
+          <div class="col-sm-3"><h5 class="card-title mb-0">nodata</h5><i class="card-text small">number</i></div>
+          <div class="col-sm-9">Set the nodata HTML status code (<code>204</code> or <code>404</code>) 
+            (default: <code>204</code>)</div>
+        </div>
+        <h5 class="mt-3 py-2">Example</h5>
+        <p>Request the differential pressure and three-component accelerometer data of the last two minutes as json: 
+          <code>/api/dataselect/query?starttime=120s&amp;field=DLVR,^LIS3D_&amp;format=json</code>
+        </p>
+
+      </div>
+    </div>
+  </div>  
+</div>
+
+<p class="pt-5 lead">Last 2 min sensor data and 30 min resources</p>
 
 <div class="form-check form-switch">
   <input class="form-check-input" type="checkbox" role="switch" id="sensorDataUpdate" checked>
   <label class="form-check-label" for="sensorDataUpdate">Auto-update sensordata every 15s</label>
 </div>
-
 <div class="form-check form-switch">
   <input class="form-check-input" type="checkbox" role="switch" id="useUTC" checked>
   <label class="form-check-label" for="useUTC">Coordinated Universal Time (UTC)</label>

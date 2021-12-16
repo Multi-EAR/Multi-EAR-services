@@ -637,11 +637,10 @@ function loadContent(nav) {
     navs.forEach(function (nav) {
 
         nav.addEventListener('shown.bs.tab', function (event) {
-
             loadContent(nav);
             navbar.hide();
-
         })
+        new bootstrap.Tooltip(nav, {placement: 'right', customClass: 'd-none d-md-flex'})
 
     })
 
