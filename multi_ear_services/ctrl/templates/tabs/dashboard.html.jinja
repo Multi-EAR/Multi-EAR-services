@@ -20,31 +20,44 @@
           <div class="col-sm-9">Description</div>
         </div>
         <div class="row py-2">
-          <div class="col-sm-3"><h5 class="card-title mb-0">starttime</h5><i class="card-text small">string</i></div>
+          <div class="col-sm-3">
+            <h5 class="card-title mb-0">starttime</h5>
+            <p class="card-text small"><i>string</i>, default: <code>120s</code></p>
+          </div>
           <div class="col-sm-9">Start time specified as UTC timestamp in ISO 8601 (format YYYY-MM-DDThh:mm:ss) 
-          or as a timedelta string relative to the end time (default: <code>120s</code>)</div>
+          or as a timedelta string relative to the end time.</div>
         </div>
         <div class="row py-2">
-          <div class="col-sm-3"><h5 class="card-title mb-0">endtime</h5><i class="card-text small">string</i></div>
+          <div class="col-sm-3">
+            <h5 class="card-title mb-0">endtime</h5>
+            <p class="card-text small"><i>string</i>, default: <code>None</code></p>
+          </div>
           <div class="col-sm-9">End time specified as UTC timestamp in ISO 8601 (format YYYY-MM-DDThh:mm:ss). 
-            If <code>None</code> the current time is used (default: <code>None</code>)</div>
+            If not set the current time is used.</div>
         </div>
         <div class="row py-2">
-          <div class="col-sm-3"><h5 class="card-title mb-0">field</h5><i class="card-text small">string</i></div>
-          <div class="col-sm-9">Sensor name(s), accepts regex (default: <code>^</code>)</div>
+          <div class="col-sm-3">
+            <h5 class="card-title mb-0">field</h5>
+            <p class="card-text small"><i>string</i>, default: <code>*</code></p>
+          </div>
+          <div class="col-sm-9">Sensor name(s), accepts regex expressions.</div>
         </div>
         <div class="row py-2">
-          <div class="col-sm-3"><h5 class="card-title mb-0">format</h5><i class="card-text small">string</i></div>
-          <div class="col-sm-9">Set the data format code (<code>json</code> or <code>csv</code>) 
-            (default: <code>json</code>)</div>
+          <div class="col-sm-3">
+            <h5 class="card-title mb-0">format</h5>
+            <p class="card-text small"><i>string</i>, default: <code>json</code></p>
+          </div>
+          <div class="col-sm-9">Set the data format code (<code>json</code> or <code>csv</code>).</div>
         </div>
         <div class="row py-2 border-bottom">
-          <div class="col-sm-3"><h5 class="card-title mb-0">nodata</h5><i class="card-text small">number</i></div>
-          <div class="col-sm-9">Set the nodata HTML status code (<code>204</code> or <code>404</code>) 
-            (default: <code>204</code>)</div>
+          <div class="col-sm-3">
+            <h5 class="card-title mb-0">nodata</h5>
+            <p class="card-text small"><i>number</i>, default: <code>204</code></p>
+          </div>
+          <div class="col-sm-9">Set the nodata HTML status code (<code>204</code> or <code>404</code>).</div>
         </div>
         <h5 class="mt-3 py-2">Example</h5>
-        <p>Request the differential pressure and three-component accelerometer data of the last two minutes as json: 
+        <p>Request the differential pressure and three-component accelerometer data of the last two minutes as json:<br> 
           <code>/api/dataselect/query?starttime=120s&amp;field=DLVR,^LIS3D_&amp;format=json</code>
         </p>
 
@@ -53,11 +66,11 @@
   </div>  
 </div>
 
-<p class="pt-5 lead">Last 2 min sensor data and 30 min resources</p>
+<p class="pt-5 lead">Charts of the last 2 min sensor data and 30 min resources</p>
 
 <div class="form-check form-switch">
   <input class="form-check-input" type="checkbox" role="switch" id="sensorDataUpdate" checked>
-  <label class="form-check-label" for="sensorDataUpdate">Auto-update sensordata every 15s</label>
+  <label class="form-check-label" for="sensorDataUpdate">Auto-update sensor data every 15s</label>
 </div>
 <div class="form-check form-switch">
   <input class="form-check-input" type="checkbox" role="switch" id="useUTC" checked>
