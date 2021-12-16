@@ -1,12 +1,11 @@
 # Mandatory imports
 import atexit
 import logging
+import multiprocessing as mp
 import numpy as np
 import os
 import pandas as pd
 import sys
-import threading
-from queue import Queue
 from argparse import ArgumentParser
 from configparser import ConfigParser
 from influxdb_client import InfluxDBClient, Point
@@ -32,11 +31,12 @@ date_utils.date_helper = PandasDateTimeHelper()
 
 
 class UART(object):
-    _buffer = b''  # buffer[:size] = memoryview(buffer)[-size:]
-    _payloads = []
+    _buffer = b''
     _uart = None
-    _db_client = None
-    _write_api = None
+    _db = None
+    _writer = None
+    _queue = None
+    _worker = None
     _time = None
     _step = None
 
@@ -125,7 +125,7 @@ class UART(object):
         self._logger.info(f"Serial connection = {self._uart}")
 
         # connect to influxdb
-        self._db_client = InfluxDBClient(
+        self._db = InfluxDBClient(
            url=config.getstr(
                'influx2', 'url', fallback='http://127.0.0.1:8086'
            ),
@@ -147,9 +147,9 @@ class UART(object):
                version=version.replace('VERSION-NOT-FOUND', 'null'),
            ),
         )
-        self._logger.info(f"Influxdb connection = {self._db_client.ping()}")
+        self._logger.info(f"Influxdb connection = {self._db.ping()}")
 
-        self._write_api = self._db_client.write_api(
+        self._writer = self._db.write_api(
             success_callback=self._write_success if debug else None,
             error_callback=self._write_error,
             retry_callback=self._write_retry,
@@ -165,26 +165,24 @@ class UART(object):
             'influx2', 'measurement', fallback='multi_ear'
         )
 
-        # init threads pool and lock
-        self._pool = Queue()
-        self._lock = threading.Lock()
-        for i in range(2):
-            threading.Thread(target=self._threader, daemon=True).start()
-
         # terminate at exit
         atexit.register(self.close)
 
     def close(self):
-        self._logger.info("Close serial port and influxdb client")
+        self._logger.info("Close uart and subprocesses")
         self.__del__()
 
     def __del__(self):
         if self._uart is not None:
             self._uart.close()
-        if self._db_client is not None:
-            self._db_client.close()
-        if self._write_api is not None:
-            self._write_api.close()
+        if self._db is not None:
+            self._db.close()
+        if self._writer is not None:
+            self._writer.close()
+        if self._queue is not None:
+            self._queue.close()
+        if self._worker is not None:
+            self._worker.terminate()
         pass
 
     def _frombuffer(self, offset=0, count=1, dtype=np.int8, like=None):
@@ -241,27 +239,18 @@ class UART(object):
             # skip byte
             i += 1
 
-        with self._lock:
-            self._buffer = self._buffer[i:]
-            self._payloads += payloads
+        self._buffer = self._buffer[i:]
+        self._queue.put(payloads)
 
     def _decode_and_write(self):
-        """Decode points from payloads and write to the database.
-        """
-        if len(self._payloads) < self._batch_size:
-            return
-        self._pool.put(self._payloads)
-        with self._lock:
-            self._payloads = []
-
-    def _threader(self):
         """Thread to decode points from payloads and write to the database.
         """
+        payloads = []
         while True:
-            payloads = self._pool.get()
-            points = self._decode(payloads)
-            self._write(points)
-            self._pool.task_done()
+            payloads += self._queue.get()
+            if len(payloads) >= self._batch_size:
+                self._write(self._decode(payloads))
+                payloads = []
 
     def _decode(self, payloads) -> list:
         """Decode points from payloads.
@@ -293,9 +282,8 @@ class UART(object):
             dstep = 1
 
         # store current step and set local time
-        with self._lock:
-            self._step = int(step)
-            self._time += self._delta * dstep
+        self._step = int(step)
+        self._time += self._delta * dstep
 
         # GNSS clock?
         gnss = False if self.local_clock else y != 0
@@ -305,7 +293,7 @@ class UART(object):
         else:
             timestamp = self._time
             clock = 'local'
-        # self._logger.info(f'{clock} time: {time}')
+        # self._logger.info(f'{clock} time: {timestamp}')
 
         # Create point
         point = Point(self._measurement).time(timestamp).tag('clock', clock)
@@ -410,8 +398,8 @@ class UART(object):
     def _write(self, points):
         """Write points to Influx database in batch mode
         """
-        # self._logger.info(f"Write {len(points)} lines")
-        self._write_api.write(bucket=self._bucket, record=points)
+        self._logger.debug(f"Write {len(points)} lines")
+        self._writer.write(bucket=self._bucket, record=points)
 
     def _write_success(self, conf: (str, str, str), data: str):
         """Successfully writen batch."""
@@ -442,7 +430,6 @@ class UART(object):
 
         # init
         self._buffer = b''
-        self._payloads = []
 
         # set local time as backup if GNSS fails
         self._time = pd.to_datetime("now", utc=True).round(self._delta)
@@ -451,10 +438,14 @@ class UART(object):
         # clear serial output buffer
         self._uart.reset_output_buffer()
 
+        # init queue and worker
+        self._queue = mp.Queue()
+        self._worker = mp.Process(target=self._decode_and_write, daemon=True)
+        self._worker.start()
+
         while True:
             self._receive()
             self._extract()
-            self._decode_and_write()
 
         self._logger.info("Serial port closed")
 
