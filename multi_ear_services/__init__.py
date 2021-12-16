@@ -16,10 +16,6 @@ Multi-EAR system services for the host Raspberry Pi OS LITE (32-bit) with sensor
     (https://www.gnu.org/licenses/gpl-3.0.en.html)
 """
 
-from . import ctrl, uart
-
-__all__ = ['ctrl', 'uart']
-
 # Version
 try:
     # - Released versions just tags:       1.10.0

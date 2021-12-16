@@ -149,7 +149,7 @@ class DataSelect(object):
         self.__endtime__ = pd.to_datetime(end or 'now', unit='ns', utc=True)
 
         try:
-            delta = pd.to_timedelta(start or '30min')
+            delta = pd.to_timedelta(start or '3min')
             self.__starttime__ = self.__endtime__ - delta
         except (pd.errors.ParserError, ValueError):
             self.__starttime__ = pd.to_datetime(start, unit='ns', utc=True)
@@ -221,7 +221,7 @@ class DataSelect(object):
 
     @bucket.setter
     def bucket(self, bucket):
-        bucket = bucket or 'telegraf/'
+        bucket = bucket or 'multi_ear/'
         if not isinstance(bucket, str):
             raise TypeError('bucket code should be a string')
         if '/' not in bucket:
@@ -231,13 +231,13 @@ class DataSelect(object):
 
     @property
     def database(self):
-        """DataSelect database (default: 'telegraf')
+        """DataSelect database (default: 'multi_ear')
         """
         return self.__database__
 
     @database.setter
     def database(self, database):
-        database = database or 'telegraf'
+        database = database or 'multi_ear'
         if not isinstance(database, str):
             raise TypeError('database code should be a string')
         self.__database__ = database
@@ -338,8 +338,11 @@ class DataSelect(object):
             ' |> pivot('
             ' rowKey:["_time"],'
             ' columnKey: ["_measurement", "_field"],'
-            ' valueColumn: "_value")'
-            ' |> drop(columns: ["_start", "_stop", "host"])'
+            ' valueColumn: "_value"'
+            ' )'
+            ' |> drop('
+            ' columns: ["_start", "_stop", "clock", "host", "uuid", "version"]'
+            ' )'
         ).format(
             self.bucket,
             self.starttime.asm8,

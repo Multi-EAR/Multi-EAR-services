@@ -1,4 +1,160 @@
-<h1 class="h2 pt-3 pb-2 mb-3 border-bottom">Dashboard</h1>
+<h1 class="h2 pt-3 pb-2 mb-3 border-bottom">Sensor data and resources</h1>
 
-<div id="chart-system-load" class="py-3"></div>
-<div id="chart-memory" class="py-3"></div>
+
+<p class="pt-4 lead">Request data via the dataselect-API</p>
+<div class="accordion accordion-flush" id="api">
+  <div class="accordion-item bg-none">
+    <h2 class="accordion-header">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#dataselect" aria-expanded="false" aria-controls="dataselect">
+        <div class"row row-cols-2">
+          <span class="badge bg-secondary">GET</span> <span class="badge bg-secondary">POST</span> <code>/api/dataselect/query</code>
+        </div>
+      </button>
+    </h2>
+    <div id="dataselect" class="accordion-collapse collapse" aria-labelledby="multi-ear-ctrl-service-response">
+      <div class="accordion-body">
+
+        <h5>Parameters</h5>
+        <div class="row py-2 border-bottom">
+          <div class="col-sm-3">Name</div>
+          <div class="col-sm-9">Description</div>
+        </div>
+        <div class="row py-2">
+          <div class="col-sm-3">
+            <h5 class="card-title mb-0">starttime</h5>
+            <p class="card-text small"><i>string</i>, default: <code>120s</code></p>
+          </div>
+          <div class="col-sm-9">Start time specified as UTC timestamp in ISO 8601 (format YYYY-MM-DDThh:mm:ss) 
+          or as a timedelta string relative to the end time.</div>
+        </div>
+        <div class="row py-2">
+          <div class="col-sm-3">
+            <h5 class="card-title mb-0">endtime</h5>
+            <p class="card-text small"><i>string</i>, default: <code>None</code></p>
+          </div>
+          <div class="col-sm-9">End time specified as UTC timestamp in ISO 8601 (format YYYY-MM-DDThh:mm:ss). 
+            If not set the current time is used.</div>
+        </div>
+        <div class="row py-2">
+          <div class="col-sm-3">
+            <h5 class="card-title mb-0">field</h5>
+            <p class="card-text small"><i>string</i>, default: <code>*</code></p>
+          </div>
+          <div class="col-sm-9">Sensor name(s), accepts regex expressions.</div>
+        </div>
+        <div class="row py-2">
+          <div class="col-sm-3">
+            <h5 class="card-title mb-0">format</h5>
+            <p class="card-text small"><i>string</i>, default: <code>json</code></p>
+          </div>
+          <div class="col-sm-9">Set the data format code (<code>json</code> or <code>csv</code>).</div>
+        </div>
+        <div class="row py-2 border-bottom">
+          <div class="col-sm-3">
+            <h5 class="card-title mb-0">nodata</h5>
+            <p class="card-text small"><i>number</i>, default: <code>204</code></p>
+          </div>
+          <div class="col-sm-9">Set the nodata HTML status code (<code>204</code> or <code>404</code>).</div>
+        </div>
+        <h5 class="mt-3 py-2">Example</h5>
+        <p>Request the differential pressure and three-component accelerometer data of the last two minutes as json:<br> 
+          <code>/api/dataselect/query?starttime=120s&amp;field=DLVR,^LIS3D_&amp;format=json</code>
+        </p>
+
+      </div>
+    </div>
+  </div>  
+</div>
+
+<p class="pt-5 lead">Charts of the last 2 min sensor data and 30 min resources</p>
+
+<div class="form-check form-switch">
+  <input class="form-check-input" type="checkbox" role="switch" id="sensorDataUpdate" checked>
+  <label class="form-check-label" for="sensorDataUpdate">Auto-update sensor data every 15s</label>
+</div>
+<div class="form-check form-switch">
+  <input class="form-check-input" type="checkbox" role="switch" id="useUTC" checked>
+  <label class="form-check-label" for="useUTC">Coordinated Universal Time (UTC)</label>
+</div>
+
+<figure class="my-3">
+  <div id="chart-p"
+       class="py-3"
+       data-source="multi_ear"
+       data-series="LPS33HW"
+       data-scalar="1/4096"
+       data-offset="0"
+       data-title="Barometric Pressure"
+       data-units="hPa">
+  </div>
+  <div id="chart-dp"
+       class="py-3"
+       data-source="multi_ear"
+       data-series="DLVR,SP210"
+       data-scalar="0.01*250/6553,250/(0.9*32768)"
+       data-offset="0,0"
+       data-title="Differential Pressure"
+       data-units="Pa">
+  </div>
+  <div id="chart-spl"
+       class="py-3"
+       data-source="multi_ear"
+       data-series="ICS"
+       data-scalar="100/4096"
+       data-offset="0"
+       data-title="Sound Pressure Level"
+       data-units="dbV">
+  </div>
+  <div id="chart-acc-z"
+       class="py-3"
+       data-source="multi_ear"
+       data-series="LIS3DH_Z"
+       data-scalar="0.076*9.80665/1000"
+       data-offset="0"
+       data-title="Acceleration in Z-direction"
+       data-units="m s-2">
+  </div>
+  <div id="chart-acc-x"
+       class="py-3"
+       data-source="multi_ear"
+       data-series="LIS3DH_X"
+       data-scalar="0.076*9.80665/1000"
+       data-offset="0"
+       data-title="Acceleration in X-direction"
+       data-units="m s-2">
+  </div>
+  <div id="chart-acc-y"
+       class="py-3"
+       data-source="multi_ear"
+       data-series="LIS3DH_Y"
+       data-scalar="0.076*9.80665/1000"
+       data-offset="0"
+       data-title="Acceleration in Y-direction"
+       data-units="m s-2">
+  </div>
+  <div id="chart-t"
+       class="py-3"
+       data-source="multi_ear"
+       data-series="SHT85_T"
+       data-scalar="175/(2**16-1)"
+       data-offset="-45"
+       data-title="Temperature"
+       data-units="°C">
+  </div>
+  <div id="chart-rh"
+       class="py-3"
+       data-source="multi_ear"
+       data-series="SHT85_H"
+       data-scalar="100/(2**16-1)"
+       data-offset="0"
+       data-title="Relative Humidity"
+       data-units="%">
+  </div>
+</figure>
+
+<figure class="my-3">
+  <div id="chart-system-load" class="py-3">
+  </div>
+  <div id="chart-memory-usage" class="py-3">
+  </div>
+</figure>
