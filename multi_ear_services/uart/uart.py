@@ -15,6 +15,7 @@ from influxdb_client.client.util.date_utils_pandas import PandasDateTimeHelper
 from serial import Serial
 from socket import gethostname
 from systemd.journal import JournaldLogHandler
+from time import sleep
 
 # Relative imports
 try:
@@ -31,10 +32,11 @@ date_utils.date_helper = PandasDateTimeHelper()
 
 
 class UART(object):
-    _buffer = b''
     _uart = None
     _db = None
     _writer = None
+    _buffer = None
+    _points = []
     _queue = None
     _worker = None
     _time = None
@@ -59,7 +61,7 @@ class UART(object):
             [serial]
               port = /dev/ttyAMA0
               baudrate = 115200
-              timeout = 2000
+              timeout = 1000
             [tags]
                uuid = %(MULTI_EAR_UUID)s
         """
@@ -117,10 +119,10 @@ class UART(object):
                 'serial', 'baudrate', fallback=115_200
             ),
             timeout=config.getint(
-                'serial', 'timeout', fallback=2_000
+                'serial', 'timeout', fallback=1_000
             )/1000,
-            rtscts=True,
-            exclusive=True,
+            # rtscts=True,
+            # exclusive=True,
         )
         self._logger.info(f"Serial connection = {self._uart}")
 
@@ -203,12 +205,21 @@ class UART(object):
         start = memoryview(self._buffer)[i:i+self._packet_start_len]
         return start == self._packet_start
 
-    def _extract(self):
+    def _extract(self, read=b''):
         """Extract payloads from the read buffer.
         """
+        # append to buffer
+        self._buffer += read
+
+        # store buffer len
         buffer_len = len(self._buffer)
+
+        # start?
+        if buffer_len < self._buffer_min_len:
+            return
+
+        # parse buffer
         i = 0
-        payloads = []
         while i < buffer_len - self._buffer_min_len:
 
             # packet header match?
@@ -218,20 +229,25 @@ class UART(object):
                 packet_len = self._packet_len(i)
 
                 # check buffer length
-                if i + packet_len > buffer_len:
-                    break
+                # if i + packet_len > buffer_len:
+                #     self._logger.warning('Remaining buffer len not sufficient')
+                #    break
 
                 # hard debug
                 # self._logger.info(
                 #     np.frombuffer(self._buffer, np.uint8, packet_len, i)
                 # )
 
-                # get payload
+                # extract payload
                 length = int(self._buffer[i+self._packet_header_len-1])
                 offset = i + self._packet_header_len
+                payload = self._buffer[offset:offset+length]
 
-                # append payload to list
-                payloads.append(self._buffer[offset:offset+length])
+                # decode point
+                point = self._decode_payload_to_point(payload)
+
+                # append point
+                self._points.append(point)
 
                 # shift buffer to next packet
                 i += packet_len
@@ -240,24 +256,8 @@ class UART(object):
             i += 1
 
         self._buffer = self._buffer[i:]
-        self._queue.put(payloads)
 
-    def _decode_and_write(self):
-        """Thread to decode points from payloads and write to the database.
-        """
-        payloads = []
-        while True:
-            payloads += self._queue.get()
-            if len(payloads) >= self._batch_size:
-                self._write(self._decode(payloads))
-                payloads = []
-
-    def _decode(self, payloads) -> list:
-        """Decode points from payloads.
-        """
-        return [self._decode_point_from_payload(p) for p in payloads]
-
-    def _decode_point_from_payload(self, payload) -> Point:
+    def _decode_payload_to_point(self, payload) -> Point:
         """Convert payload from Level-1 data to counts.
         Returns
         -------
@@ -281,16 +281,17 @@ class UART(object):
         else:
             dstep = 1
 
-        # store current step and set local time
+        # store current step
         self._step = int(step)
-        self._time += self._delta * dstep
 
         # GNSS clock?
         gnss = False if self.local_clock else y != 0
         if gnss:
             timestamp = pd.Timestamp(2000+y, m, d, H, M, S) + step*self._delta
+            self._time = timestamp
             clock = 'GNSS'
         else:
+            self._time += self._delta * dstep
             timestamp = self._time
             clock = 'local'
         # self._logger.info(f'{clock} time: {timestamp}')
@@ -383,23 +384,14 @@ class UART(object):
 
         return point
 
-    def _receive(self):
-        """Read all available bytes from the serial port
-        and append to the read buffer.
-        """
-        # https://github.com/pyserial/pyserial/issues/216#issuecomment-369414522
-        while True:
-            size = max(1, min(2048, self._uart.in_waiting))
-            received = self._uart.read(size)
-            self._buffer += received
-            if b'\n' in received:
-                return
-
-    def _write(self, points):
+    def _write(self):
         """Write points to Influx database in batch mode
         """
-        self._logger.debug(f"Write {len(points)} lines")
-        self._writer.write(bucket=self._bucket, record=points)
+        if len(self._points) < self._batch_size:
+            return
+        self._logger.debug(f"Write {len(self._points)} lines")
+        self._writer.write(bucket=self._bucket, record=self._points)
+        self._points = []
 
     def _write_success(self, conf: (str, str, str), data: str):
         """Successfully writen batch."""
@@ -430,24 +422,44 @@ class UART(object):
 
         # init
         self._buffer = b''
+        self._points = []
+
+        # clear serial output buffer
+        self._uart.reset_output_buffer()
+
+        # init buffer and payload queues and start worker
+        self._queue = mp.Queue()
+        self._worker = mp.Process(
+            target=_uart_receiver_thread,
+            daemon=True,
+            args=(self._uart, self._queue),
+        )
+        self._worker.start()
 
         # set local time as backup if GNSS fails
         self._time = pd.to_datetime("now", utc=True).round(self._delta)
         self._logger.info(f"Local reference time if GNSS fails: {self._time}")
 
-        # clear serial output buffer
-        self._uart.reset_output_buffer()
-
-        # init queue and worker
-        self._queue = mp.Queue()
-        self._worker = mp.Process(target=self._decode_and_write, daemon=True)
-        self._worker.start()
-
         while True:
-            self._receive()
-            self._extract()
+            read = self._queue.get()
+            self._extract(read)
+            self._write()
 
         self._logger.info("Serial port closed")
+
+
+def _uart_receiver_thread(uart, queue, chunk_size=2048):
+    """Read all available bytes from the serial port
+    and append to the queue.
+    """
+    # https://github.com/pyserial/pyserial/issues/216#issuecomment-369414522
+
+    while uart.is_open:
+        read_bytes = uart.readline()
+        sleep(.1)
+        read_bytes += uart.read(uart.in_waiting)
+        queue.put(read_bytes)
+        # queue.put(uart.read(uart.in_waiting))
 
 
 def main():
