@@ -390,7 +390,7 @@ class UART(object):
                 'GNSS_ALT',
                 payload[i] + (payload[i+1] << 8) + (payload[i+2] << 16)
             )
-            self._set_system_time(self._time, gnss)
+            self._set_system_time(self._time)
 
         # self._logger.debug(f"Read point: {point.to_line_protocol()}")
 
