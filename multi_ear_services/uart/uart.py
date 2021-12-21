@@ -17,6 +17,7 @@ from serial import Serial
 from socket import gethostname
 from subprocess import Popen, PIPE
 from systemd.journal import JournaldLogHandler
+from time import sleep
 
 # Relative imports
 try:
@@ -479,6 +480,9 @@ class UART(object):
 
         while True:
             read = self._queue.get()
+            if not read:
+                sleep(.1)
+                continue
             self._extract(read)
             self._write()
 
