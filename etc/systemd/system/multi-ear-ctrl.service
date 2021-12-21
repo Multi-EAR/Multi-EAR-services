@@ -11,7 +11,7 @@ Environment="VIRTUAL_ENV=/home/tud/.py37"
 Environment="PATH=$VIRTUAL_ENV/bin:$PATH"
 EnvironmentFile=/home/tud/.multi_ear.env
 ExecStart=
-ExecStart=/usr/bin/nice -n -10 /home/tud/.py37/bin/uwsgi \
+ExecStart=/usr/bin/sudo /usr/bin/nice -n -10 /home/tud/.py37/bin/uwsgi \
   --ini /home/tud/.py37/multi-ear-services/uwsgi.ini
 StandardOutput=syslog
 StandardError=syslog
