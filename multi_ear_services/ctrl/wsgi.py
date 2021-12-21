@@ -26,4 +26,3 @@ def main(app_kwargs: dict = None, run_kwargs: dict = None):
 
 if __name__ == '__main__':
     app.run()
-    # main()

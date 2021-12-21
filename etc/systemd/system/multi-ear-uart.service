@@ -12,7 +12,7 @@ Environment="VIRTUAL_ENV=/home/tud/.py37"
 Environment="PATH=$VIRTUAL_ENV/bin:$PATH"
 EnvironmentFile=/home/tud/.multi_ear.env
 ExecStart=
-ExecStart=/home/tud/.py37/bin/multi-ear-uart \
+ExecStart=/usr/bin/nice -n 10 /home/tud/.py37/bin/multi-ear-uart \
   --ini /home/tud/.py37/multi-ear-services/config.ini \
   --journald
 StandardOutput=syslog

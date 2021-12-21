@@ -740,6 +740,7 @@ function do_update
 
     # Rsync configure
     do_rsync_etc
+    do_daemon_reload 
 
     # Restart 3rd party services
     do_systemd_service_restart "rsyslog"
@@ -845,10 +846,10 @@ fi
 #
 # Check for default user pi
 #
-if id -u pi >/dev/null 2>&1; then
-    echo "Default user pi should not exit"
-    exit -1
-fi
+# if id -u pi >/dev/null 2>&1; then
+#     echo "Default user pi should not exit"
+#     exit -1
+# fi
 
 
 #
