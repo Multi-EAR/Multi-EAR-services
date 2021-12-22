@@ -186,7 +186,7 @@ class UART(object):
 
         # init websocket
         if MultiEARWebsocket:
-            self._ws = = MultiEARWebsocket()
+            self._ws = MultiEARWebsocket()
             self._ws.listen("localhost", 8765)
 
         # terminate at exit
