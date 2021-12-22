@@ -5,6 +5,7 @@ import hashlib
 from flask import Flask, Response, jsonify, request, render_template
 from flask_cors import CORS
 from influxdb_client import InfluxDBClient
+from pandas import Timestamp
 
 # relative imports
 try:
@@ -62,6 +63,7 @@ def create_app(test_config=None):
         version=version,
         services=utils.services,
         hostapd=dict(hostapd.items('DEFAULT')),
+        utcnow=Timestamp.utcnow,
     )
 
     # inject template globals

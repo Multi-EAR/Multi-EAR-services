@@ -1,8 +1,9 @@
 /* global bootstrap: false */
 let debug = window.location.hostname == '127.0.0.1'
-let dataselect = (debug ? 'http://multi-ear-' + window.prompt("Enter Multi-EAR id for dataselect dev","3001") + '.local' : '') + '/api/dataselect/'
+let host = debug ? 'http://multi-ear-' + window.prompt("Enter Multi-EAR id for dev","3001") + '.local' : ''
 let statusUpdater = null;
 let sensorDataUpdater = null;
+
 
 Highcharts.setOptions({
     global: { useUTC: true }
@@ -190,7 +191,7 @@ function statusUpdateLoop() {
 
 function statusUpdate() {
 
-    getResponse("/_systemd_status", { service: '*' })
+    getResponse('/_systemd_status', { service: '*' })
         .then(function(resp) {
 
             if (resp.status !== 200) return
@@ -277,13 +278,26 @@ function bytes(bytes, label) {
 }
 
 
-function fetchSensorData() {
+function fetchSensorData(end) {
 
-    console.log('Fetch sensordata')
+    // console.log('Fetch sensordata')
 
-    fetch(dataselect + 'query?field=^&start=120s&format=json')
+    var fetchButton = document.getElementById('sensorDataFetch')
+    fetchButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...'
+    fetchButton.disabled = true
+
+    if (end === undefined) {
+        end = new Date().toISOString().substring(0, 19)
+        var sendorDataEnd = document.getElementById('sensorDataEnd')
+        sensorDataEnd.value = end
+    }
+
+    var duration = document.getElementById('sensorDataDuration').value
+    var decimate = document.getElementById('sensorDataDuration').getAttribute('data-decimate')
+
+    fetch(`${host}/api/dataselect/query?field=^&start=${duration}&end=${end}&format=json`)
         .then(res => res.status == 200 && res.json())
-        .then(data => data && updateCharts(data))
+        .then(json => updateCharts(json))
 
 }
 
@@ -326,15 +340,23 @@ async function updateChart(chart, sensorData) {
 
 async function updateCharts(sensorData) {
 
-    console.log('Update sensordata charts')
-    Highcharts.charts.forEach(chart => updateChart(chart, sensorData))
+    // console.log('Update sensordata charts')
+    if (sensorData === false) {
+        window.alert('No sensor data returned')
+    } else {
+        Highcharts.charts.forEach(chart => updateChart(chart, sensorData))
+    }
+
+    var fetchButton = document.getElementById('sensorDataFetch')
+    fetchButton.innerHTML = 'Request and plot'
+    fetchButton.disabled = false
 
 }
 
 
 function startSensorDataUpdater() {
 
-    console.log('Start sensordata interval update')
+    // console.log('Start sensordata interval update')
     window.clearInterval(sensorDataUpdater);
     sensorDataUpdater = setInterval(fetchSensorData, 15000);  // ms, every 15s
 
@@ -346,7 +368,7 @@ function startSensorDataUpdater() {
 
 function stopSensorDataUpdater() {
 
-    console.log('Stop sensordata interval update')
+    // console.log('Stop sensordata interval update')
     window.clearInterval(sensorDataUpdater);
 
 }
@@ -379,6 +401,10 @@ function syncChartExtremes(e) {
 
 function loadDashboard() {
 
+    // timeseries graph
+    var canvas = document.getElementById('sensorDataWS')
+    let graph = new TimeseriesGraph(canvas, 15 * 30)
+
     // initialize charts
     let charts = [].slice.call(document.querySelectorAll('[data-source="multi_ear"]'))
 
@@ -402,8 +428,8 @@ function loadDashboard() {
 
     })
 
-    // Fetch all sensordata of last 3 minutes and update charts
-    startSensorDataUpdater()
+    // Fetch all sensordata of last two minutes and update charts
+    fetchSensorData()
 
     // Enable toggles
     var updateToggle = document.getElementById('sensorDataUpdate')
@@ -418,6 +444,18 @@ function loadDashboard() {
         })
     })
 
+    // Enable fetch button
+    var fetchButton = document.getElementById('sensorDataFetch')
+    fetchButton.addEventListener('click', function (event) {
+
+        var endtime = document.getElementById('sensorDataEnd').value
+
+        fetchSensorData(endtime)
+
+        stopSensorDataUpdater()
+        updateToggle.checked = false
+    })
+
     // Telegraf system-load chart
     Highcharts.chart('chart-system-load', {
         chart: {
@@ -426,7 +464,7 @@ function loadDashboard() {
             backgroundColor: 'none',
         },
         data: {
-            csvURL: dataselect + 'query?d=telegraf&m=system&f=load*&s=30m&_f=csv',
+            csvURL: `${host}/api/dataselect/query?d=telegraf&m=system&f=load*&s=30m&_f=csv`,
             dataRefreshRate: 30,
             enablePolling: true,
             parseDate: Date.parse,
@@ -459,7 +497,7 @@ function loadDashboard() {
             backgroundColor: 'none',
         },
         data: {
-            csvURL: dataselect + 'query?d=telegraf&m=mem&f=used,buffered,cached,free&s=30m&_f=csv',
+            csvURL: `${host}/api/dataselect/query?d=telegraf&m=mem&f=used,buffered,cached,free&s=30m&_f=csv`,
             dataRefreshRate: 30,
             enablePolling: true,
             parseDate: Date.parse,
@@ -485,6 +523,9 @@ function loadDashboard() {
             enabled: false
         },
     });
+
+    // update sensor data
+    startSensorDataUpdater()
 
 }
 
