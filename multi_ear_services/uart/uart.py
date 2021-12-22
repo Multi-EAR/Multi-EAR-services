@@ -24,6 +24,10 @@ try:
     from ..version import version
 except (ValueError, ModuleNotFoundError):
     version = 'VERSION-NOT-FOUND'
+try:
+    from .ws import MultiEARWebsocket
+except (ValueError, ModuleNotFoundError):
+    MultiEARWebsocket = False
 
 
 __all__ = ['UART']
@@ -179,6 +183,11 @@ class UART(object):
             daemon=True,
             args=(self._uart, self._queue),
         )
+
+        # init websocket
+        if MultiEARWebsocket:
+            self._ws = = MultiEARWebsocket()
+            self._ws.listen("localhost", 8765)
 
         # terminate at exit
         atexit.register(self.close)
@@ -397,6 +406,12 @@ class UART(object):
 
         return point
 
+    def _broadcast(self):
+        """Broadcast points using WebSockets
+        """
+        if MultiEARWebsocket:
+            self._ws.broadcast(self._points)
+
     def _write(self):
         """Write points to Influx database in batch mode
         """
@@ -484,6 +499,7 @@ class UART(object):
                 sleep(.1)
                 continue
             self._extract(read)
+            self._broadcast()
             self._write()
 
         self._logger.info("Serial port closed")

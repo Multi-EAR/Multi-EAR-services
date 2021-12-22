@@ -10,9 +10,12 @@ dependencies:
   - gpiozero>=1.6
   - uwsgi>=2.0
   - flask>=2.0
+  - flask-cors>=3.0
   - websockets>=10.1
   - ipython
   - flake8
+  - requests>=2.20
+  - websockets>=10.1
   - pip:
     - Flask-Testing
     - influxdb-client>=1.20
