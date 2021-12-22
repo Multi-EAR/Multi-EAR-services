@@ -43,28 +43,28 @@
       <div class="collapse navbar-collapse flex-column text-center mt-2 mt-md-0" id="navbar">
         <ul class="nav nav-pills nav-flush flex-column border-top mb-auto">
           <li class="nav-item border-bottom">
-            <a class="active nav-link" aria-current="page" href="#" data-bs-toggle="tab" data-bs-target="home" title="Home">
-              <i class="bi bi-house-door"></i><span class="d-md-none"> Home</span>
+            <a class="active nav-link" aria-current="page" href="#" data-bs-toggle="tab" data-bs-target="home">
+              <i class="bi bi-house-door"></i><span> Home</span>
             </a>
           </li>
           <li class="nav-item border-bottom">
-            <a class="nav-link" href="#pcb" data-bs-toggle="tab" data-bs-target="pcb" title="MEMS on a PCB">
-              <i class="bi bi-cpu"></i><span class="d-md-none"> MEMS on a PCB</span>
+            <a class="nav-link" href="#pcb" data-bs-toggle="tab" data-bs-target="pcb">
+              <i class="bi bi-cpu"></i><span> MEMS</span>
             </a>
           </li>
           <li class="nav-item border-bottom">
-            <a class="nav-link" href="#dashboard" data-bs-toggle="tab" data-bs-target="dashboard" title="Data">
-              <i class="bi bi-graph-up"></i><span class="d-md-none"> Data</span>
+            <a class="nav-link" href="#dashboard" data-bs-toggle="tab" data-bs-target="dashboard">
+              <i class="bi bi-graph-up"></i><span> Data</span>
             </a>
           </li>
           <li class="nav-item border-bottom">
-            <a class="nav-link" href="#wifi" data-bs-toggle="tab" data-bs-target="wifi" title="Wi-Fi control">
-              <i class="bi bi-wifi"></i><span class="d-md-none"> Wi-Fi control</span>
+            <a class="nav-link" href="#wifi" data-bs-toggle="tab" data-bs-target="wifi">
+              <i class="bi bi-wifi"></i><span> Wi-Fi</span>
             </a>
           </li>
           <li class="nav-item border-bottom">
-            <a class="nav-link" href="#status" data-bs-toggle="tab" data-bs-target="status" title="Status monitoring">
-              <i class="bi bi-journal-code"></i><span class="d-md-none"> Status monitoring</span>
+            <a class="nav-link" href="#status" data-bs-toggle="tab" data-bs-target="status">
+              <i class="bi bi-journal-code"></i><span> Status</span>
             </a>
           </li>
         </ul>
@@ -72,13 +72,13 @@
           <li class="nav-item border-bottom">
             <a class="nav-link" href="http://{{hostname}}.local:3000"
              title="Grafana" target="_blank" rel="noopener noreferrer">
-              <i class="bi bi-server" alt="Grafana"></i><span class="d-md-none"> Grafana server</span>
+              <i class="bi bi-server" alt="Grafana"></i><span> Grafana</span>
             </a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="https://github.com/Multi-EAR"
              title="Github" target="_blank" rel="noopener noreferrer">
-              <i class="bi bi-github" alt="Github"></i><span class="d-md-none"> Github project</span>
+              <i class="bi bi-github" alt="Github"></i><span> Github</span>
             </a>
           </li>
         </ul>
@@ -100,6 +100,7 @@
   <script src="{{ url_for('static', filename='3rd/crypto-js-v4.1.1/sha256.js') }}"></script>
   <script src="{{ url_for('static', filename='js/get-response.js') }}"></script>
   <script src="{{ url_for('static', filename='js/show-password-toggle.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/timeseriesgraph.js') }}"></script>
   <script src="{{ url_for('static', filename='js/multi-ear.js') }}"></script>
 
   <!-- Custom scripts for this template -->

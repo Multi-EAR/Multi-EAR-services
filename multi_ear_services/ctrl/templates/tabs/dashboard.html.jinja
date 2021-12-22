@@ -1,7 +1,14 @@
 <h1 class="h2 pt-3 pb-2 mb-3 border-bottom">Sensor data and resources</h1>
 
+<h4 class="my-3 pt-4">Live sensor data</h4>
 
-<p class="pt-4 lead">Request data via the dataselect-API</p>
+<canvas>websocket timeseries here</canvas>
+
+
+<hr class="my-4 my-md-5">
+
+<h4 class="my-3">Request data via the dataselect-API</h4>
+
 <div class="accordion accordion-flush" id="api">
   <div class="accordion-item bg-none">
     <h2 class="accordion-header">
@@ -58,7 +65,7 @@
         </div>
         <h5 class="mt-3 py-2">Example</h5>
         <p>Request the differential pressure and three-component accelerometer data of the last two minutes as json:<br> 
-          <a href="http://{{hostname|lower}}.local/api/dataselect/query?starttime=120s&amp;field=DLVR,^LIS3D_&amp;format=json" target="_blank"><code>http://{{hostname|lower}}.local/api/dataselect/query?starttime=120s&amp;field=DLVR,^LIS3D_&amp;format=json</code></a>
+          <a href="http://{{hostname|lower}}.local/api/dataselect/query?starttime=120s&amp;field=DLVR,^LIS3DH&amp;format=csv" target="_blank"><code>http://{{hostname|lower}}.local/api/dataselect/query?starttime=120s&amp;field=DLVR,^LIS3DH&amp;format=csv</code></a>
         </p>
 
       </div>
@@ -66,24 +73,31 @@
   </div>  
 </div>
 
-<p class="pt-5 lead">Charts of the last 2 min sensor data and 30 min resources</p>
+<hr class="my-4 my-md-5">
+
+<h4 class="my-3">Charts of sensor data</h4>
 
 <div class="row">
   <div class="col-md-6 col-xl-4">
     <div class="input-group mb-3">
+      <span class="input-group-text">Start time</span>
+      <input type="text" class="form-control" placeholder="yyyy-mm-ddTHH:MM:SS" id="sensorDataStart" aria-label="Start time">
+    </div>
+  </div>
+  <div class="col-md-6 col-xl-4">
+    <div class="input-group mb-3">
       <span class="input-group-text">Duration</span>
-      <select class="form-select" id="inputGroupSelect01">
-        <option selected value="120">120 sec</option>
-        <option value="900">15 min</option>
-        <option value="1800">30 min</option>
-        <option value="3600">60 min</option>
+      <select class="form-select" id="sensorDataDuration">
+        <option value="120" data-decimate="0" selected>2 min</option>
+        <option value="900" data-decimate="8">15 min</option>
+        <option value="1800" data-decimate="16">30 min</option>
+        <option value="7200" data-decimate="64">120 min</option>
       </select>
     </div>
   </div>
   <div class="col-md-6 col-xl-4">
     <div class="input-group mb-3">
-      <span class="input-group-text">End time</span>
-      <input type="text" class="form-control" placeholder="yyyy-mm-ddTHH:MM:SS" aria-label="End time">
+      <button class="btn btn-primary">Request and plot</button>
     </div>
   </div>
 </div>
@@ -171,6 +185,10 @@
        data-units="%">
   </div>
 </figure>
+
+<hr class="my-4 my-md-5">
+
+<h4 class="my-3">Charts of system resources</h4>
 
 <figure class="my-3">
   <div id="chart-system-load" class="py-3">

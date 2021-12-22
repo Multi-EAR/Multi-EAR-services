@@ -1,6 +1,6 @@
 /* global bootstrap: false */
 let debug = window.location.hostname == '127.0.0.1'
-let dataselect = (debug ? 'http://multi-ear-3003.local' : '') + '/api/dataselect/'
+let dataselect = (debug ? 'http://multi-ear-' + window.prompt("Enter Multi-EAR id for dataselect dev","3001") + '.local' : '') + '/api/dataselect/'
 let statusUpdater = null;
 let sensorDataUpdater = null;
 
@@ -640,7 +640,6 @@ function loadContent(nav) {
             loadContent(nav);
             navbar.hide();
         })
-        new bootstrap.Tooltip(nav, {placement: 'right', customClass: 'd-none d-md-flex'})
 
     })
 

@@ -53,8 +53,8 @@ div.pcb {
 }
 
 .nav-link {
-  padding-top: 1rem!important;
-  padding-bottom: 1rem!important;
+  padding-top: .8rem!important;
+  padding-bottom: .8rem!important;
 }
 .navbar-dark .nav-link {
   color: #f9fafb;
@@ -105,6 +105,11 @@ div.pcb {
     text-align: center;
     margin: 0!important;
     padding: .5rem!important;
+  }
+  .nav-link > span {
+    font-size: .5rem;
+    line-height: .5rem;
+    display: block;
   }
 }
 
