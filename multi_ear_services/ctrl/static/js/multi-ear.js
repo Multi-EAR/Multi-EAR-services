@@ -342,7 +342,7 @@ async function updateCharts(sensorData) {
 
     // console.log('Update sensordata charts')
     if (sensorData === false) {
-        window.alert('No sensor data returned')
+        window.alert('No data returned')
     } else {
         Highcharts.charts.forEach(chart => updateChart(chart, sensorData))
     }
