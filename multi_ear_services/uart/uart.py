@@ -9,7 +9,9 @@ import sys
 from argparse import ArgumentParser
 from collections import deque
 from configparser import ConfigParser
-from influxdb_client import InfluxDBClient, Point
+from dataclasses import dataclass
+from dataclasses import field as datafield
+from influxdb_client import InfluxDBClient
 from influxdb_client.client.exceptions import InfluxDBError
 import influxdb_client.client.util.date_utils as date_utils
 from influxdb_client.client.util.date_utils_pandas import PandasDateTimeHelper
@@ -18,6 +20,8 @@ from socket import gethostname
 from subprocess import Popen, PIPE
 from systemd.journal import JournaldLogHandler
 from time import sleep
+from typing import Union
+
 
 # Relative imports
 try:
@@ -35,6 +39,32 @@ __all__ = ['UART']
 
 # Set PandasDate helper which supports nanoseconds.
 date_utils.date_helper = PandasDateTimeHelper()
+
+
+# Set epoch base
+epoch_base = pd.Timestamp('1970-01-01', tz='UTC')
+
+
+@dataclass
+class Point:
+    """influxdb_client-like Point class to improve serialization."""
+    measurement: str
+    time: pd.Timestamp
+    clock: str
+    fields: dict = datafield(init=False, repr=False, default_factory=dict)
+
+    def field(self, key: str, value: Union[np.integer, np.floating]):
+        self.fields[key] = value
+
+    def epoch(self) -> int:
+        return (self.time - epoch_base) // pd.Timedelta('1ns')
+
+    def to_line_protocol(self) -> str:
+        fields = ",".join([
+            f"{k}={v}{'i' if np.issubdtype(v, np.integer) else ''}"
+            for k, v in self.fields.items()
+        ])
+        return f"{self.measurement},clock={self.clock} {fields} {self.epoch()}"
 
 
 class UART(object):
@@ -288,7 +318,7 @@ class UART(object):
         """Convert payload from Level-1 data to counts.
         Returns
         -------
-        point : :class:`Point`
+        point : :dataclass:`Point`
             Influx Point object with all tags, fields for the given time step.
         """
 
@@ -322,8 +352,8 @@ class UART(object):
             clock = 'local'
         # self._logger.info(f'{clock} time: {timestamp}')
 
-        # Create point
-        point = Point(self._measurement).time(timestamp).tag('clock', clock)
+        # Create point object
+        point = Point(self._measurement, timestamp, clock)
 
         # DLVR-F50D differential pressure (14-bit ADC)
         tmp = payload[7] | (payload[8] << 8)
@@ -406,24 +436,13 @@ class UART(object):
 
         # GNSS
         if gnss and length >= 52:
-            i = length - 24
-            point.field(
-                'GNSS_LAT',
-                payload[i] + (payload[i+1] << 8) + (payload[i+2] << 16)
-            )
-            i += 3
-            point.field(
-                'GNSS_LON',
-                payload[i] + (payload[i+1] << 8) + (payload[i+2] << 16)
-            )
-            i += 3
-            point.field(
-                'GNSS_ALT',
-                payload[i] + (payload[i+1] << 8) + (payload[i+2] << 16)
-            )
+            lat, lon, alt = np.frombuffer(payload, np.float32, 3, length - 24)
+            point.field('GNSS_LAT', lat)
+            point.field('GNSS_LON', lon)
+            point.field('GNSS_ALT', alt)
             self._set_system_time(self._time)
 
-        # self._logger.debug(f"Read point: {point.to_line_protocol()}")
+        self._logger.debug(f"Read point: {point.to_line_protocol()}")
 
         return point
 
@@ -439,7 +458,8 @@ class UART(object):
         if len(self._points) < self._batch_size:
             return
         self._logger.debug(f"Write {len(self._points)} lines")
-        self._writer.write(bucket=self._bucket, record=self._points)
+        lines = [p.to_line_protocol() for p in self._points]
+        self._writer.write(bucket=self._bucket, record=lines)
         self._points.clear()
 
     def _write_success(self, conf: (str, str, str), data: str):
