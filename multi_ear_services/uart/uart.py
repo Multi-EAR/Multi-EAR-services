@@ -250,7 +250,8 @@ class UART(object):
         while i < buffer_len - self._buffer_min_len:
 
             # packet header match?
-            if kind = self._packet_starts(i):
+            pcb_id = self._packet_starts(i)
+            if pcb_id != 0:
 
                 # get packet length
                 packet_len = self._packet_len(i)
@@ -270,7 +271,7 @@ class UART(object):
                     break
 
                 # decode point
-                point = self._decode_payload_to_point(payload, length, kind)
+                point = self._decode_payload_to_point(payload, length, pcb_id)
 
                 # append point
                 self._points.append(point)
@@ -283,7 +284,7 @@ class UART(object):
 
         self._buffer = self._buffer[i:]
 
-    def _decode_payload_to_point(self, payload, length, kind) -> Point:
+    def _decode_payload_to_point(self, payload, length, pcb_id) -> Point:
         """Convert payload from Level-1 data to counts.
         Returns
         -------
@@ -345,7 +346,7 @@ class UART(object):
         )
 
         # LSM303 3-axis accelerometer and gyroscope (3x 16-bit), green pcb only
-        if kind == 1:
+        if pcb_id == 1:
             point.field(
                 'LSM303_X',
                 np.int16(payload[14] | (payload[15] << 8))
