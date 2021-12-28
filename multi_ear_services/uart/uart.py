@@ -49,7 +49,7 @@ class UART(object):
     _step = None
 
     def __init__(self, config_file='config.ini', journald=False,
-                 debug=False, dry_run=False, local_clock=False) -> None:
+                 debug=False, dry_run=False) -> None:
         """Sensorboard serial readout with data storage in a local influx
         database.
 
@@ -74,7 +74,6 @@ class UART(object):
 
         # set options
         self.dry_run = dry_run or False
-        self.local_clock = local_clock or False
 
         # set logger
         self._logger = logging.getLogger('multi-ear-uart')
@@ -97,8 +96,9 @@ class UART(object):
         self._logger.setLevel(logging.DEBUG if debug else logging.INFO)
 
         # configuration defaults
-        self._packet_start = b'\x11\x99\x22\x88\x33\x73'
-        self._packet_start_len = len(self._packet_start)
+        self._packet_start_green = b'\x11\x99\x22\x88\x33\x73'
+        self._packet_start_blue = b'\x11\x99\x22\x88\x33\x74'
+        self._packet_start_len = 6
         self._packet_header_len = 11
         self._buffer_min_len = 34
         self._sampling_rate = 16  # [Hz]
@@ -221,11 +221,16 @@ class UART(object):
         return self._packet_start_len + int(self._buffer[j])
 
     def _packet_starts(self, i):
-        """Returns True if the read buffer at the given start index matches the
-        packet start sequence.
+        """Returns 1 or 2 if the read buffer at the given start index matches
+        the packet start sequence of the green or blue pcb, otherwise 0.
         """
         start = memoryview(self._buffer)[i:i+self._packet_start_len]
-        return start == self._packet_start
+        if start == self._packet_start_green:
+            return 1
+        elif start == self._packet_start_blue:
+            return 2
+        else:
+            return 0
 
     def _extract(self, read=b''):
         """Extract payloads from the read buffer.
@@ -245,7 +250,7 @@ class UART(object):
         while i < buffer_len - self._buffer_min_len:
 
             # packet header match?
-            if self._packet_starts(i):
+            if kind = self._packet_starts(i):
 
                 # get packet length
                 packet_len = self._packet_len(i)
@@ -265,7 +270,7 @@ class UART(object):
                     break
 
                 # decode point
-                point = self._decode_payload_to_point(payload)
+                point = self._decode_payload_to_point(payload, length, kind)
 
                 # append point
                 self._points.append(point)
@@ -278,7 +283,7 @@ class UART(object):
 
         self._buffer = self._buffer[i:]
 
-    def _decode_payload_to_point(self, payload) -> Point:
+    def _decode_payload_to_point(self, payload, length, kind) -> Point:
         """Convert payload from Level-1 data to counts.
         Returns
         -------
@@ -286,7 +291,6 @@ class UART(object):
             Influx Point object with all tags, fields for the given time step.
         """
 
-        length = len(payload)
         # self._logger.info(f"payload #{length}: "
         #                   f"{np.frombuffer(payload, np.uint8)}")
 
@@ -306,7 +310,7 @@ class UART(object):
         self._step = int(step)
 
         # GNSS clock?
-        gnss = False if self.local_clock else y != 0
+        gnss = y != 0 and M != 0
         if gnss:
             timestamp = pd.Timestamp(2000+y, m, d, H, M, S) + step*self._delta
             self._time = timestamp
@@ -340,37 +344,53 @@ class UART(object):
             np.uint32(payload[11] + (payload[12] << 8) + (payload[13] << 16))
         )
 
+        # LSM303 3-axis accelerometer and gyroscope (3x 16-bit), green pcb only
+        if kind == 1:
+            point.field(
+                'LSM303_X',
+                np.int16(payload[14] | (payload[15] << 8))
+            )
+            point.field(
+                'LSM303_Y',
+                np.int16(payload[16] | (payload[17] << 8))
+            )
+            point.field(
+                'LSM303_Z',
+                np.int16(payload[18] | (payload[19] << 8))
+            )
+
         # LIS3DH 3-axis accelerometer and gyroscope (3x 16-bit)
         point.field(
             'LIS3DH_X',
-            np.int16(payload[14] | (payload[15] << 8))
+            np.int16(payload[20] | (payload[21] << 8))
         )
         point.field(
             'LIS3DH_Y',
-            np.int16(payload[16] | (payload[17] << 8))
+            np.int16(payload[22] | (payload[23] << 8))
         )
         point.field(
             'LIS3DH_Z',
-            np.int16(payload[18] | (payload[19] << 8))
+            np.int16(payload[24] | (payload[25] << 8))
         )
 
-        if length == 26 or length == 50:
+        # SHT85 temperature and humidity, ICS-4300 SPL
+        if length == 32 or length == 56:
             point.field(
                 'SHT85_T',
-                np.uint16((payload[20] << 8) | payload[21])
+                np.uint16((payload[26] << 8) | payload[27])
             )
             point.field(
                 'SHT85_H',
-                np.uint16((payload[22] << 8) | payload[23])
+                np.uint16((payload[28] << 8) | payload[29])
             )
             point.field(
                 'ICS',
-                np.uint16((payload[24] << 8) | payload[25])
+                np.uint16((payload[30] << 8) | payload[31])
             )
         else:
             point.field(
                 'ICS',
-                np.uint16((payload[20] << 8) | payload[21])
+                np.uint16((payload[26] << 8) | payload[27])
             )
 
         # Counts to unit conversions
@@ -379,12 +399,12 @@ class UART(object):
         # LPS33HW   [hPa] : count / 4096
         # LIS3DH     [mg] : counts * 0.076
         # LIS3DH   [ms-2] : counts * 0.076*9.80665/1000
-        # SHT8x_T    [°C] : counts * 175/(2**16-1) - 45
-        # SHT8x_H     [%] : counts * 100/(2**16-1)
+        # SHT85_T    [°C] : counts * 175/(2**16-1) - 45
+        # SHT85_H     [%] : counts * 100/(2**16-1)
         # ICS       [dBV] : counts * 100/4096
 
         # GNSS
-        if gnss and length >= 46:
+        if gnss and length >= 52:
             i = length - 24
             point.field(
                 'GNSS_LAT',
@@ -543,10 +563,6 @@ def main():
         help='Serial read without storage in the influx database'
     )
     parser.add_argument(
-        '--local-clock', action='store_true', default=False,
-        help='Disable GNSS time (if available) and use the local time only.'
-    )
-    parser.add_argument(
         '--debug', action='store_true', default=False,
         help='Make the operation a lot more talkative'
     )
@@ -563,7 +579,6 @@ def main():
         journald=args.journald,
         debug=args.debug,
         dry_run=args.dry_run,
-        local_clock=args.local_clock
     )
     uart.readout()
 
