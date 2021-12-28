@@ -2,7 +2,7 @@
 
 <h4 class="my-3 pt-4">Live sensor data</h4>
 
-<canvas class="my-3" id="sensorDataWS"></canvas>
+<canvas class="my-3 img-fluid" id="sensorDataWS"></canvas>
 <small>here comes a live timeseries graph via websockets</small>
 
 <hr class="my-4 my-md-5">
@@ -126,12 +126,23 @@
   <div id="chart-dp"
        class="py-3"
        data-source="multi_ear"
+       data-series="DLVR"
+       data-scalar="0.01*250/6553"
+       data-offset="0,0"
+       data-title="Differential Pressure"
+       data-units="Pa">
+  </div>
+<!--
+  <div id="chart-dp"
+       class="py-3"
+       data-source="multi_ear"
        data-series="DLVR,SP210"
        data-scalar="0.01*250/6553,250/(0.9*32768)"
        data-offset="0,0"
        data-title="Differential Pressure"
        data-units="Pa">
   </div>
+-->
   <div id="chart-spl"
        class="py-3"
        data-source="multi_ear"

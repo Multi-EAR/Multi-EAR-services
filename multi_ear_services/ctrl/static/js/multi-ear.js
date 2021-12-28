@@ -550,8 +550,6 @@ function stopCharts(tab) {
 
 function loadPCB () {
 
-    resizePCB()
-
     var pcbItems = [].slice.call(document.querySelectorAll('.pcb > svg > *'))
 
     var pcbPopovers = pcbItems.map(function (item) {
@@ -578,6 +576,8 @@ function loadPCB () {
 
         return popover
     })
+
+    resizePCB()
 
 }
 
