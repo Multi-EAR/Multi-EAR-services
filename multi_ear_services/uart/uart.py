@@ -54,11 +54,11 @@ class Point:
         return (self.time - _epoch_base) // _epoch_delta
 
     def serialize(self) -> str:
-        fields = ",".join([
+        field_set = ",".join([
             f"{k}={v}{'i' if np.issubdtype(v, np.integer) else ''}"
             for k, v in self.fields.items()
         ])
-        return "clock={clock} {fields} {time}".format(
+        return "clock={clock} {field_set} {time}".format(
             clock=self.clock,
             fields=fields,
             time=self.epoch(),
@@ -486,7 +486,7 @@ class UART(object):
                 self._measurement,
                 self._host,
                 self._uuid,
-                self._version
+                self._version,
             ) for p in self._points
         ])
         self._writer.write(bucket=self._bucket, record=lines)

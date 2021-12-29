@@ -239,6 +239,7 @@ function do_systemd_service_configtest
 
 function do_systemd_env
 {
+    source ~/.bashrc
     cat > $HOME/.multi_ear.env << EOF
 MULTI_EAR_ID=$MULTI_EAR_ID
 MULTI_EAR_UUID=$MULTI_EAR_UUID
@@ -741,6 +742,7 @@ function do_update
     # Rsync configure
     do_rsync_etc
     do_daemon_reload 
+    do_systemd_env
 
     # Restart 3rd party services
     do_systemd_service_restart "rsyslog"
