@@ -55,6 +55,7 @@ function usage
 "                  * configure system services"
 "                  * create Python3 virtual environment py37 in ~/.py37"
 "                  * install and activate the Multi-EAR services"
+"  configure      Configure the Multi-EAR services and dependencies."
 "  check          Verify the installed Multi-EAR services and dependencies."
 "  update         Update the existing Multi-EAR services and dependencies."
 "  uninstall      Remove the installed Multi-EAR services, data, configurations and "
