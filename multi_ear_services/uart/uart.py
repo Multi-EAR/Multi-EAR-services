@@ -4,20 +4,22 @@ import logging
 import multiprocessing as mp
 import numpy as np
 import os
-import pandas as pd
 import sys
 from argparse import ArgumentParser
 from collections import deque
 from configparser import ConfigParser
-from influxdb_client import InfluxDBClient, Point
+from dataclasses import dataclass
+from dataclasses import field as datafield
+from influxdb_client import InfluxDBClient
 from influxdb_client.client.exceptions import InfluxDBError
-import influxdb_client.client.util.date_utils as date_utils
-from influxdb_client.client.util.date_utils_pandas import PandasDateTimeHelper
+from pandas import Timestamp, Timedelta
 from serial import Serial
 from socket import gethostname
 from subprocess import Popen, PIPE
 from systemd.journal import JournaldLogHandler
 from time import sleep
+from typing import Union
+
 
 # Relative imports
 try:
@@ -33,8 +35,44 @@ except (ValueError, ModuleNotFoundError):
 __all__ = ['UART']
 
 
-# Set PandasDate helper which supports nanoseconds.
-date_utils.date_helper = PandasDateTimeHelper()
+# Set epoch base and delta
+_epoch_base = Timestamp('1970-01-01', tz='UTC')
+_epoch_delta = Timedelta('1ns')
+
+
+@dataclass
+class Point:
+    """influxdb_client-like Point class to improve serialization."""
+    time: Timestamp
+    clock: str
+    fields: dict = datafield(init=False, repr=False, default_factory=dict)
+
+    def field(self, key: str, value: Union[np.integer, np.floating]):
+        self.fields[key] = value
+
+    def epoch(self) -> int:
+        return (self.time - _epoch_base) // _epoch_delta
+
+    def serialize(self) -> str:
+        fields = ",".join([
+            f"{k}={v}{'i' if np.issubdtype(v, np.integer) else ''}"
+            for k, v in self.fields.items()
+        ])
+        return "clock={clock} {fields} {time}".format(
+            clock=self.clock,
+            fields=fields,
+            time=self.epoch(),
+        )
+
+    def to_line_protocol(self,
+                         measurement: str = 'multi_ear',
+                         host: str = 'null',
+                         uuid: str = 'null',
+                         version: str = 'null') -> str:
+        """Return the serialized influx line to write with all tags.
+        """
+        return (f"{measurement},host={host},uuid={uuid},version={version}," +
+                self.serialize())
 
 
 class UART(object):
@@ -49,7 +87,7 @@ class UART(object):
     _step = None
 
     def __init__(self, config_file='config.ini', journald=False,
-                 debug=False, dry_run=False, local_clock=False) -> None:
+                 debug=False, dry_run=False) -> None:
         """Sensorboard serial readout with data storage in a local influx
         database.
 
@@ -74,7 +112,6 @@ class UART(object):
 
         # set options
         self.dry_run = dry_run or False
-        self.local_clock = local_clock or False
 
         # set logger
         self._logger = logging.getLogger('multi-ear-uart')
@@ -97,12 +134,13 @@ class UART(object):
         self._logger.setLevel(logging.DEBUG if debug else logging.INFO)
 
         # configuration defaults
-        self._packet_start = b'\x11\x99\x22\x88\x33\x73'
-        self._packet_start_len = len(self._packet_start)
+        self._packet_start_green = b'\x11\x99\x22\x88\x33\x73'
+        self._packet_start_blue = b'\x11\x99\x22\x88\x33\x74'
+        self._packet_start_len = 6
         self._packet_header_len = 11
         self._buffer_min_len = 34
         self._sampling_rate = 16  # [Hz]
-        self._delta = pd.Timedelta(1/self._sampling_rate, 's')
+        self._delta = Timedelta(1/self._sampling_rate, 's')
 
         # parse configuration file
         if not os.path.exists(config_file):
@@ -152,14 +190,12 @@ class UART(object):
            auth_basic=config.getboolean(
                'influx2', 'auth_basic', fallback=False
            ),
-           default_tags=dict(
-               host=config.getstr('tags', 'host', fallback=gethostname()),
-               uuid=config.getstr('tags', 'uuid', fallback='null'),
-               version=version.replace('VERSION-NOT-FOUND', 'null'),
-           ),
         )
         self._logger.info(f"Influxdb connection = {self._db.ping()}")
 
+        # Python requests session? Less overhead!
+        # https://stackoverflow.com/questions/23267409
+        # /how-to-implement-retry-mechanism-into-python-requests-library
         self._writer = self._db.write_api(
             success_callback=self._write_success if debug else None,
             error_callback=self._write_error,
@@ -175,6 +211,9 @@ class UART(object):
         self._measurement = config.getstr(
             'influx2', 'measurement', fallback='multi_ear'
         )
+        self._host = config.getstr('tags', 'host', fallback=gethostname())
+        self._uuid = config.getstr('tags', 'uuid', fallback='null')
+        self._version = version.replace('VERSION-NOT-FOUND', 'null')
 
         # init serial receiver queue and process
         self._queue = mp.Queue()
@@ -185,9 +224,12 @@ class UART(object):
         )
 
         # init websocket
-        if MultiEARWebsocket:
-            self._ws = MultiEARWebsocket()
-            self._ws.listen("localhost", 8765)
+        # if MultiEARWebsocket:
+        #     self._ws = MultiEARWebsocket()
+        #     self._ws.listen("localhost", 8765)
+        #     self._ws_fields = ['LPS33HW',
+        #                        'DLVR',
+        #                        'LIS3DH_X', 'LIS3DH_Y', 'LIS3DH_Z']
 
         # terminate at exit
         atexit.register(self.close)
@@ -221,11 +263,16 @@ class UART(object):
         return self._packet_start_len + int(self._buffer[j])
 
     def _packet_starts(self, i):
-        """Returns True if the read buffer at the given start index matches the
-        packet start sequence.
+        """Returns 1 or 2 if the read buffer at the given start index matches
+        the packet start sequence of the green or blue pcb, otherwise 0.
         """
         start = memoryview(self._buffer)[i:i+self._packet_start_len]
-        return start == self._packet_start
+        if start == self._packet_start_green:
+            return 0x73
+        elif start == self._packet_start_blue:
+            return 0x74
+        else:
+            return 0
 
     def _extract(self, read=b''):
         """Extract payloads from the read buffer.
@@ -245,7 +292,8 @@ class UART(object):
         while i < buffer_len - self._buffer_min_len:
 
             # packet header match?
-            if self._packet_starts(i):
+            pcb_id = self._packet_starts(i)
+            if pcb_id != 0:
 
                 # get packet length
                 packet_len = self._packet_len(i)
@@ -265,10 +313,13 @@ class UART(object):
                     break
 
                 # decode point
-                point = self._decode_payload_to_point(payload)
+                point = self._decode_payload_to_point(payload, length, pcb_id)
 
                 # append point
                 self._points.append(point)
+
+                # broadcast point
+                # self._broadcast(point)
 
                 # shift buffer to next packet
                 i += packet_len
@@ -278,17 +329,16 @@ class UART(object):
 
         self._buffer = self._buffer[i:]
 
-    def _decode_payload_to_point(self, payload) -> Point:
+    def _decode_payload_to_point(self, payload, length, pcb_id) -> Point:
         """Convert payload from Level-1 data to counts.
         Returns
         -------
-        point : :class:`Point`
+        point : :dataclass:`Point`
             Influx Point object with all tags, fields for the given time step.
         """
 
-        length = len(payload)
-        # self._logger.info(f"payload #{length}: "
-        #                   f"{np.frombuffer(payload, np.uint8)}")
+        # self._logger.debug(f"payload {pcb_id} #{length}: "
+        #                    f"{np.frombuffer(payload, np.uint8)}")
 
         # Get date, time, and cycle step from payload
         y, m, d, H, M, S, step = np.frombuffer(payload, np.uint8, 7, 0)
@@ -306,9 +356,9 @@ class UART(object):
         self._step = int(step)
 
         # GNSS clock?
-        gnss = False if self.local_clock else y != 0
+        gnss = y != 0 and H != 0 and M != 0
         if gnss:
-            timestamp = pd.Timestamp(2000+y, m, d, H, M, S) + step*self._delta
+            timestamp = Timestamp(2000+y, m, d, H, M, S) + step * self._delta
             self._time = timestamp
             clock = 'GNSS'
         else:
@@ -317,8 +367,8 @@ class UART(object):
             clock = 'local'
         # self._logger.info(f'{clock} time: {timestamp}')
 
-        # Create point
-        point = Point(self._measurement).time(timestamp).tag('clock', clock)
+        # Create point object
+        point = Point(timestamp, clock)
 
         # DLVR-F50D differential pressure (14-bit ADC)
         tmp = payload[7] | (payload[8] << 8)
@@ -340,7 +390,7 @@ class UART(object):
             np.uint32(payload[11] + (payload[12] << 8) + (payload[13] << 16))
         )
 
-        # LIS3DH 3-axis accelerometer and gyroscope (3x 16-bit)
+        # LIS3DH 3-axis accelerometer (3x 16-bit)
         point.field(
             'LIS3DH_X',
             np.int16(payload[14] | (payload[15] << 8))
@@ -354,24 +404,46 @@ class UART(object):
             np.int16(payload[18] | (payload[19] << 8))
         )
 
-        if length == 26 or length == 50:
+        # LSM303C 3-axis accelerometer (3x 16-bit), green pcb only
+        if pcb_id == 0x73:
+            point.field(
+                'LSM303C_X',
+                np.int16(payload[20] | (payload[21] << 8))
+            )
+            point.field(
+                'LSM303C_Y',
+                np.int16(payload[22] | (payload[23] << 8))
+            )
+            point.field(
+                'LSM303C_Z',
+                np.int16(payload[24] | (payload[25] << 8))
+            )
+
+        # SHT85 temperature and humidity, ICS-4300 SPL
+        #
+        # temporary fix for missing byte of ICS-4300
+        # if length == 32 or length == 56:
+        #
+        if length == 31 or length == 55:
             point.field(
                 'SHT85_T',
-                np.uint16((payload[20] << 8) | payload[21])
+                np.uint16((payload[26] << 8) | payload[27])
             )
             point.field(
                 'SHT85_H',
-                np.uint16((payload[22] << 8) | payload[23])
+                np.uint16((payload[28] << 8) | payload[29])
             )
+        """
             point.field(
                 'ICS',
-                np.uint16((payload[24] << 8) | payload[25])
+                np.uint16((payload[30] << 8) | payload[31])
             )
-        else:
+        else:  # length == 28 or length == 52
             point.field(
                 'ICS',
-                np.uint16((payload[20] << 8) | payload[21])
+                np.uint16((payload[26] << 8) | payload[27])
             )
+        """
 
         # Counts to unit conversions
         # DLVR       [Pa] : counts * 0.01*250/6553
@@ -379,38 +451,29 @@ class UART(object):
         # LPS33HW   [hPa] : count / 4096
         # LIS3DH     [mg] : counts * 0.076
         # LIS3DH   [ms-2] : counts * 0.076*9.80665/1000
-        # SHT8x_T    [°C] : counts * 175/(2**16-1) - 45
-        # SHT8x_H     [%] : counts * 100/(2**16-1)
+        # SHT85_T    [°C] : counts * 175/(2**16-1) - 45
+        # SHT85_H     [%] : counts * 100/(2**16-1)
         # ICS       [dBV] : counts * 100/4096
 
         # GNSS
-        if gnss and length >= 46:
-            i = length - 24
-            point.field(
-                'GNSS_LAT',
-                payload[i] + (payload[i+1] << 8) + (payload[i+2] << 16)
-            )
-            i += 3
-            point.field(
-                'GNSS_LON',
-                payload[i] + (payload[i+1] << 8) + (payload[i+2] << 16)
-            )
-            i += 3
-            point.field(
-                'GNSS_ALT',
-                payload[i] + (payload[i+1] << 8) + (payload[i+2] << 16)
-            )
+        if gnss and length >= 51:  # >= 52
+            lat, lon, alt = np.frombuffer(payload, np.int32, 3, length - 24)
+            point.field('GNSS_LAT', lat)
+            point.field('GNSS_LON', lon)
+            point.field('GNSS_ALT', alt)
             self._set_system_time(self._time)
 
-        # self._logger.debug(f"Read point: {point.to_line_protocol()}")
+        self._logger.debug(f"Point: {point.serialize()}")
 
         return point
 
-    def _broadcast(self):
+    def _broadcast(self, point):
         """Broadcast points using WebSockets
         """
-        if MultiEARWebsocket:
-            self._ws.broadcast(self._points)
+        if MultiEARWebsocket is False:
+            return
+        data = [point.fields[k] for k in self._ws_fields]
+        self._ws.broadcast(data)
 
     def _write(self):
         """Write points to Influx database in batch mode
@@ -418,7 +481,15 @@ class UART(object):
         if len(self._points) < self._batch_size:
             return
         self._logger.debug(f"Write {len(self._points)} lines")
-        self._writer.write(bucket=self._bucket, record=self._points)
+        lines = "\n".join([
+            p.to_line_protocol(
+                self._measurement,
+                self._host,
+                self._uuid,
+                self._version
+            ) for p in self._points
+        ])
+        self._writer.write(bucket=self._bucket, record=lines)
         self._points.clear()
 
     def _write_success(self, conf: (str, str, str), data: str):
@@ -490,7 +561,7 @@ class UART(object):
         self._receiver.start()
 
         # set local time as backup if GNSS fails
-        self._time = pd.to_datetime("now", utc=True).round(self._delta)
+        self._time = Timestamp.utcnow().round(self._delta)
         self._logger.info(f"Local reference time if GNSS fails: {self._time}")
 
         while True:
@@ -499,7 +570,6 @@ class UART(object):
                 sleep(.1)
                 continue
             self._extract(read)
-            self._broadcast()
             self._write()
 
         self._logger.info("Serial port closed")
@@ -543,10 +613,6 @@ def main():
         help='Serial read without storage in the influx database'
     )
     parser.add_argument(
-        '--local-clock', action='store_true', default=False,
-        help='Disable GNSS time (if available) and use the local time only.'
-    )
-    parser.add_argument(
         '--debug', action='store_true', default=False,
         help='Make the operation a lot more talkative'
     )
@@ -563,7 +629,6 @@ def main():
         journald=args.journald,
         debug=args.debug,
         dry_run=args.dry_run,
-        local_clock=args.local_clock
     )
     uart.readout()
 

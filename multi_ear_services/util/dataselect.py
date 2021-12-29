@@ -57,11 +57,11 @@ class DataSelect(object):
         if not isinstance(client, InfluxDBClient):
             raise TypeError('InfluxDBClient should be set')
 
-        self.__db_client__ = client
-        self.__query_api__ = client.query_api()
-        self.__status__ = 100
-        self.__error__ = None
-        self.__df__ = None
+        self.__db_client = client
+        self.__query_api = client.query_api()
+        self.__status = 100
+        self.__error = None
+        self.__df = None
 
         self.set_time(starttime, endtime)
         self.field = field
@@ -110,7 +110,7 @@ class DataSelect(object):
     def duration(self):
         """DataSelect time duration.
         """
-        return self.__endtime__ - self.__starttime__
+        return self.__endtime - self.__starttime
 
     @property
     def start(self):
@@ -122,7 +122,7 @@ class DataSelect(object):
     def starttime(self):
         """DataSelect start time.
         """
-        return self.__starttime__
+        return self.__starttime
 
     @property
     def end(self):
@@ -134,7 +134,7 @@ class DataSelect(object):
     def endtime(self):
         """DataSelect end time.
         """
-        return self.__endtime__
+        return self.__endtime
 
     def set_time(self, start=None, end=None):
         """Set the start and end time
@@ -146,22 +146,22 @@ class DataSelect(object):
         end : str or Timestamp (default 'now')
             Sets the dataselect end time.
         """
-        self.__endtime__ = pd.to_datetime(end or 'now', unit='ns', utc=True)
+        self.__endtime = pd.to_datetime(end or 'now', unit='ns', utc=True)
 
         try:
-            delta = pd.to_timedelta(start or '3min')
-            self.__starttime__ = self.__endtime__ - delta
+            delta = pd.to_timedelta(start or '2min')
+            self.__starttime = self.__endtime - delta
         except (pd.errors.ParserError, ValueError):
-            self.__starttime__ = pd.to_datetime(start, unit='ns', utc=True)
+            self.__starttime = pd.to_datetime(start, unit='ns', utc=True)
 
-        if self.__starttime__ > self.__endtime__:
+        if self.__starttime > self.__endtime:
             raise ValueError('end time should be after start time')
 
     @property
     def measurement(self):
         """DataSelect measurement code as a string (default: '*')
         """
-        return ','.join(self.__measurement__)
+        return ','.join(self.__measurement)
 
     @measurement.setter
     def measurement(self, measurement):
@@ -177,19 +177,19 @@ class DataSelect(object):
             raise TypeError(
                 'measurement code should be a string or a list strings'
             )
-        self.__measurement__ = measurement
+        self.__measurement = measurement
 
     @property
     def measurements(self):
         """DataSelect measurement code as a list (default: ['*'])
         """
-        return self.__measurement__
+        return self.__measurement
 
     @property
     def field(self):
         """DataSelect field code as a string (default: '*')
         """
-        return ','.join(self.__field__)
+        return ','.join(self.__field)
 
     @field.setter
     def field(self, field):
@@ -205,19 +205,19 @@ class DataSelect(object):
             raise TypeError(
                 'field code should be a string or a list strings'
             )
-        self.__field__ = field
+        self.__field = field
 
     @property
     def fields(self):
         """DataSelect field code as a list (default: ['*'])
         """
-        return self.__field__
+        return self.__field
 
     @property
     def bucket(self):
         """DataSelect bucket code of format 'database/retention_policy'
         """
-        return f"{self.__database__}/{self.__retention_policy__}"
+        return f"{self.__database}/{self.__retention_policy}"
 
     @bucket.setter
     def bucket(self, bucket):
@@ -227,39 +227,39 @@ class DataSelect(object):
         if '/' not in bucket:
             raise ValueError('bucket code should be of format '
                              '"database/retention_policy"')
-        self.__database__, self.__retenion_policy__ = bucket.split('/')
+        self.__database, self.__retenion_policy = bucket.split('/')
 
     @property
     def database(self):
         """DataSelect database (default: 'multi_ear')
         """
-        return self.__database__
+        return self.__database
 
     @database.setter
     def database(self, database):
         database = database or 'multi_ear'
         if not isinstance(database, str):
             raise TypeError('database code should be a string')
-        self.__database__ = database
+        self.__database = database
 
     @property
     def retention_policy(self):
         """DataSelect retention_policy code (default: '')
         """
-        return self.__retention_policy__
+        return self.__retention_policy
 
     @retention_policy.setter
     def retention_policy(self, retention_policy):
         retention_policy = retention_policy or ''
         if not isinstance(retention_policy, str):
             raise TypeError('retention_policy code should be a string')
-        self.__retention_policy__ = retention_policy
+        self.__retention_policy = retention_policy
 
     @property
     def format(self):
         """DataSelect format code {json|csv|miniseed} (default: 'json').
         """
-        return self.__format__
+        return self.__format
 
     @format.setter
     def format(self, fmt):
@@ -269,20 +269,20 @@ class DataSelect(object):
         fmt = fmt.lower()
         if fmt not in ('json', 'csv', 'miniseed'):
             raise ValueError('format code should be {json|csv|miniseed}')
-        self.__format__ = fmt
+        self.__format = fmt
 
         if fmt == 'csv':
-            self.__mimetype__ = 'text/csv'
+            self.__mimetype = 'text/csv'
         if fmt == 'json':
-            self.__mimetype__ = 'application/json'
+            self.__mimetype = 'application/json'
         if fmt == 'miniseed':
-            self.__mimetype__ = 'application/octet-stream'
+            self.__mimetype = 'application/octet-stream'
 
     @property
     def nodata(self):
         """DataSelect nodata HTTP status code
         """
-        return self.__nodata__
+        return self.__nodata
 
     @nodata.setter
     def nodata(self, nodata):
@@ -293,19 +293,19 @@ class DataSelect(object):
             raise ValueError(
                 'nodata HTTP status code should be "204" or "404"'
             )
-        self.__nodata__ = nodata
+        self.__nodata = nodata
 
     @property
     def _client(self):
         """Returns the InfluxDB client
         """
-        return self.__db_client__
+        return self.__db_client
 
     @property
     def _query_api(self):
         """Returns the InfluxDB query api
         """
-        return self.__query_api__
+        return self.__query_api
 
     @property
     def _q(self):
@@ -359,22 +359,22 @@ class DataSelect(object):
             df = self._query_api.query_data_frame(self._q)
             df = pd.concat(df) if isinstance(df, list) else df
             if df.size == 0:
-                self.__status__ = self.nodata
-                self.__error__ = f"No data found\n{self}"
+                self.__status = self.nodata
+                self.__error = f"No data found\n{self}"
             else:
-                self.__status__ = 200
-                self.__df__ = df.drop(['result', 'table'], axis=1)
+                self.__status = 200
+                self.__df = df.drop(['result', 'table'], axis=1)
         except Exception as e:
-            self.__error__ = "Server Error: {}\n{}".format(
+            self.__error = "Server Error: {}\n{}".format(
                 repr(e), ''.join(tb.format_exception(None, e, e.__traceback__))
             )
-            self.__status__ = 500
+            self.__status = 500
 
     @property
     def _df(self):
         """Returns the DataSelect query DataFrame.
         """
-        return self.__df__
+        return self.__df
 
     def _to_format(self):
         """Returns the DataSelect request as self.format.
@@ -384,12 +384,12 @@ class DataSelect(object):
         if self._status != 200:
             return self._error
         try:
-            resp = eval(f"self._to_{self.__format__}()")
+            resp = eval(f"self._to_{self.__format}()")
         except Exception as e:
-            self.__error__ = "Server Error: {}\n{}".format(
+            self.__error = "Server Error: {}\n{}".format(
                 repr(e), ''.join(tb.format_exception(None, e, e.__traceback__))
             )
-            self.__status__ = 500
+            self.__status = 500
         return resp if self._status == 200 else self._error
 
     def _to_json(self, orient='split', date_format='epoch', indent=4,
@@ -427,19 +427,19 @@ class DataSelect(object):
     def _status(self):
         """Returns the HTTP status code (int).
         """
-        return self.__status__
+        return self.__status
 
     @property
     def _mimetype(self):
         """Returns the HTTP mimetype.
         """
-        return self.__mimetype__ or 'text/plain'
+        return self.__mimetype or 'text/plain'
 
     @property
     def _error(self):
         """Returns the HTTP status code (int).
         """
-        return self.__error__
+        return self.__error
 
     def response(self):
         """Return the DataSelect query response.

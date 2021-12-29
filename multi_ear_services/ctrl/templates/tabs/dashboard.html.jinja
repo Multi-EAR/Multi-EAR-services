@@ -2,7 +2,7 @@
 
 <h4 class="my-3 pt-4">Live sensor data</h4>
 
-<canvas class="my-3" id="sensorDataWS"></canvas>
+<canvas class="my-3 img-fluid" id="sensorDataWS"></canvas>
 <small>here comes a live timeseries graph via websockets</small>
 
 <hr class="my-4 my-md-5">
@@ -94,7 +94,7 @@
   <div class="col-md-6 col-xl-4">
     <div class="input-group mb-3">
       <span class="input-group-text">End time (UTC)</span>
-      <input type="text" class="form-control" placeholder="YYYY-MM-DDTHH:mm:ss" id="sensorDataEnd" aria-label="End time" value="{{utcnow().strftime('%Y-%m-%dT%H:%M:%S')}}">
+      <input type="text" class="form-control" placeholder="YYYY-MM-DDTHH:mm:ss" id="sensorDataEnd" aria-label="End time" value="">
     </div>
   </div>
   <div class="col-md-6 col-xl-4">
@@ -126,12 +126,24 @@
   <div id="chart-dp"
        class="py-3"
        data-source="multi_ear"
+       data-series="DLVR"
+       data-scalar="0.01*250/6553"
+       data-offset="0,0"
+       data-title="Differential Pressure"
+       data-units="Pa">
+  </div>
+<!--
+  <div id="chart-dp"
+       class="py-3"
+       data-source="multi_ear"
        data-series="DLVR,SP210"
        data-scalar="0.01*250/6553,250/(0.9*32768)"
        data-offset="0,0"
        data-title="Differential Pressure"
        data-units="Pa">
   </div>
+-->
+<!--
   <div id="chart-spl"
        class="py-3"
        data-source="multi_ear"
@@ -141,6 +153,7 @@
        data-title="Sound Pressure Level"
        data-units="dbV">
   </div>
+-->
   <div id="chart-acc-z"
        class="py-3"
        data-source="multi_ear"

@@ -2,10 +2,10 @@
 import os
 import socket
 import hashlib
+import requests
 from flask import Flask, Response, jsonify, request, render_template
 from flask_cors import CORS
 from influxdb_client import InfluxDBClient
-from pandas import Timestamp
 
 # relative imports
 try:
@@ -63,7 +63,6 @@ def create_app(test_config=None):
         version=version,
         services=utils.services,
         hostapd=dict(hostapd.items('DEFAULT')),
-        utcnow=Timestamp.utcnow,
     )
 
     # inject template globals
@@ -84,17 +83,14 @@ def create_app(test_config=None):
 
     @app.route("/_tab/<tab>", methods=['GET'])
     def load_tab(tab="home"):
-
         if not is_internal_referer():
             return "Invalid request", 400
-
         try:
             html = render_template(f"tabs/{tab}.html.jinja")
         except FileNotFoundError:
             return f"Tab {tab} not found", 404
         except Exception as e:
             return f"Server Error: {e}", 500
-
         resp = {
             "succes": True,
             "tab": tab,
@@ -104,61 +100,65 @@ def create_app(test_config=None):
 
     @app.route("/_systemd_status", methods=['GET'])
     def systemd_status():
-
         if not is_rpi:
             return "I'm not Raspberry Pi", 418
-
         service = request.args.get('service') or '*'
         if service == '*': 
             resp = utils.systemd_status_all()
         else:
             resp = utils.systemd_status(service)
-
         return jsonify(resp), 200
 
     @app.route("/_append_wpa_supplicant", methods=['POST'])
     def append_wpa_supplicant():
-
         if not is_internal_referer():
             return "Invalid request", 403
-
         if not is_rpi:
             return "I'm not Raspberry Pi", 418
-
         secret = request.args.get('secret')
         if secret != wifi_secret:
             return "Secret invalid", 403
-
         ssid = request.args.get('ssid')
         passphrase = request.args.get('passphrase')
         if not (ssid and passphrase):
             return "Invalid ssid and/or passphrase arguments", 400
-        
         resp = utils.wlan_ssid_passphrase(ssid, passphrase)
-
         return jsonify(resp), 200
 
     @app.route("/_autohotspot", methods=['POST'])
     def autohotspot():
-
         if not is_internal_referer():
             return "Invalid request", 403
-
         if not is_rpi:
             return "I'm not Raspberry Pi", 418
-
         secret = request.args.get('secret')
         if secret != wifi_secret:
             return "Secret invalid", 403
-        
         resp = utils.wlan_autohotspot()
-
         return jsonify(resp), 200
-
 
     @app.route("/api/dataselect/health", methods=['GET'])
     def api_dataselect_health():
-        return repr(db_client.health()), 200
+        if not is_rpi:
+            return "I'm not Raspberry Pi", 418
+        r = requests.get("http://localhost:8086/health")
+        return r.text, r.status_code
+
+    @app.route("/api/dataselect/timing", methods=['GET'])
+    def api_dataselect_gnss():
+        if not is_rpi:
+            return "I'm not Raspberry Pi", 418
+        r = requests.get(
+            url="http://localhost:8086/query?pretty=true",
+            params=dict(
+                db="multi_ear",
+                q=("SELECT * FROM \"multi_ear\" "
+                   "WHERE \"clock\"='GNSS' "
+                   "ORDER BY time DESC "
+                   "LIMIT 1"),
+            )
+        )
+        return r.text, r.status_code
 
     @app.route("/api/dataselect/query", methods=['GET', 'POST'])
     def api_dataselect_query():

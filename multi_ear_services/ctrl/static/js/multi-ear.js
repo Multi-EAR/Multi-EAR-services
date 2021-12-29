@@ -10,6 +10,14 @@ Highcharts.setOptions({
 })
 
 
+Date.prototype.addSecs = function(s) {
+
+    this.setTime(this.getTime() + (s * 1000));
+    return this;
+
+}
+
+
 function sleep(ms) {
 
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -286,8 +294,8 @@ function fetchSensorData(end) {
     fetchButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...'
     fetchButton.disabled = true
 
-    if (end === undefined) {
-        end = new Date().toISOString().substring(0, 19)
+    if (end === undefined | end === '') {
+        end = (new Date()).addSecs(-5).toISOString().substring(0, 19)
         var sendorDataEnd = document.getElementById('sensorDataEnd')
         sensorDataEnd.value = end
     }
@@ -550,8 +558,6 @@ function stopCharts(tab) {
 
 function loadPCB () {
 
-    resizePCB()
-
     var pcbItems = [].slice.call(document.querySelectorAll('.pcb > svg > *'))
 
     var pcbPopovers = pcbItems.map(function (item) {
@@ -578,6 +584,8 @@ function loadPCB () {
 
         return popover
     })
+
+    resizePCB()
 
 }
 

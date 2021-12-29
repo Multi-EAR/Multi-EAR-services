@@ -19,8 +19,10 @@
        x="19%" y="05%" width="21%" height="21%" />
       <rect class="btn" id="PCB-DLVR" data-bs-content="DLVR-L01D"
        x="45%" y="02%" width="28%" height="15%" />
-      <rect class="btn" id="PCB-FLASH" data-bs-content="LIS3D"
-       x="47%" y="21%" width="08%" height="05%" />
+      <rect class="btn" id="PCB-LIS3DH" data-bs-content="LIS3DH"
+       x="46%" y="20%" width="09%" height="06%" />
+      <rect class="btn" id="PCB-LSM303C" data-bs-content="LSM303C"
+       x="47%" y="30%" width="06%" height="04%" />
       <rect class="btn" id="PCB-ICS" data-bs-content="ICS-40300"
        x="77%" y="04%" width="08%" height="06%" />
       <rect class="btn" id="PCB-GNS413-ANT" data-bs-content="GNS413 antenna"
@@ -193,26 +195,6 @@
     </dl>
 
     <h4 class="my-3 pt-3 border-top">Inertial measurement units</h4>
-<!--
-    <dl class="row pcb" id="LSM303">
-       <dt class="col-sm-3 text-sm-end">Type</dt>
-      <dd class="col-sm-9">LSM303</dd>
-      <dt class="col-sm-3 text-sm-end">Manufacturer</dt>
-      <dd class="col-sm-9">ST Microelectronics</dd>
-      <dt class="col-sm-3 text-sm-end">Description</dt>
-      <dd class="col-sm-9">three-axis linear accelerometer and 3-axis magnetometer</dd>
-      <dt class="col-sm-3 text-sm-end">Datasheet</dt>
-      <dd class="col-sm-9">
-        <a href="{{ url_for('static', filename='datasheet/LSM303.pdf') }}">LSM303 Datasheet (PDF)</a>
-      </dd>
-      <dt class="col-sm-3 text-sm-end">Range</dt>
-      <dd class="col-sm-9">&#177;2 to &#177;16 G</dd>
-      <dt class="col-sm-3 text-sm-end">Resolution</dt>
-      <dd class="col-sm-9">16 bit</dd>
-      <dt class="col-sm-3 text-sm-end">Accuracy</dt>
-      <dd class="col-sm-9">..</dd>
-    </dl>
--->
 
     <dl class="row pcb" id="LIS3DH">
       <dt class="col-sm-3 text-sm-end">Type</dt>
@@ -226,11 +208,30 @@
         <a href="{{ url_for('static', filename='datasheet/LIS3DH.pdf') }}">LIS3DH Datasheet (PDF)</a>
       </dd>
       <dt class="col-sm-3 text-sm-end">Range</dt>
-      <dd class="col-sm-9">&#177;2 to &#177;16 G</dd>
+      <dd class="col-sm-9">&#177;2 to &#177;16 <i>g</i></dd>
       <dt class="col-sm-3 text-sm-end">Resolution</dt>
       <dd class="col-sm-9">16 bit</dd>
       <dt class="col-sm-3 text-sm-end">Accuracy</dt>
-      <dd class="col-sm-9">&#177;40 mG (zero-G)</dd>
+      <dd class="col-sm-9">&#177;40 m<i>g</i> (zero-<i>g</i> level)</dd>
+    </dl>
+
+    <dl class="row pcb" id="LSM303C">
+      <dt class="col-sm-3 text-sm-end">Type</dt>
+      <dd class="col-sm-9">LSM303C <i>(only present on the green pcb)</i></dd>
+      <dt class="col-sm-3 text-sm-end">Manufacturer</dt>
+      <dd class="col-sm-9">ST Microelectronics</dd>
+      <dt class="col-sm-3 text-sm-end">Description</dt>
+      <dd class="col-sm-9">three-axis linear accelerometer and 3-axis magnetometer</dd>
+      <dt class="col-sm-3 text-sm-end">Datasheet</dt>
+      <dd class="col-sm-9">
+        <a href="{{ url_for('static', filename='datasheet/LSM303C.pdf') }}">LSM303C Datasheet (PDF)</a>
+      </dd>
+      <dt class="col-sm-3 text-sm-end">Range</dt>
+      <dd class="col-sm-9">&#177;2 to &#177;8 <i>g</i></dd>
+      <dt class="col-sm-3 text-sm-end">Resolution</dt>
+      <dd class="col-sm-9">16 bit</dd>
+      <dt class="col-sm-3 text-sm-end">Accuracy</dt>
+      <dd class="col-sm-9">&#177;40 m<i>g</i> (zero-<i>g</i> level)</dd>
     </dl>
 
   </div>
