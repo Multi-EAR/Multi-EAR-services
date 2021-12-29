@@ -58,11 +58,7 @@ class Point:
             f"{k}={v}{'i' if np.issubdtype(v, np.integer) else ''}"
             for k, v in self.fields.items()
         ])
-        return "clock={clock} {field_set} {time}".format(
-            clock=self.clock,
-            fields=fields,
-            time=self.epoch(),
-        )
+        return f"clock={self.clock} {field_set} {self.epoch()}"
 
     def to_line_protocol(self,
                          measurement: str = 'multi_ear',
