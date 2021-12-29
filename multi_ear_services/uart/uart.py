@@ -334,7 +334,7 @@ class UART(object):
             Influx Point object with all tags, fields for the given time step.
         """
 
-        self._logger.debug(f"payload {id} #{length}: "
+        self._logger.debug(f"payload {pcb_id} #{length}: "
                            f"{np.frombuffer(payload, np.uint8)}")
 
         # Get date, time, and cycle step from payload
