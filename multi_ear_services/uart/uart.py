@@ -221,12 +221,12 @@ class UART(object):
         )
 
         # init websocket
-        if MultiEARWebsocket:
-            # self._ws = MultiEARWebsocket()
-            # self._ws.listen("localhost", 8765)
-            # self._ws_fields = ['LPS33HW',
-            #                    'DLVR',
-            #                    'LIS3DH_X', 'LIS3DH_Y', 'LIS3DH_Z']
+        # if MultiEARWebsocket:
+        #     self._ws = MultiEARWebsocket()
+        #     self._ws.listen("localhost", 8765)
+        #     self._ws_fields = ['LPS33HW',
+        #                        'DLVR',
+        #                        'LIS3DH_X', 'LIS3DH_Y', 'LIS3DH_Z']
 
         # terminate at exit
         atexit.register(self.close)
