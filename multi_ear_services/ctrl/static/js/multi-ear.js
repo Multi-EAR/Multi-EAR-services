@@ -331,7 +331,11 @@ async function updateChart(chart, sensorData) {
         if (columnIndex === -1) return
 
         let data = sensorData.data.map( function (row, rowIndex) {
-            return [sensorData.index[rowIndex], offset + scalar * row[columnIndex]]
+            if (row[columnIndex] !== null) {
+                return [sensorData.index[rowIndex], offset + scalar * row[columnIndex]]
+            }
+        }).filter(function( element ) {
+            return element !== undefined;
         })
 
         series = {name: name, data: data}
