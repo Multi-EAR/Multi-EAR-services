@@ -193,6 +193,9 @@ class UART(object):
         )
         self._logger.info(f"Influxdb connection = {self._db.ping()}")
 
+        # Python requests session? Less overhead!
+        # https://stackoverflow.com/questions/23267409
+        # /how-to-implement-retry-mechanism-into-python-requests-library
         self._writer = self._db.write_api(
             success_callback=self._write_success if debug else None,
             error_callback=self._write_error,
