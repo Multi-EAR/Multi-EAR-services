@@ -4,7 +4,6 @@ import logging
 import multiprocessing as mp
 import numpy as np
 import os
-import pandas as pd
 import sys
 from argparse import ArgumentParser
 from collections import deque
@@ -13,8 +12,7 @@ from dataclasses import dataclass
 from dataclasses import field as datafield
 from influxdb_client import InfluxDBClient
 from influxdb_client.client.exceptions import InfluxDBError
-import influxdb_client.client.util.date_utils as date_utils
-from influxdb_client.client.util.date_utils_pandas import PandasDateTimeHelper
+from pandas import Timestamp, Timedelta
 from serial import Serial
 from socket import gethostname
 from subprocess import Popen, PIPE
@@ -37,19 +35,16 @@ except (ValueError, ModuleNotFoundError):
 __all__ = ['UART']
 
 
-# Set PandasDate helper which supports nanoseconds.
-date_utils.date_helper = PandasDateTimeHelper()
-
-
-# Set epoch base
-epoch_base = pd.Timestamp('1970-01-01', tz='UTC')
+# Set epoch base and delta
+_epoch_base = Timestamp('1970-01-01', tz='UTC')
+_epoch_delta = Timedelta('1ns')
 
 
 @dataclass
 class Point:
     """influxdb_client-like Point class to improve serialization."""
     measurement: str
-    time: pd.Timestamp
+    time: Timestamp
     clock: str
     fields: dict = datafield(init=False, repr=False, default_factory=dict)
 
@@ -57,7 +52,7 @@ class Point:
         self.fields[key] = value
 
     def epoch(self) -> int:
-        return (self.time - epoch_base) // pd.Timedelta('1ns')
+        return (self.time - _epoch_base) // _epoch_delta
 
     def to_line_protocol(self) -> str:
         fields = ",".join([
@@ -132,7 +127,7 @@ class UART(object):
         self._packet_header_len = 11
         self._buffer_min_len = 34
         self._sampling_rate = 16  # [Hz]
-        self._delta = pd.Timedelta(1/self._sampling_rate, 's')
+        self._delta = Timedelta(1/self._sampling_rate, 's')
 
         # parse configuration file
         if not os.path.exists(config_file):
@@ -218,6 +213,9 @@ class UART(object):
         if MultiEARWebsocket:
             self._ws = MultiEARWebsocket()
             self._ws.listen("localhost", 8765)
+            self._ws_fields = ['LPS33HW',
+                               'DLVR',
+                               'LIS3DH_X', 'LIS3DH_Y', 'LIS3DH_Z']
 
         # terminate at exit
         atexit.register(self.close)
@@ -256,9 +254,9 @@ class UART(object):
         """
         start = memoryview(self._buffer)[i:i+self._packet_start_len]
         if start == self._packet_start_green:
-            return 1
+            return 0x73
         elif start == self._packet_start_blue:
-            return 2
+            return 0x74
         else:
             return 0
 
@@ -306,6 +304,9 @@ class UART(object):
                 # append point
                 self._points.append(point)
 
+                # broadcast point
+                # self._broadcast(point)
+
                 # shift buffer to next packet
                 i += packet_len
 
@@ -343,7 +344,7 @@ class UART(object):
         # GNSS clock?
         gnss = y != 0 and M != 0
         if gnss:
-            timestamp = pd.Timestamp(2000+y, m, d, H, M, S) + step*self._delta
+            timestamp = Timestamp(2000+y, m, d, H, M, S) + step * self._delta
             self._time = timestamp
             clock = 'GNSS'
         else:
@@ -375,22 +376,22 @@ class UART(object):
             np.uint32(payload[11] + (payload[12] << 8) + (payload[13] << 16))
         )
 
-        # LSM303 3-axis accelerometer and gyroscope (3x 16-bit), green pcb only
-        if pcb_id == 1:
+        # LSM303C 3-axis accelerometer (3x 16-bit), green pcb only
+        if pcb_id == 0x73 and False:
             point.field(
-                'LSM303_X',
+                'LSM303C_X',
                 np.int16(payload[14] | (payload[15] << 8))
             )
             point.field(
-                'LSM303_Y',
+                'LSM303C_Y',
                 np.int16(payload[16] | (payload[17] << 8))
             )
             point.field(
-                'LSM303_Z',
+                'LSM303C_Z',
                 np.int16(payload[18] | (payload[19] << 8))
             )
 
-        # LIS3DH 3-axis accelerometer and gyroscope (3x 16-bit)
+        # LIS3DH 3-axis accelerometer (3x 16-bit)
         point.field(
             'LIS3DH_X',
             np.int16(payload[20] | (payload[21] << 8))
@@ -446,11 +447,13 @@ class UART(object):
 
         return point
 
-    def _broadcast(self):
+    def _broadcast(self, point):
         """Broadcast points using WebSockets
         """
-        if MultiEARWebsocket:
-            self._ws.broadcast(self._points)
+        if MultiEARWebsocket is False:
+            return
+        data = [point.fields[k] for k in self._ws_fields]
+        self._ws.broadcast(data)
 
     def _write(self):
         """Write points to Influx database in batch mode
@@ -531,7 +534,7 @@ class UART(object):
         self._receiver.start()
 
         # set local time as backup if GNSS fails
-        self._time = pd.to_datetime("now", utc=True).round(self._delta)
+        self._time = Timestamp.utcnow().round(self._delta)
         self._logger.info(f"Local reference time if GNSS fails: {self._time}")
 
         while True:
@@ -540,7 +543,6 @@ class UART(object):
                 sleep(.1)
                 continue
             self._extract(read)
-            self._broadcast()
             self._write()
 
         self._logger.info("Serial port closed")
