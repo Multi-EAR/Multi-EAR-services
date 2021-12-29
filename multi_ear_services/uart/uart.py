@@ -334,8 +334,8 @@ class UART(object):
             Influx Point object with all tags, fields for the given time step.
         """
 
-        self._logger.debug(f"payload {pcb_id} #{length}: "
-                           f"{np.frombuffer(payload, np.uint8)}")
+        # self._logger.debug(f"payload {pcb_id} #{length}: "
+        #                    f"{np.frombuffer(payload, np.uint8)}")
 
         # Get date, time, and cycle step from payload
         y, m, d, H, M, S, step = np.frombuffer(payload, np.uint8, 7, 0)
@@ -353,7 +353,7 @@ class UART(object):
         self._step = int(step)
 
         # GNSS clock?
-        gnss = y != 0 and M != 0
+        gnss = y != 0 and H != 0 and M != 0
         if gnss:
             timestamp = Timestamp(2000+y, m, d, H, M, S) + step * self._delta
             self._time = timestamp
@@ -387,34 +387,34 @@ class UART(object):
             np.uint32(payload[11] + (payload[12] << 8) + (payload[13] << 16))
         )
 
-        # LSM303C 3-axis accelerometer (3x 16-bit), green pcb only
-        if pcb_id == 0x73 and False:
-            point.field(
-                'LSM303C_X',
-                np.int16(payload[14] | (payload[15] << 8))
-            )
-            point.field(
-                'LSM303C_Y',
-                np.int16(payload[16] | (payload[17] << 8))
-            )
-            point.field(
-                'LSM303C_Z',
-                np.int16(payload[18] | (payload[19] << 8))
-            )
-
         # LIS3DH 3-axis accelerometer (3x 16-bit)
         point.field(
             'LIS3DH_X',
-            np.int16(payload[20] | (payload[21] << 8))
+            np.int16(payload[14] | (payload[15] << 8))
         )
         point.field(
             'LIS3DH_Y',
-            np.int16(payload[22] | (payload[23] << 8))
+            np.int16(payload[16] | (payload[17] << 8))
         )
         point.field(
             'LIS3DH_Z',
-            np.int16(payload[24] | (payload[25] << 8))
+            np.int16(payload[18] | (payload[19] << 8))
         )
+
+        # LSM303C 3-axis accelerometer (3x 16-bit), green pcb only
+        if pcb_id == 0x73:
+            point.field(
+                'LSM303C_X',
+                np.int16(payload[20] | (payload[21] << 8))
+            )
+            point.field(
+                'LSM303C_Y',
+                np.int16(payload[22] | (payload[23] << 8))
+            )
+            point.field(
+                'LSM303C_Z',
+                np.int16(payload[24] | (payload[25] << 8))
+            )
 
         # SHT85 temperature and humidity, ICS-4300 SPL
         #
