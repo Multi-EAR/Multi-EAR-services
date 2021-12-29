@@ -417,7 +417,11 @@ class UART(object):
         )
 
         # SHT85 temperature and humidity, ICS-4300 SPL
-        if length == 32 or length == 56:
+        #
+        # temporary fix for missing byte of ICS-4300
+        # if length == 32 or length == 56:
+        #
+        if length == 31 or length == 55:
             point.field(
                 'SHT85_T',
                 np.uint16((payload[26] << 8) | payload[27])
@@ -426,15 +430,17 @@ class UART(object):
                 'SHT85_H',
                 np.uint16((payload[28] << 8) | payload[29])
             )
+        """
             point.field(
                 'ICS',
                 np.uint16((payload[30] << 8) | payload[31])
             )
-        else:
+        else:  # length == 28 or length == 52
             point.field(
                 'ICS',
                 np.uint16((payload[26] << 8) | payload[27])
             )
+        """
 
         # Counts to unit conversions
         # DLVR       [Pa] : counts * 0.01*250/6553
@@ -447,14 +453,14 @@ class UART(object):
         # ICS       [dBV] : counts * 100/4096
 
         # GNSS
-        if gnss and length >= 52:
-            lat, lon, alt = np.frombuffer(payload, np.float32, 3, length - 24)
+        if gnss and length >= 51:  # >= 52
+            lat, lon, alt = np.frombuffer(payload, np.int32, 3, length - 24)
             point.field('GNSS_LAT', lat)
             point.field('GNSS_LON', lon)
             point.field('GNSS_ALT', alt)
             self._set_system_time(self._time)
 
-        self._logger.debug(f"Read point: {point.serialize()}")
+        self._logger.debug(f"Point: {point.serialize()}")
 
         return point
 
