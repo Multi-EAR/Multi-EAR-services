@@ -150,7 +150,7 @@ def create_app(test_config=None):
             return "I'm not Raspberry Pi", 418
         r = requests.get(
             url="http://localhost:8086/query?pretty=true",
-            data=dict(
+            params=dict(
                 db="multi_ear",
                 q=("SELECT * FROM \"multi_ear\" "
                    "WHERE \"clock\"='GNSS' "
