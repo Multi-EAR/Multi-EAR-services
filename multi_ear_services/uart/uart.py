@@ -365,7 +365,7 @@ class UART(object):
         # self._logger.info(f'{clock} time: {timestamp}')
 
         # Create point object
-        point = Point(self._measurement, timestamp, clock)
+        point = Point(timestamp, clock)
 
         # DLVR-F50D differential pressure (14-bit ADC)
         tmp = payload[7] | (payload[8] << 8)
