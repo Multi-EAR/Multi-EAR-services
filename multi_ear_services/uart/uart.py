@@ -43,7 +43,6 @@ _epoch_delta = Timedelta('1ns')
 @dataclass
 class Point:
     """influxdb_client-like Point class to improve serialization."""
-    measurement: str
     time: Timestamp
     clock: str
     fields: dict = datafield(init=False, repr=False, default_factory=dict)
@@ -54,12 +53,26 @@ class Point:
     def epoch(self) -> int:
         return (self.time - _epoch_base) // _epoch_delta
 
-    def to_line_protocol(self) -> str:
+    def serialize(self) -> str:
         fields = ",".join([
             f"{k}={v}{'i' if np.issubdtype(v, np.integer) else ''}"
             for k, v in self.fields.items()
         ])
-        return f"{self.measurement},clock={self.clock} {fields} {self.epoch()}"
+        return "clock={clock} {fields} {time}".format(
+            clock=self.clock,
+            fields=fields,
+            time=self.epoch(),
+        )
+
+    def to_line_protocol(self,
+                         measurement: str = 'multi_ear',
+                         host: str = 'null',
+                         uuid: str = 'null',
+                         version: str = 'null') -> str:
+        """Return the serialized influx line to write with all tags.
+        """
+        return (f"{measurement},host={host},uuid={uuid},version={version}," +
+                self.serialize())
 
 
 class UART(object):
@@ -177,11 +190,6 @@ class UART(object):
            auth_basic=config.getboolean(
                'influx2', 'auth_basic', fallback=False
            ),
-           default_tags=dict(
-               host=config.getstr('tags', 'host', fallback=gethostname()),
-               uuid=config.getstr('tags', 'uuid', fallback='null'),
-               version=version.replace('VERSION-NOT-FOUND', 'null'),
-           ),
         )
         self._logger.info(f"Influxdb connection = {self._db.ping()}")
 
@@ -200,6 +208,9 @@ class UART(object):
         self._measurement = config.getstr(
             'influx2', 'measurement', fallback='multi_ear'
         )
+        self._host = config.getstr('tags', 'host', fallback=gethostname())
+        self._uuid = config.getstr('tags', 'uuid', fallback='null')
+        self._version = version.replace('VERSION-NOT-FOUND', 'null')
 
         # init serial receiver queue and process
         self._queue = mp.Queue()
@@ -323,8 +334,8 @@ class UART(object):
             Influx Point object with all tags, fields for the given time step.
         """
 
-        # self._logger.info(f"payload #{length}: "
-        #                   f"{np.frombuffer(payload, np.uint8)}")
+        self._logger.debug(f"payload {id} #{length}: "
+                           f"{np.frombuffer(payload, np.uint8)}")
 
         # Get date, time, and cycle step from payload
         y, m, d, H, M, S, step = np.frombuffer(payload, np.uint8, 7, 0)
@@ -443,7 +454,7 @@ class UART(object):
             point.field('GNSS_ALT', alt)
             self._set_system_time(self._time)
 
-        self._logger.debug(f"Read point: {point.to_line_protocol()}")
+        self._logger.debug(f"Read point: {point.serialize()}")
 
         return point
 
@@ -461,7 +472,14 @@ class UART(object):
         if len(self._points) < self._batch_size:
             return
         self._logger.debug(f"Write {len(self._points)} lines")
-        lines = [p.to_line_protocol() for p in self._points]
+        lines = "\n".join([
+            p.to_line_protocol(
+                self._measurement,
+                self._host,
+                self._uuid,
+                self._version
+            ) for p in self._points
+        ])
         self._writer.write(bucket=self._bucket, record=lines)
         self._points.clear()
 
