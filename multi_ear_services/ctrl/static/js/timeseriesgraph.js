@@ -1,4 +1,4 @@
-const TimeseriesGraph = function(element, size) {
+const TimeseriesGraph = function(elements, size) {
 
   /*
    * Class TimeseriesGraph
@@ -7,17 +7,23 @@ const TimeseriesGraph = function(element, size) {
    * API:
    *
    * @TimeseriesGraph.reset - resets the timeseries graph by clearing all data
+   * @TimeseriesGraph.hover - callback fired when hovering over the graph
    * @TimeseriesGraph.pause - toggles paused/not paused for drawing timeseries graph
    * @TimeseriesGraph.add - Adds a new value to the timeseries graph
    *
    */
 
-  this.canvas = element;
-  this.name = element.getAttribute("name");
+  this.min = elements[0];
+  this.max = elements[1];
+  this.title = elements[2];
+  this.canvas = elements[3];
+
+  // Listeners
   this.canvas.addEventListener("click", this.pause.bind(this));
   this.canvas.addEventListener("dblclick", this.reset.bind(this));
+  this.canvas.addEventListener("mousemove", this.hover.bind(this));
+
   this.context = this.canvas.getContext("2d");
-  this.first = false;
 
   // Settings
   this.canvas.width = size;
@@ -31,6 +37,7 @@ const TimeseriesGraph = function(element, size) {
 
   // Ringbuffer that stores the data of size N
   this.ringbuffer = new RingBuffer(size);
+  this.__first = false;
 
 }
 
@@ -41,7 +48,30 @@ TimeseriesGraph.prototype.reset = function() {
    * Resets the timeseries graph by re-creating the ringbuffer
    */
 
+  if(this.__paused) {
+    this.pause()
+  }
+
   this.ringbuffer = new RingBuffer(this.ringbuffer.size);
+  this.__draw();
+
+}
+
+TimeseriesGraph.prototype.hover = function(event) {
+
+  /*  
+   * Function TimeseriesGraph.hover
+   * Callback fired when the mouse is hovered over: calculate the selected index
+   */
+
+  let rect = this.canvas.getBoundingClientRect();
+  let x = event.clientX - rect.left;
+  let px = Math.round(this.ringbuffer.size * (x / this.canvas.width));
+  let index = Math.max(0, Math.min(this.ringbuffer.size, px)) - 1;
+  let rindex = (this.ringbuffer.index + index) % this.ringbuffer.size;
+
+  // Log it to console
+  console.log(this.ringbuffer.data[rindex]);
 
 }
 
@@ -53,6 +83,17 @@ TimeseriesGraph.prototype.pause = function() {
    */
 
   this.__paused = !this.__paused;
+
+  if(this.__paused) {
+    this.color = "#7CB5EC80";
+  } else {
+    this.color = "#7CB5ECFF";
+  }
+
+  this.__draw()
+  this.context.fillStyle = "grey";
+  this.context.font = "14px sans-serif";
+  this.context.fillText("Paused", 6, 14);
 
 }
 
@@ -117,9 +158,10 @@ TimeseriesGraph.prototype.__createGradient = function() {
 
   let gradient = this.context.createLinearGradient(0, 0, 0, this.canvas.height);
 
-  gradient.addColorStop("0.1", "red");
-  gradient.addColorStop("0.5" , "white");
-  gradient.addColorStop("0.9", "blue");
+  gradient.addColorStop("0.0", "#7CB5EC00");
+  gradient.addColorStop("0.15", "#7CB5ECFF");
+  gradient.addColorStop("0.85", "#7CB5ECFF");
+  gradient.addColorStop("1.0", "#7CB5EC00");
 
   return gradient;
 
@@ -151,6 +193,9 @@ TimeseriesGraph.prototype.__draw = function() {
   this.context.beginPath();
   this.ringbuffer.plot(this.canvas.height, this.context);
   this.context.stroke();
+
+  this.min.innerHTML = (this.ringbuffer.mean - this.ringbuffer.scale).toFixed(0);
+  this.max.innerHTML = (this.ringbuffer.mean + this.ringbuffer.scale).toFixed(0);
 
 }
 
@@ -186,7 +231,7 @@ RingBuffer.prototype.add = function(value) {
   this.data[this.index] = value;
   this.index = (this.index + 1) % this.size;
 
-  // The mean of the series
+  // The mean
   this.mean = this.data.reduce((a, b) => a + b, 0) / this.data.filter(x => x !== null).length;
 
   // Keep track of the minimum and maximum values in the array
@@ -202,8 +247,7 @@ RingBuffer.prototype.plot = function(height, context) {
    */
 
   let index = 0;
-
-  this.first = true;
+  this.__first = true;
 
   // Go over the ringbuffer in the correct order
   for(let i = this.index; i < this.data.length; i++) {
@@ -227,9 +271,9 @@ RingBuffer.prototype.__drawSample = function(context, height, x, i) {
     return;
   }
 
-  if(this.first) {
+  if(this.__first) {
     context.moveTo(x, 0.5 * height - this.__getHeightPixel(height, this.data[i]));
-    this.first = false;
+    this.__first = false;
   } else {
     context.lineTo(x, 0.5 * height - this.__getHeightPixel(height, this.data[i]));
   }

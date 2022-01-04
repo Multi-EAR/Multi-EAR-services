@@ -438,7 +438,7 @@ function loadWebsockets() {
   ws.onopen = function() {
     div.style.display = "flex";
     graphs = Array.from(div.children).map(function(child) {
-      return new TimeseriesGraph(child.children[1], N_SAMP);
+      return new TimeseriesGraph(child.children, N_SAMP);
     });
   }
 
