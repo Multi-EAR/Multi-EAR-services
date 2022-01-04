@@ -13,9 +13,11 @@ const TimeseriesGraph = function(element, size) {
    */
 
   this.canvas = element;
+  this.name = element.getAttribute("name");
   this.canvas.addEventListener("click", this.pause.bind(this));
   this.canvas.addEventListener("dblclick", this.reset.bind(this));
   this.context = this.canvas.getContext("2d");
+  this.first = false;
 
   // Settings
   this.canvas.width = size;
@@ -25,7 +27,7 @@ const TimeseriesGraph = function(element, size) {
   this.gradient = this.__createGradient();
 
   this.enableGridLines = true;
-  this.enableGradient = true;
+  this.enableGradient = false;
 
   // Ringbuffer that stores the data of size N
   this.ringbuffer = new RingBuffer(size);
@@ -91,7 +93,7 @@ TimeseriesGraph.prototype.__drawGridLines = function() {
     this.context.beginPath();
     this.context.moveTo(0.5 + nx * i, 0);
     this.context.lineTo(0.5 + nx * i, this.canvas.height);
-    this.context.stroke();   
+    this.context.stroke();
   }
 
  // Three lines
@@ -101,7 +103,7 @@ TimeseriesGraph.prototype.__drawGridLines = function() {
     this.context.beginPath();
     this.context.moveTo(0, 0.5 + ny * i);
     this.context.lineTo(this.canvas.width, 0.5 + ny * i);
-    this.context.stroke();   
+    this.context.stroke();
   }
 
 }
@@ -148,7 +150,7 @@ TimeseriesGraph.prototype.__draw = function() {
   // Draw curve
   this.context.beginPath();
   this.ringbuffer.plot(this.canvas.height, this.context);
-  this.context.stroke(); 
+  this.context.stroke();
 
 }
 
@@ -161,7 +163,6 @@ const RingBuffer = function(size) {
    * API:
    *
    * @RingBuffer.add - Adds a value to the ringbuffer
-   * @RingBuffer.getFirstHeightPixel(height, value) - Returns the height of the first value in pixels based min/max
    * @RingBuffer.getHeightPixel(height, value) - Return the height of any value in pixels based on and min/max
    * @RingBuffer.plot(height, context) - Plots the ringbuffer to the passed canvas height & context
    *
@@ -169,7 +170,7 @@ const RingBuffer = function(size) {
 
   this.size = size;
   this.index = 0;
-  this.data = new Array(this.size).fill(0);
+  this.data = new Array(this.size).fill(null);
   this.previousScale = 0;
 
 }
@@ -185,8 +186,11 @@ RingBuffer.prototype.add = function(value) {
   this.data[this.index] = value;
   this.index = (this.index + 1) % this.size;
 
+  // The mean of the series
+  this.mean = this.data.reduce((a, b) => a + b, 0) / this.data.filter(x => x !== null).length;
+
   // Keep track of the minimum and maximum values in the array
-  this.scale = Math.max.apply(null, this.data.map(Math.abs));
+  this.scale = Math.max.apply(null, this.data.filter(x => x!== null).map(x => Math.abs(x - this.mean)));
 
 }
 
@@ -197,10 +201,9 @@ RingBuffer.prototype.plot = function(height, context) {
    * Plots the ringbuffer to the passed context
    */
 
-  // Begin of the curve
-  context.moveTo(0, this.__getFirstHeightPixel(height));
-
   let index = 0;
+
+  this.first = true;
 
   // Go over the ringbuffer in the correct order
   for(let i = this.index; i < this.data.length; i++) {
@@ -220,18 +223,16 @@ RingBuffer.prototype.__drawSample = function(context, height, x, i) {
    * Draws a single sample to the canvas by moving the line to the appropriate position
    */
 
-  context.lineTo(x, 0.5 * height - this.__getHeightPixel(height, this.data[i]));
+  if(this.data[i] === null) {
+    return;
+  }
 
-}
-
-RingBuffer.prototype.__getFirstHeightPixel = function(height) {
-
-  /*
-   * Function RingBuffer.getFirstHeightPixel
-   * Returns the pixel height of the first sample in the ringbuffer
-   */
-
-  return 0.5 * height - this.__getHeightPixel(height, this.data[this.index]);
+  if(this.first) {
+    context.moveTo(x, 0.5 * height - this.__getHeightPixel(height, this.data[i]));
+    this.first = false;
+  } else {
+    context.lineTo(x, 0.5 * height - this.__getHeightPixel(height, this.data[i]));
+  }
 
 }
 
@@ -242,6 +243,6 @@ RingBuffer.prototype.__getHeightPixel = function(height, value) {
    * Returns the pixel height of the first sample in the ringbuffer
    */
 
-  return 0.5 * Math.round(height * value / this.scale);
+  return 0.5 * Math.round(height * (value - this.mean) / this.scale);
 
 }

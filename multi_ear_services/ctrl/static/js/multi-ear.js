@@ -413,9 +413,27 @@ function syncChartExtremes(e) {
 
 function loadDashboard() {
 
-    // timeseries graph
-    var canvas = document.getElementById('sensorDataWS')
-    let graph = new TimeseriesGraph(canvas, 15 * 30)
+    // timeseries graph (how to fetch ID of multi-ear?
+    let ws = new WebSocket("ws://multi-ear-3002:8765");
+    let graphs = new Array();
+
+    ws.onmessage = function(packet) {
+      if(graphs.length === 0) return;
+      packet = JSON.parse(packet.data);
+      for(let i = 0; i < packet.length; i++) {
+        graphs[i].add(packet[i]);
+      }   
+    }   
+
+    ws.onopen = function() {
+
+      let div = document.getElementById("sensorDataWS");
+      div.style.display = "flex";
+      graphs = Array.from(div.children).map(function(child, i) {
+        return new TimeseriesGraph(child.children[1], 15 * 30) 
+      }); 
+
+    }
 
     // initialize charts
     let charts = [].slice.call(document.querySelectorAll('[data-source="multi_ear"]'))
