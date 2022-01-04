@@ -409,13 +409,46 @@ function syncChartExtremes(e) {
     }
 }
 
+
+/**
+ * Connecs to the Multi-EAR websocket server and handles messages
+ */
+function loadWebsockets() {
+
+  const N_SAMP = 15 * 30;
+
+  let ws = new WebSocket("ws://multi-ear-3002:8765");
+  let div = document.getElementById("sensorDataWS");
+  let graphs = new Array();
+  
+  // Incoming message
+  ws.onmessage = function(packet) {
+    packet = JSON.parse(packet.data); 
+    for(let i = 0; i < packet.length; i++) {
+      graphs[i].add(packet[i]);
+    }   
+  }
+
+  // Callback when opened
+  ws.onclose = function(event) {
+    div.style.display = "flex";  
+    div.innerHTML = "Could not connect to the Websocket Server.";
+  }
+  
+  ws.onopen = function() {
+    div.style.display = "flex";
+    graphs = Array.from(div.children).map(function(child) {
+      return new TimeseriesGraph(child.children, N_SAMP);
+    });
+  }
+
+}
+
 // https://www.highcharts.com/demo/synchronized-charts
 
 function loadDashboard() {
 
-    // timeseries graph
-    var canvas = document.getElementById('sensorDataWS')
-    let graph = new TimeseriesGraph(canvas, 15 * 30)
+    loadWebsockets();
 
     // initialize charts
     let charts = [].slice.call(document.querySelectorAll('[data-source="multi_ear"]'))

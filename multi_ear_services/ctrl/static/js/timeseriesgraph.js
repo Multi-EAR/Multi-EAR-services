@@ -1,4 +1,4 @@
-const TimeseriesGraph = function(element, size) {
+const TimeseriesGraph = function(elements, size) {
 
   /*
    * Class TimeseriesGraph
@@ -7,28 +7,37 @@ const TimeseriesGraph = function(element, size) {
    * API:
    *
    * @TimeseriesGraph.reset - resets the timeseries graph by clearing all data
+   * @TimeseriesGraph.hover - callback fired when hovering over the graph
    * @TimeseriesGraph.pause - toggles paused/not paused for drawing timeseries graph
    * @TimeseriesGraph.add - Adds a new value to the timeseries graph
    *
    */
 
-  this.canvas = element;
+  this.min = elements[0];
+  this.max = elements[1];
+  this.title = elements[2];
+  this.canvas = elements[3];
+
+  // Listeners
   this.canvas.addEventListener("click", this.pause.bind(this));
   this.canvas.addEventListener("dblclick", this.reset.bind(this));
+  this.canvas.addEventListener("mousemove", this.hover.bind(this));
+
   this.context = this.canvas.getContext("2d");
 
   // Settings
   this.canvas.width = size;
   this.canvas.height = 100;
   this.width = 2;
-  this.color = "#2f7ed8";
+  this.color = "#7CB5EC";
   this.gradient = this.__createGradient();
 
   this.enableGridLines = true;
-  this.enableGradient = true;
+  this.enableGradient = false;
 
   // Ringbuffer that stores the data of size N
   this.ringbuffer = new RingBuffer(size);
+  this.__first = false;
 
 }
 
@@ -39,7 +48,30 @@ TimeseriesGraph.prototype.reset = function() {
    * Resets the timeseries graph by re-creating the ringbuffer
    */
 
+  if(this.__paused) {
+    this.pause()
+  }
+
   this.ringbuffer = new RingBuffer(this.ringbuffer.size);
+  this.__draw();
+
+}
+
+TimeseriesGraph.prototype.hover = function(event) {
+
+  /*  
+   * Function TimeseriesGraph.hover
+   * Callback fired when the mouse is hovered over: calculate the selected index
+   */
+
+  let rect = this.canvas.getBoundingClientRect();
+  let x = event.clientX - rect.left;
+  let px = Math.round(this.ringbuffer.size * (x / this.canvas.width));
+  let index = Math.max(0, Math.min(this.ringbuffer.size, px)) - 1;
+  let rindex = (this.ringbuffer.index + index) % this.ringbuffer.size;
+
+  // Log it to console
+  console.log(this.ringbuffer.data[rindex]);
 
 }
 
@@ -51,6 +83,17 @@ TimeseriesGraph.prototype.pause = function() {
    */
 
   this.__paused = !this.__paused;
+
+  if(this.__paused) {
+    this.color = "#7CB5EC80";
+  } else {
+    this.color = "#7CB5ECFF";
+  }
+
+  this.__draw()
+  this.context.fillStyle = "grey";
+  this.context.font = "14px sans-serif";
+  this.context.fillText("Paused", 6, 14);
 
 }
 
@@ -78,30 +121,30 @@ TimeseriesGraph.prototype.__drawGridLines = function() {
    * Draws grid lines to the canvas
    */
 
-  let nGridLinesWidth = 20;
-  let nGridLinesHeight = 8;
+  let nGridLinesWidth = 10;
+  let nGridLinesHeight = 4;
 
   this.context.strokeStyle = "lightgrey";
   this.context.lineWidth = 1;
 
-  let nx = Math.round(this.canvas.width / nGridLinesWidth);
+  let nx = Math.ceil(this.canvas.width / nGridLinesWidth);
 
   // Ten lines
   for(let i = 0; i < nGridLinesWidth; i++) {
     this.context.beginPath();
-    this.context.moveTo(0.5 + nx * i, 0);
-    this.context.lineTo(0.5 + nx * i, this.canvas.height);
-    this.context.stroke();   
+    this.context.moveTo(-0.5 + nx * i, 0);
+    this.context.lineTo(-0.5 + nx * i, this.canvas.height);
+    this.context.stroke();
   }
 
  // Three lines
- let ny = Math.round(this.canvas.height / nGridLinesHeight);
+ let ny = Math.ceil(this.canvas.height / nGridLinesHeight);
 
   for(let i = 0; i < nGridLinesHeight; i++) {
     this.context.beginPath();
-    this.context.moveTo(0, 0.5 + ny * i);
-    this.context.lineTo(this.canvas.width, 0.5 + ny * i);
-    this.context.stroke();   
+    this.context.moveTo(0, -0.5 + ny * i);
+    this.context.lineTo(this.canvas.width, -0.5 + ny * i);
+    this.context.stroke();
   }
 
 }
@@ -115,9 +158,10 @@ TimeseriesGraph.prototype.__createGradient = function() {
 
   let gradient = this.context.createLinearGradient(0, 0, 0, this.canvas.height);
 
-  gradient.addColorStop("0.1", "red");
-  gradient.addColorStop("0.5" , "white");
-  gradient.addColorStop("0.9", "blue");
+  gradient.addColorStop("0.0", "#7CB5EC00");
+  gradient.addColorStop("0.15", "#7CB5ECFF");
+  gradient.addColorStop("0.85", "#7CB5ECFF");
+  gradient.addColorStop("1.0", "#7CB5EC00");
 
   return gradient;
 
@@ -148,7 +192,10 @@ TimeseriesGraph.prototype.__draw = function() {
   // Draw curve
   this.context.beginPath();
   this.ringbuffer.plot(this.canvas.height, this.context);
-  this.context.stroke(); 
+  this.context.stroke();
+
+  this.min.innerHTML = (this.ringbuffer.mean - this.ringbuffer.scale).toFixed(0);
+  this.max.innerHTML = (this.ringbuffer.mean + this.ringbuffer.scale).toFixed(0);
 
 }
 
@@ -161,7 +208,6 @@ const RingBuffer = function(size) {
    * API:
    *
    * @RingBuffer.add - Adds a value to the ringbuffer
-   * @RingBuffer.getFirstHeightPixel(height, value) - Returns the height of the first value in pixels based min/max
    * @RingBuffer.getHeightPixel(height, value) - Return the height of any value in pixels based on and min/max
    * @RingBuffer.plot(height, context) - Plots the ringbuffer to the passed canvas height & context
    *
@@ -169,7 +215,7 @@ const RingBuffer = function(size) {
 
   this.size = size;
   this.index = 0;
-  this.data = new Array(this.size).fill(0);
+  this.data = new Array(this.size).fill(null);
   this.previousScale = 0;
 
 }
@@ -185,8 +231,11 @@ RingBuffer.prototype.add = function(value) {
   this.data[this.index] = value;
   this.index = (this.index + 1) % this.size;
 
+  // The mean
+  this.mean = this.data.reduce((a, b) => a + b, 0) / this.data.filter(x => x !== null).length;
+
   // Keep track of the minimum and maximum values in the array
-  this.scale = Math.max.apply(null, this.data.map(Math.abs));
+  this.scale = Math.max.apply(null, this.data.filter(x => x!== null).map(x => Math.abs(x - this.mean)));
 
 }
 
@@ -197,10 +246,8 @@ RingBuffer.prototype.plot = function(height, context) {
    * Plots the ringbuffer to the passed context
    */
 
-  // Begin of the curve
-  context.moveTo(0, this.__getFirstHeightPixel(height));
-
   let index = 0;
+  this.__first = true;
 
   // Go over the ringbuffer in the correct order
   for(let i = this.index; i < this.data.length; i++) {
@@ -220,18 +267,16 @@ RingBuffer.prototype.__drawSample = function(context, height, x, i) {
    * Draws a single sample to the canvas by moving the line to the appropriate position
    */
 
-  context.lineTo(x, 0.5 * height - this.__getHeightPixel(height, this.data[i]));
+  if(this.data[i] === null) {
+    return;
+  }
 
-}
-
-RingBuffer.prototype.__getFirstHeightPixel = function(height) {
-
-  /*
-   * Function RingBuffer.getFirstHeightPixel
-   * Returns the pixel height of the first sample in the ringbuffer
-   */
-
-  return 0.5 * height - this.__getHeightPixel(height, this.data[this.index]);
+  if(this.__first) {
+    context.moveTo(x, 0.5 * height - this.__getHeightPixel(height, this.data[i]));
+    this.__first = false;
+  } else {
+    context.lineTo(x, 0.5 * height - this.__getHeightPixel(height, this.data[i]));
+  }
 
 }
 
@@ -242,6 +287,6 @@ RingBuffer.prototype.__getHeightPixel = function(height, value) {
    * Returns the pixel height of the first sample in the ringbuffer
    */
 
-  return 0.5 * Math.round(height * value / this.scale);
+  return 0.5 * Math.round(height * (value - this.mean) / this.scale);
 
 }

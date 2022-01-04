@@ -220,12 +220,11 @@ class UART(object):
         )
 
         # init websocket
-        # if MultiEARWebsocket:
-        #     self._ws = MultiEARWebsocket()
-        #     self._ws.listen("localhost", 8765)
-        #     self._ws_fields = ['LPS33HW',
-        #                        'DLVR',
-        #                        'LIS3DH_X', 'LIS3DH_Y', 'LIS3DH_Z']
+        if MultiEARWebsocket:
+            self._ws = MultiEARWebsocket()
+            self._ws.listen("0.0.0.0", 8765)
+            self._ws_fields = ['LIS3DH_X', 'LIS3DH_Y', 'LIS3DH_Z',
+                               'LPS33HW', 'DLVR']
 
         # terminate at exit
         atexit.register(self.close)
@@ -315,7 +314,7 @@ class UART(object):
                 self._points.append(point)
 
                 # broadcast point
-                # self._broadcast(point)
+                self._broadcast(point)
 
                 # shift buffer to next packet
                 i += packet_len
@@ -466,10 +465,10 @@ class UART(object):
     def _broadcast(self, point):
         """Broadcast points using WebSockets
         """
-        if MultiEARWebsocket is False:
+        if not MultiEARWebsocket:
             return
-        data = [point.fields[k] for k in self._ws_fields]
-        self._ws.broadcast(data)
+        data = [float(point.fields[k]) for k in self._ws_fields]
+        self._ws.broadcast(json.dumps(data))
 
     def _write(self):
         """Write points to Influx database in batch mode

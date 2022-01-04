@@ -21,6 +21,49 @@ html {
   border-radius: 0;
 }
 
+#sensorDataWSError {
+  display: none;
+  text-align: center;
+}
+
+#sensorDataWS {
+  display: none;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.ws-wrapper {
+  margin: 8px;
+  text-align: center;
+  position: relative;
+}
+
+.ws-wrapper span {
+  color: grey;
+  font-size: 12px;
+  position: absolute;
+}
+
+.ws-wrapper .min {
+  left: 0px;
+  bottom: -12px;
+}
+
+.ws-wrapper .max {
+  left: 0px;
+  top: 9px;
+}
+
+.ws-wrapper canvas:hover {
+  cursor: pointer;
+}
+
+.ws-wrapper canvas {
+  border: 1px solid lightgrey;
+  border-radius: 8px;
+  box-shadow: 0 0 8px lightgrey;
+}
+
 div.pcb {
   -webkit-user-select: none;
   -khtml-user-select: none;

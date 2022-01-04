@@ -2,8 +2,39 @@
 
 <h4 class="my-3 pt-4">Live sensor data</h4>
 
-<canvas class="my-3 img-fluid" id="sensorDataWS"></canvas>
-<small>here comes a live timeseries graph via websockets</small>
+<div id="sensorDataWSError"></div>
+<div id="sensorDataWS">
+  <div class="ws-wrapper">
+    <span class="min"></span>
+    <span class="max"></span>
+    <h6 class="ws-title">LIS3DH_X</h6>
+    <canvas name="LIS3DH_X"></canvas>
+  </div>
+  <div class="ws-wrapper">
+    <span class="min"></span>
+    <span class="max"></span>
+    <h6 class="ws-title">LIS3DH_Y</h6>
+    <canvas name="LIS3DH_Y"></canvas>
+  </div>
+  <div class="ws-wrapper">
+    <span class="min"></span>
+    <span class="max"></span>
+    <h6 class="ws-title">LIS3DH_Z</h6>
+    <canvas name="LIS3DH_Z"></canvas>
+  </div>
+  <div class="ws-wrapper">
+    <span class="min"></span>
+    <span class="max"></span>
+    <h6 class="ws-title">LPS33HW</h6>
+    <canvas name="LPS33HW"></canvas>
+  </div>
+  <div class="ws-wrapper">
+    <span class="min"></span>
+    <span class="max"></span>
+    <h6 class="ws-title">DLVR</h6>
+    <canvas name="DLVR"></canvas>
+  </div>
+</div>
 
 <hr class="my-4 my-md-5">
 
