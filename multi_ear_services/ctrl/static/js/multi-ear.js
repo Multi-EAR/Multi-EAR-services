@@ -417,7 +417,9 @@ function loadWebsockets() {
 
   const N_SAMP = 15 * 30;
 
-  let ws = new WebSocket("ws://multi-ear-3002:8765");
+  // Copy string
+  let url = "" + window.location;
+  let ws = new WebSocket(url.replace(/\/$/, "").replace("http", "ws") + ":8765");
   let div = document.getElementById("sensorDataWS");
   let graphs = new Array();
   

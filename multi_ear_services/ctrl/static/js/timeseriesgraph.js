@@ -70,9 +70,6 @@ TimeseriesGraph.prototype.hover = function(event) {
   let index = Math.max(0, Math.min(this.ringbuffer.size, px)) - 1;
   let rindex = (this.ringbuffer.index + index) % this.ringbuffer.size;
 
-  // Log it to console
-  console.log(this.ringbuffer.data[rindex]);
-
 }
 
 TimeseriesGraph.prototype.pause = function() {
