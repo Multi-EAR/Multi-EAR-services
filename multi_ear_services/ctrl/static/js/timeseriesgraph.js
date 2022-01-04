@@ -23,7 +23,7 @@ const TimeseriesGraph = function(element, size) {
   this.canvas.width = size;
   this.canvas.height = 100;
   this.width = 2;
-  this.color = "#2f7ed8";
+  this.color = "#7CB5EC";
   this.gradient = this.__createGradient();
 
   this.enableGridLines = true;
@@ -80,29 +80,29 @@ TimeseriesGraph.prototype.__drawGridLines = function() {
    * Draws grid lines to the canvas
    */
 
-  let nGridLinesWidth = 20;
-  let nGridLinesHeight = 8;
+  let nGridLinesWidth = 10;
+  let nGridLinesHeight = 4;
 
   this.context.strokeStyle = "lightgrey";
   this.context.lineWidth = 1;
 
-  let nx = Math.round(this.canvas.width / nGridLinesWidth);
+  let nx = Math.ceil(this.canvas.width / nGridLinesWidth);
 
   // Ten lines
   for(let i = 0; i < nGridLinesWidth; i++) {
     this.context.beginPath();
-    this.context.moveTo(0.5 + nx * i, 0);
-    this.context.lineTo(0.5 + nx * i, this.canvas.height);
+    this.context.moveTo(-0.5 + nx * i, 0);
+    this.context.lineTo(-0.5 + nx * i, this.canvas.height);
     this.context.stroke();
   }
 
  // Three lines
- let ny = Math.round(this.canvas.height / nGridLinesHeight);
+ let ny = Math.ceil(this.canvas.height / nGridLinesHeight);
 
   for(let i = 0; i < nGridLinesHeight; i++) {
     this.context.beginPath();
-    this.context.moveTo(0, 0.5 + ny * i);
-    this.context.lineTo(this.canvas.width, 0.5 + ny * i);
+    this.context.moveTo(0, -0.5 + ny * i);
+    this.context.lineTo(this.canvas.width, -0.5 + ny * i);
     this.context.stroke();
   }
 
