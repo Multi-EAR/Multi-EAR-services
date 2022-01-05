@@ -138,6 +138,11 @@ def create_app(test_config=None):
         resp = utils.wlan_autohotspot()
         return jsonify(resp), 200
 
+    @app.route("/_ssid", methods=['GET'])
+    def ssid_api():
+        ssid = os.popen("sudo iwgetid -r").read().rstrip("\n")
+        return jsonify({"ssid": ssid}), 200
+
     @app.route("/_storage", methods=['GET'])
     def storage_api():
         if not is_rpi:

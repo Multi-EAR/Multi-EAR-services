@@ -672,6 +672,13 @@ async function resizePCB () {
 
 }
 
+function loadConnectedSSID() {
+
+    getResponse('/_ssid').then(function(resp) {
+        document.getElementById("ssid-connected").innerHTML = `Connected to <b>${JSON.parse(resp.response).ssid}</b>`
+    });
+
+}
 
 function loadContent(nav) {
 
@@ -711,6 +718,7 @@ function loadContent(nav) {
                     break;
 
                 case "wifi":
+		    loadConnectedSSID()
                     showPasswordToggle()
                     validateWifiForm()
                     break;
