@@ -3,6 +3,7 @@ import os
 import socket
 import hashlib
 import requests
+import shutil
 from flask import Flask, Response, jsonify, request, render_template
 from flask_cors import CORS
 from influxdb_client import InfluxDBClient
@@ -136,6 +137,16 @@ def create_app(test_config=None):
             return "Secret invalid", 403
         resp = utils.wlan_autohotspot()
         return jsonify(resp), 200
+
+    @app.route("/_storage", methods=['GET'])
+    def storage_api():
+        if not is_rpi:
+            return "I'm not Raspberry Pi", 418
+        usage = shutil.disk_usage("/")
+        return jsonify({
+            "total": usage.total,
+            "used": usage.used,
+            "free": usage.free}), 200
 
     @app.route("/api/dataselect/health", methods=['GET'])
     def api_dataselect_health():
