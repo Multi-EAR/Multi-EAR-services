@@ -166,6 +166,29 @@ function autohotspot() {
 
 }
 
+function updateStorage() {
+
+    getResponse('/_storage').then(function(resp) {
+
+        let data = JSON.parse(resp.response)
+
+        Highcharts.chart({
+            chart: { height: 200, renderTo: 'highcharts-storage', type: 'bar', backgroundColor: 'none' },
+            credits: { enabled: false },
+            title: { text: 'Storage Space' },
+            subtitle: { text: `(${(100 * data.free / data.total).toFixed(2)}% available out of a total of ${bytes(data.total, true)})` },
+            tooltip: { formatter: function() { return bytes(this.y, true); } },
+            xAxis: { visible: false },
+            yAxis: { visible: false },
+            exporting: { enabled: false },
+            legend: { enabled: false },
+            plotOptions: { series: { stacking: 'normal', dataLabels: { style: { fontSize: "14px" }, enabled: true, inside: true, formatter: function() { return bytes(this.y, true) } } } },
+            series: [{ name: "Free", data: [data.free]}, { name: "Used", data: [data.used]}]
+        });
+
+    })
+
+}
 
 function statusUpdateLoop() {
 
@@ -176,6 +199,8 @@ function statusUpdateLoop() {
     let width = 0;
 
     statusUpdater = setInterval(progressBarWidth, 100);  // ms, times 100 gives 10s
+
+    updateStorage()
 
     function progressBarWidth() {
 

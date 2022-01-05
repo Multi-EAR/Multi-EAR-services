@@ -137,6 +137,16 @@ def create_app(test_config=None):
         resp = utils.wlan_autohotspot()
         return jsonify(resp), 200
 
+    @app.route("/_storage", methods=['GET'])
+    def storage_api():
+        if not is_rpi:
+            return "I'm not Raspberry Pi", 418
+        usage = shutil.disk_usage("/")
+        return jsonify({
+            "total": usage.total,
+            "used": usage.used,
+            "free": usage.free}), 200
+
     @app.route("/api/dataselect/health", methods=['GET'])
     def api_dataselect_health():
         if not is_rpi:
