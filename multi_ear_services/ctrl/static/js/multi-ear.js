@@ -446,24 +446,28 @@ function loadWebsockets() {
   let url = "" + window.location;
   let ws = new WebSocket(url.replace(/\/$/, "").replace("http", "ws") + ":8765");
   let div = document.getElementById("sensorDataWS");
+  let errordiv = document.getElementById("sensorDataWSError");
   let graphs = new Array();
-  
+
   // Incoming message
   ws.onmessage = function(packet) {
-    packet = JSON.parse(packet.data); 
+    packet = JSON.parse(packet.data);
     for(let i = 0; i < packet.length; i++) {
       graphs[i].add(packet[i]);
-    }   
+    }
   }
 
-  // Callback when opened
+  // Callback when closed
   ws.onclose = function(event) {
-    div.style.display = "flex";  
-    div.innerHTML = "Could not connect to the Websocket Server.";
+    errordiv.style.display = "block";
+    div.style.display = "none";
+    setTimeout(loadWebsockets, 5000);
   }
-  
+
+  // When opened
   ws.onopen = function() {
     div.style.display = "flex";
+    errordiv.style.display = "none";
     graphs = Array.from(div.children).map(function(child) {
       return new TimeseriesGraph(child.children, N_SAMP);
     });
