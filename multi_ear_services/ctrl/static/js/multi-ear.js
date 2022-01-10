@@ -42,11 +42,11 @@ function getRelease() {
 
   // Resolve the promises
   Promise.all([promise1, promise2]).then(function(values) {
-    let [ resp, version ] = values;
-    let current = JSON.parse(resp.response).shift();
+    let [ resp, version ] = values.map(x => JSON.parse(x.response));
+    let current = resp.shift();
 
     // Compare Multi-EAR version vs latest GitHub release
-    if(current.tag_name !== JSON.parse(version.response).version) {
+    if(current.tag_name !== version.version) {
       console.log("A new version of the Multi-EAR is available!");
     }
 
