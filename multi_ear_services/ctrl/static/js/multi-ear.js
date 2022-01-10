@@ -33,6 +33,28 @@ function resetWifiForm(form) {
 
 }
 
+function getRelease() {
+
+  url = "https://api.github.com/repos/Multi-EAR/Multi-EAR-services/releases"
+
+  let promise1 = getResponse(url, 'GET');
+  let promise2 = getResponse("/_version");
+
+  // Resolve the promises
+  Promise.all([promise1, promise2]).then(function(values) {
+    let [ resp, version ] = values;
+    let current = JSON.parse(resp.response).shift();
+
+    // Compare Multi-EAR version vs latest GitHub release
+    if(current.tag_name !== JSON.parse(version.response).version) {
+      console.log("A new version of the Multi-EAR is available!");
+    }
+
+  }).catch(function(error) {
+    console.log("Could not get releases! Not connected to the internet?");
+  });
+
+}
 
 function validateWifiForm() {
 
@@ -754,6 +776,7 @@ function loadContent(nav) {
     'use strict'
 
     loadContent();
+    getRelease();
 
     var navbar = new bootstrap.Collapse(document.querySelector('#navbar'), {toggle: false})
 
