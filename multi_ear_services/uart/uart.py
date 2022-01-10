@@ -2,6 +2,7 @@
 import atexit
 import logging
 import multiprocessing as mp
+import json
 import numpy as np
 import os
 import sys

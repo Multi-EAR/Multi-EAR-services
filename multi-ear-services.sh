@@ -737,6 +737,8 @@ function do_multi_ear_services
 #
 function do_update
 {
+    local pip=$PYTHON_ENV/bin/pip3
+
     # update repository --> should become optional
     # git pull
 
