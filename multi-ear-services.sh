@@ -22,7 +22,7 @@ PYTHON_ENV="/home/$USER/.py37"
 BASH_ENV="/home/$USER/.bashrc"
 
 # Log file
-LOG_FILE="$(pwd)/install.log"
+LOG_FILE="$(pwd)/multi-ear-services.log"
 
 
 #
@@ -739,26 +739,13 @@ function do_update
 {
     local pip=$PYTHON_ENV/bin/pip3
 
-    # update repository --> should become optional
-    # git pull
-
-    # Rsync configure
-    do_rsync_etc
-    do_daemon_reload 
-    do_systemd_env
-
-    # Restart 3rd party services
-    do_systemd_service_restart "rsyslog"
-    do_systemd_service_restart "nginx"
-    do_systemd_service_restart "influxdb"
-    do_systemd_service_restart "telegraf"
-    do_systemd_service_restart "grafana-server"
-
     # Pip multi-ear services
+    verbose_msg ".. pip install multi_ear_services"
     $pip uninstall -y multi_ear_services . >> $LOG_FILE 2>&1
     $pip install . >> $LOG_FILE 2>&1
 
     # Restart multi-ear services
+    verbose_msg ".. restart multi_ear_services"
     do_systemd_service_restart "multi-ear-ctrl.service"
     do_systemd_service_restart "multi-ear-uart.service"
 }
