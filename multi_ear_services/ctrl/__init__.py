@@ -99,6 +99,10 @@ def create_app(test_config=None):
         }
         return jsonify(resp), 200
 
+    @app.route("/_version", methods=['GET'])
+    def multi_ear_version():
+      return jsonify({"version": version}), 200
+
     @app.route("/_systemd_status", methods=['GET'])
     def systemd_status():
         if not is_rpi:
